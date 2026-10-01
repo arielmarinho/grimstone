@@ -1,3 +1,10 @@
+## v0.6.26 — Auditoria Area 2 Player&Skills (ciclo 54, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 6 fixes de skills (descricao vs codigo): NEVASCA agora AOE+stun 2.2x/1.5s (era _skill_aoe 3.0 SEM stun); ESCUDO ARCANO 10s (era 8s); TIRO CERTEIRO desc corrigida pra x2 (critico do jogo e x2); GOLPE DUPLO desc corrigida (2 ataques, 2o golpe 50%); CHUVA DE FLECHAS exige 5 flechas (antes zerava e soltava a AOE mesmo sem); skills com alvo (atordoar/fogo/investida/tiro_multi) DEVOLVEM mana e nao gastam cooldown quando nao ha alvo (feedback no HUD)
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
+- GitHub: player.gd byte-exato verificado lendo de volta (3 pushes: 1o saiu com indentacao errada na investida, 2o com typo "armado" — ambos reparados); skills_db.gd SHA c59038fe byte-exato
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.25 — Fix stall da city2 (ciclo 53, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - STALL (barraca de feira) da city2 saia do telhado da casa NE: decor 1320,420 -> 1320,380 e colisor acompanha (colliders/decor em par, regra "colisor casa com o cenario")
@@ -20,7 +27,7 @@ Formato: codigo no GitHub (push MCP), docs pushados
 - Colisores refeitos casando com a nova arte: muralha com portões leste/sul abertos (y/x 932-1156), lago em 2 rects com VÃO da ponte (caminho cruza), prédios nas novas posições, cerca da área de treino com PORTÃO (player entra pra treinar), fonte r=104
 - Barris/caixote do decor movidos pra fora da loja de poções nova; rato do spawner reposicionado (nascia dentro do prédio)
 - VALIDAÇÃO VISUAL OBRIGATÓRIA cumprida: preview renderizado (artifacts/map_city1.png) e analisado — lago, ponte, dummies, fonte multinível, lojas e torres presentes; check programático dos portões (0/21 px de muralha na abertura leste e sul, 15/20 no controle), lago azul e ponte marrom confirmados por amostragem de pixels
-- Validação: headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitários OK
+- Validação: headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
 - Commits: bae91fa (colliders/decor/spawners), af11179 (tex_helper), docs este commit
 - Fila: teste no Mac do usuário (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md) OU city2 seguindo referência
 
