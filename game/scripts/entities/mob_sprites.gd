@@ -24,6 +24,7 @@ static func draw_mob(img: Image, type: String, f: int, is_attack: bool, is_death
 
 # ---------- RATO (marrom, orelhas rosa, cauda longa) — procedural, 3 direcoes ----------
 static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, dir: String = "down") -> void:
+	# RATO GRANDE (estilo Rucoy): ocupa ~64x44 do frame 96x96 — presenca de monstro
 	var cx := 48
 	var fur := Color(0.55, 0.42, 0.3)
 	var fur_d := Color(0.42, 0.31, 0.22)
@@ -33,68 +34,68 @@ static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_wa
 	var tail := Color(0.8, 0.55, 0.55)
 	if is_death:
 		# deitado de lado, patas pra cima
-		_ell(img, cx, 86, 18, 5, fur)
-		_ell(img, cx, 82, 14, 4, belly)
-		_ell(img, cx - 20, 84, 7, 2.5, tail)
-		_ell(img, cx + 16, 82, 4, 5, fur_d)
-		_circ(img, cx + 18, 78, 2.5, ear)
-		_circ(img, cx + 17, 81, 1.2, eye)
+		_ell(img, cx, 82, 26, 8, fur)
+		_ell(img, cx, 76, 18, 6, belly)
+		_ell(img, cx - 32, 80, 11, 4, tail)
+		_ell(img, cx + 24, 76, 6, 8, fur_d)
+		_circ(img, cx + 27, 68, 4, ear)
+		_circ(img, cx + 25, 72, 2, eye)
 		return
 	var bob: int = [0, 1, 0, 1][f]
-	var step: int = [3, 0, -3, 0][f] if is_walk else 0
-	_ell(img, cx, 88, 16, 3, Color(0, 0, 0, 0.25))
+	var step: int = [4, 0, -4, 0][f] if is_walk else 0
+	_ell(img, cx, 84, 24, 4, Color(0, 0, 0, 0.25))
 	# cauda (curva pra tras)
-	_ell(img, cx - 22, 80 - bob, 9, 2.5, tail)
-	_ell(img, cx - 28, 76 - bob, 5, 2, tail)
+	_ell(img, cx - 34, 74 - bob, 14, 4, tail)
+	_ell(img, cx - 44, 68 - bob, 8, 3, tail)
 	if dir == "up":
 		# visto de tras: corpo + costas, sem rosto, orelhas de costas
-		_ell(img, cx, 78 + bob, 15, 9, fur)
-		_ell(img, cx, 82 + bob, 10, 5, fur_d)
-		_ell(img, cx - 8, 84 + step, 3, 4, fur_d)
-		_ell(img, cx + 8, 84 - step, 3, 4, fur_d)
-		_circ(img, cx - 6, 68 + bob, 4, fur)
-		_circ(img, cx + 6, 68 + bob, 4, fur)
-		_circ(img, cx - 6, 68 + bob, 2, ear)
-		_circ(img, cx + 6, 68 + bob, 2, ear)
+		_ell(img, cx, 70 + bob, 24, 14, fur)
+		_ell(img, cx, 76 + bob, 16, 8, fur_d)
+		_ell(img, cx - 13, 78 + step, 5, 6, fur_d)
+		_ell(img, cx + 13, 78 - step, 5, 6, fur_d)
+		_circ(img, cx - 9, 54 + bob, 6, fur)
+		_circ(img, cx + 9, 54 + bob, 6, fur)
+		_circ(img, cx - 9, 54 + bob, 3, ear)
+		_circ(img, cx + 9, 54 + bob, 3, ear)
 		if is_attack and f >= 2:
-			_ell(img, cx, 70 + bob, 5, 3, fur_d)
+			_ell(img, cx, 56 + bob, 8, 5, fur_d)
 		return
 	# frente (down) e perfil (side)
-	_ell(img, cx, 78 + bob, 15, 9, fur)
-	_ell(img, cx, 82 + bob, 10, 5, belly)
+	_ell(img, cx, 70 + bob, 24, 14, fur)
+	_ell(img, cx, 76 + bob, 16, 8, belly)
 	# patas
-	_ell(img, cx - 8, 84 + step, 3, 4, fur_d)
-	_ell(img, cx + 8, 84 - step, 3, 4, fur_d)
+	_ell(img, cx - 13, 78 + step, 5, 6, fur_d)
+	_ell(img, cx + 13, 78 - step, 5, 6, fur_d)
 	# cabeca
-	var hy := 68 + bob
+	var hy := 52 + bob
 	if dir == "side":
 		# perfil: focinho apontado pra direita (flip_h cobre esquerda)
-		_circ(img, cx + 4, hy, 7, fur)
-		_ell(img, cx + 12, hy + 2, 5, 3, fur)
-		_circ(img, cx + 17, hy + 2, 1.2, Color(0.15, 0.1, 0.1))
-		_circ(img, cx + 2, hy - 6, 3.5, fur)
-		_circ(img, cx + 2, hy - 6, 2, ear)
-		_circ(img, cx + 6, hy - 1, 1.5, eye)
-		_tri(img, cx + 14, hy + 4, 3, 2, Color(0.95, 0.93, 0.85))
+		_circ(img, cx + 6, hy, 11, fur)
+		_ell(img, cx + 19, hy + 3, 8, 5, fur)
+		_circ(img, cx + 27, hy + 3, 2, Color(0.15, 0.1, 0.1))
+		_circ(img, cx + 3, hy - 10, 5.5, fur)
+		_circ(img, cx + 3, hy - 10, 3, ear)
+		_circ(img, cx + 9, hy - 2, 2.4, eye)
+		_tri(img, cx + 22, hy + 6, 5, 3, Color(0.95, 0.93, 0.85))
 		if is_attack and f >= 2:
-			_tri(img, cx + 18, hy + 5, 4, 3, Color(0.95, 0.95, 0.9))
+			_tri(img, cx + 28, hy + 8, 6, 5, Color(0.95, 0.95, 0.9))
 	else:
 		# frente: orelhas redondas + olhos vermelhos + dentes
-		_circ(img, cx - 6, hy - 6, 4, fur)
-		_circ(img, cx + 6, hy - 6, 4, fur)
-		_circ(img, cx - 6, hy - 6, 2, ear)
-		_circ(img, cx + 6, hy - 6, 2, ear)
-		_circ(img, cx, hy, 7, fur)
-		_circ(img, cx - 3, hy - 1, 1.5, eye)
-		_circ(img, cx + 3, hy - 1, 1.5, eye)
-		_circ(img, cx - 2.5, hy - 1.5, 0.5, Color(1, 0.9, 0.9))
-		_circ(img, cx + 3.5, hy - 1.5, 0.5, Color(1, 0.9, 0.9))
-		_ell(img, cx, hy + 4, 3, 2, Color(0.7, 0.5, 0.5))
-		_rect(img, cx - 2, hy + 5, 1.5, 2, Color(0.95, 0.93, 0.85))
-		_rect(img, cx + 1, hy + 5, 1.5, 2, Color(0.95, 0.93, 0.85))
+		_circ(img, cx - 10, hy - 10, 6.5, fur)
+		_circ(img, cx + 10, hy - 10, 6.5, fur)
+		_circ(img, cx - 10, hy - 10, 3.2, ear)
+		_circ(img, cx + 10, hy - 10, 3.2, ear)
+		_circ(img, cx, hy, 11, fur)
+		_circ(img, cx - 5, hy - 2, 2.4, eye)
+		_circ(img, cx + 5, hy - 2, 2.4, eye)
+		_circ(img, cx - 4, hy - 2.5, 0.8, Color(1, 0.9, 0.9))
+		_circ(img, cx + 6, hy - 2.5, 0.8, Color(1, 0.9, 0.9))
+		_ell(img, cx, hy + 6, 5, 3, Color(0.7, 0.5, 0.5))
+		_rect(img, cx - 3, hy + 8, 2.5, 3, Color(0.95, 0.93, 0.85))
+		_rect(img, cx + 1, hy + 8, 2.5, 3, Color(0.95, 0.93, 0.85))
 		if is_attack and f >= 2:
-			_tri(img, cx - 2, hy + 6, 3, 3, Color(0.95, 0.95, 0.9))
-			_tri(img, cx + 2, hy + 6, 3, 3, Color(0.95, 0.95, 0.9))
+			_tri(img, cx - 3, hy + 9, 5, 5, Color(0.95, 0.95, 0.9))
+			_tri(img, cx + 3, hy + 9, 5, 5, Color(0.95, 0.95, 0.9))
 
 # ---------- DUMMY DE TREINO (boneco de madeira, imortal) ----------
 static func _draw_dummy(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
