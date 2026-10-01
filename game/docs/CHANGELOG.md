@@ -2,6 +2,14 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
+
+- NOVO: flash VERMELHO no player ao tomar dano (o mob ja tinha flash branco; agora os dois lados tem feedback)
+- NOVO: tremida curta de camera (shake 0.13s) ao tomar dano — impacto visivel
+- Camera com position_smoothing (speed 6.0) — movimento mais suave ao andar e trocar de mapa
+- Validado Godot headless: 0 erros de script
+- Local 77fd17d; GitHub 45905cf (player.gd + player.tscn, blob SHA byte-exato)
+
 ## 2026-10-01 — v0.6.6 (ciclo 24: BESTIARIO — estilo Tibia)
 
 - NOVO: BESTIARIO (tecla N) — registro de caca estilo Tibia: ficha dos 8 mobs (nome, onde vive, lore curta), contador de derrotas por tipo, monstros nunca enfrentados ficam "???" (descobre cacando), rodape "Descobertos: X de 8"
@@ -157,9 +165,9 @@ Formato: [data] versão — o que mudou (commit)
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim morte com tamanho, preview roupas renderiza, cooldown numerico Q/E/R/G, feedback na tela (mana/skill bloqueada/sem flechas)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
-- Titulo: versao v0.4.5 + ESC sai
+- Titulo: v0.4.5 + ESC sai
 
 ## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
 
