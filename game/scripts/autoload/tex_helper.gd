@@ -1,10 +1,9 @@
 class_name TexHelper
 extends Object
-## TexHelper — ordem de carregamento:
-## 1) assets_override/ (instalado pelo usuario, sem tocar no git)
-## 2) assets/ PNG normal
-## 3) assets/ .b64 (base64 no repo, decodificado em runtime)
-## 4) arte procedural (fallback)
+## TexHelper — carrega sprite real do disco; se nao existir, gera grafico procedural
+## (assim o jogo roda 100% so com o clone, e sprites reais entram depois)
+
+const KNIGHT_IDLE := "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png"
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)
@@ -38,7 +37,7 @@ static func _load_image(path: String) -> Image:
 	img = Image.load_from_file(ProjectSettings.globalize_path(path))
 	if img != null:
 		return img
-	# 3) versao .b64 (base64 no repo, decodificada em runtime)
+	# 2) tenta versao .b64 (sprites vao ao git em base64 e sao decodificados em runtime)
 	var f = FileAccess.open(path + ".b64", FileAccess.READ)
 	if f == null:
 		return null
@@ -68,7 +67,10 @@ static func _procedural(path: String, weapon: String = "sword", hair: String = "
 		frames.append(ImageTexture.create_from_image(img))
 	return frames
 
-# ---------- KNIGHT ORGANICO ----------
+static var DEFAULT_HAIR := "castanho"
+static var DEFAULT_TUNIC := "castanho"
+
+# ---------- KNIGHT ORGANICO (cabelo castanho, tunica marrom, espada) ----------
 static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, weapon: String = "sword", hair_color: String = "castanho", tunic_color: String = "castanho") -> void:
 	var cx := 48
 	var bob := 0
@@ -93,38 +95,49 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 	var pants := Color(0.28, 0.23, 0.19)
 	var boots := Color(0.38, 0.26, 0.15)
 	if is_death:
+		# deitado, corpo no chao
 		_draw_ellipse(img, cx + 2, 84, 16, 5, tunic)
 		_draw_circle(img, cx - 18, 84, 6, skin)
 		_draw_ellipse(img, cx - 20, 82, 6, 3, hair)
 		_draw_ellipse(img, cx + 18, 86, 8, 3, pants)
 		_draw_rect(img, cx + 14, 90, 14, 2, Color(0.8, 0.82, 0.86))
 		return
+	# SOMBRA no chao
 	_draw_ellipse(img, cx, 88, 11, 3.5, Color(0, 0, 0, 0.25))
+	# pernas (capsulas)
 	_draw_ellipse(img, cx - 5, 70 + leg_l, 3.5, 8, pants)
 	_draw_ellipse(img, cx + 5, 70 + leg_r, 3.5, 8, pants)
+	# botas
 	_draw_ellipse(img, cx - 5, 80 + leg_l, 4, 3, boots)
 	_draw_ellipse(img, cx + 5, 80 + leg_r, 4, 3, boots)
+	# tunica (trapezio organico com dobra)
 	_draw_ellipse(img, cx, 52 + bob, 12, 13, tunic)
 	_draw_ellipse(img, cx + 4, 56 + bob, 7, 9, tunic_d)
+	# cinto
 	_draw_rect(img, cx - 10, 62 + bob, 20, 3, Color(0.25, 0.17, 0.1))
 	_draw_circle(img, cx, 63.5 + bob, 1.5, Color(0.8, 0.65, 0.3))
+	# bracos
 	_draw_ellipse(img, cx - 11, 50 + bob, 3, 7, tunic)
 	_draw_circle(img, cx - 11, 58 + bob, 2.5, skin)
+	# cabeca organica
 	_draw_circle(img, cx, 32 + bob, 8.5, skin)
 	_draw_ellipse(img, cx, 36 + bob, 6, 3, skin_sh)
+	# cabelo com franja
 	_draw_ellipse(img, cx, 27 + bob, 8.5, 5.5, hair)
 	_draw_ellipse(img, cx - 7, 31 + bob, 2.5, 4, hair)
 	_draw_ellipse(img, cx + 7, 31 + bob, 2.5, 4, hair)
+	# olhos
 	_draw_circle(img, cx - 3.5, 33 + bob, 1.3, Color(0.12, 0.1, 0.14))
 	_draw_circle(img, cx + 3.5, 33 + bob, 1.3, Color(0.12, 0.1, 0.14))
 	_draw_circle(img, cx - 3.5, 33.5 + bob, 0.5, Color(0.9, 0.9, 0.9))
 	_draw_circle(img, cx + 3.5, 33.5 + bob, 0.5, Color(0.9, 0.9, 0.9))
+	# arma na mao direita (elevada)
 	var hand_x := cx + 11
 	var hand_y := 52 + bob
 	if Equips.WEAPONS.has(weapon):
 		Equips.draw_weapon(img, weapon, hand_x, hand_y, f, is_attack)
 
-# ---------- RATO ORGANICO ----------
+# ---------- RATO ORGANICO (marrom, olhos vermelhos, orelhas rosas) ----------
 static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
 	var cx := 44
 	var fur := Color(0.48, 0.34, 0.19)
@@ -134,6 +147,7 @@ static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_wa
 	var eye := Color(0.85, 0.1, 0.1)
 	var bob: int = [0, 1, 0, 1][f]
 	if is_death:
+		# de costas, patas pra cima
 		_draw_ellipse(img, cx, 86, 17, 5, fur)
 		_draw_circle(img, cx + 18, 84, 6, fur)
 		_draw_circle(img, cx + 15, 80, 3, ear)
@@ -141,27 +155,37 @@ static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_wa
 		_draw_ellipse(img, cx - 8, 78, 2, 5, Color(0.7, 0.5, 0.5))
 		_draw_ellipse(img, cx - 2, 77, 2, 5, Color(0.7, 0.5, 0.5))
 		return
+	# sombra
 	_draw_ellipse(img, cx, 88, 15, 3.5, Color(0, 0, 0, 0.25))
+	# cauda curvada
 	_draw_ellipse(img, cx - 20, 80 - bob * 2, 6, 2.5, ear)
 	_draw_ellipse(img, cx - 26, 76 - bob * 3, 5, 2, ear)
+	# corpo (oval)
 	_draw_ellipse(img, cx, 74 + bob, 16, 9, fur)
 	_draw_ellipse(img, cx - 2, 78 + bob, 11, 5, belly)
+	# cabeca
 	_draw_circle(img, cx + 16, 66 + bob, 7.5, fur)
 	_draw_ellipse(img, cx + 20, 69 + bob, 5, 3, fur_d)
+	# focinho/nariz
 	_draw_circle(img, cx + 24, 68 + bob, 1.5, Color(0.75, 0.5, 0.5))
+	# orelhas redondas
 	_draw_circle(img, cx + 12, 59 + bob, 3.5, ear)
 	_draw_circle(img, cx + 20, 58 + bob, 3.5, ear)
 	_draw_circle(img, cx + 12, 59 + bob, 1.8, Color(0.7, 0.45, 0.5))
 	_draw_circle(img, cx + 20, 58 + bob, 1.8, Color(0.7, 0.45, 0.5))
+	# olhos vermelhos brilhantes
 	_draw_circle(img, cx + 18, 65 + bob, 1.8, eye)
 	_draw_circle(img, cx + 18.5, 64.5 + bob, 0.6, Color(1.0, 0.6, 0.6))
+	# dentes
 	_draw_rect(img, cx + 22, 71 + bob, 1.5, 2.5, Color(0.95, 0.95, 0.9))
 	_draw_rect(img, cx + 24, 71 + bob, 1.5, 2.5, Color(0.95, 0.95, 0.9))
+	# patas
 	var step := 0
 	if is_walk:
 		step = [2, 0, -2, 0][f]
 	_draw_ellipse(img, cx - 8, 84 + step, 2.5, 2, fur_d)
 	_draw_ellipse(img, cx + 2, 84 - step, 2.5, 2, fur_d)
+	# boca aberta no ataque
 	if is_attack and f >= 2:
 		_draw_ellipse(img, cx + 22, 71 + bob, 4, 2.5, Color(0.7, 0.25, 0.25))
 		_draw_circle(img, cx + 21, 69.5 + bob, 1, Color(0.95, 0.95, 0.9))
@@ -195,21 +219,24 @@ static func load_map(path: String) -> Texture2D:
 		return _map_cave()
 	return _map_city()
 
-# ---------- CIDADE 1 ORGANICA ----------
+# ---------- CIDADE 1 ORGANICA (muralha, fonte central, lojas, lago, portao sul, bueiro) ----------
 static func _map_city() -> Texture2D:
 	var W := 1024
 	var H := 1024
 	var img = Image.create(W, H, false, Image.FORMAT_RGBA8)
+	# grama com variacao organica
 	img.fill(Color(0.45, 0.68, 0.33))
 	for i in range(9000):
 		var x = randi() % W
 		var y = randi() % H
 		var shade = 0.4 + randf() * 0.15
 		img.set_pixel(x, y, Color(shade, shade + 0.22, shade * 0.7))
+	# tufos de grama
 	for i in range(140):
 		var x = 20 + randi() % (W - 40)
 		var y = 20 + randi() % (H - 40)
 		_draw_ellipse(img, x, y, 2 + randf() * 3, 1.5 + randf() * 2, Color(0.38, 0.58, 0.28, 0.5))
+	# caminhos de terra organicos (centro para 4 direcoes)
 	var dirt := Color(0.78, 0.66, 0.48)
 	var dirt_d := Color(0.7, 0.58, 0.42)
 	for y in range(180, 920):
@@ -222,6 +249,7 @@ static func _map_city() -> Texture2D:
 		for y in range(H / 2 - 26 + wobble, H / 2 + 26 + wobble):
 			var c = dirt if (x + y) % 7 != 0 else dirt_d
 			img.set_pixel(x, y, c)
+	# praca central (pedra organica)
 	_draw_circle(img, W / 2, H / 2, 105, Color(0.63, 0.61, 0.57))
 	for i in range(400):
 		var ang = randf() * TAU
@@ -229,13 +257,16 @@ static func _map_city() -> Texture2D:
 		var px = W / 2 + cos(ang) * r
 		var py = H / 2 + sin(ang) * r
 		img.set_pixel(px, py, Color(0.58, 0.56, 0.52))
+	# FONTE central (circulos concentricos)
 	_draw_circle(img, W / 2, H / 2, 45, Color(0.58, 0.56, 0.53))
 	_draw_circle(img, W / 2, H / 2, 34, Color(0.3, 0.55, 0.85))
 	_draw_circle(img, W / 2, H / 2, 30, Color(0.35, 0.62, 0.9))
 	_draw_circle(img, W / 2, H / 2, 12, Color(0.62, 0.6, 0.56))
 	_draw_circle(img, W / 2, H / 2, 6, Color(0.7, 0.68, 0.64))
+	# ondas da agua
 	for i in range(3):
 		_draw_ellipse(img, W / 2 + 18 - i * 8, H / 2 + 10 - i * 12, 6 - i, 2 - i * 0.5, Color(0.5, 0.72, 0.95, 0.6))
+	# MURALHA (anel de pedra organico)
 	var wall := Color(0.6, 0.58, 0.54)
 	var wall_d := Color(0.5, 0.48, 0.45)
 	for i in range(0, W, 2):
@@ -254,16 +285,19 @@ static func _map_city() -> Texture2D:
 		_draw_ellipse(img, 881 + wv, j, 14, 2.2, wall)
 		if j % 8 == 0:
 			_draw_ellipse(img, 881 + wv, j + 1, 14, 1.8, wall_d)
+	# ameias organicas
 	for i in range(150, 860, 42):
 		_draw_circle(img, i, 124, 8, wall)
 		_draw_circle(img, i, 900, 8, wall)
 	for j in range(150, 860, 42):
 		_draw_circle(img, 124, j, 8, wall)
 		_draw_circle(img, 900, j, 8, wall)
+	# TORRES nos cantos
 	for pos in [[143, 143], [881, 143], [143, 881], [881, 881]]:
 		_draw_circle(img, pos[0], pos[1], 22, Color(0.66, 0.64, 0.6))
 		_draw_circle(img, pos[0], pos[1], 14, Color(0.72, 0.7, 0.66))
 		_draw_circle(img, pos[0], pos[1], 5, Color(0.35, 0.33, 0.3))
+	# PORTAO SUL
 	for y in range(881, 1024):
 		for x in range(W / 2 - 46, W / 2 + 46):
 			img.set_pixel(x, y, dirt)
@@ -271,26 +305,33 @@ static func _map_city() -> Texture2D:
 	_draw_rect(img, W / 2 + 38, 860, 14, 70, Color(0.45, 0.3, 0.18))
 	_draw_circle(img, W / 2 - 45, 855, 10, Color(0.5, 0.34, 0.2))
 	_draw_circle(img, W / 2 + 45, 855, 10, Color(0.5, 0.34, 0.2))
+	# LOJAS: ferreiro (azul), alquimista (roxo), geral (amarela)
 	_draw_building(img, 210, 220, 160, 115, Color(0.3, 0.45, 0.8))
 	_draw_building(img, 640, 220, 160, 115, Color(0.6, 0.35, 0.75))
 	_draw_building(img, 210, 640, 160, 115, Color(0.88, 0.72, 0.3))
+	# LAGO com pier (canto direito)
 	_draw_ellipse(img, 745, 715, 100, 85, Color(0.28, 0.5, 0.8))
 	_draw_ellipse(img, 745, 715, 92, 77, Color(0.33, 0.56, 0.85))
 	_draw_ellipse(img, 760, 700, 40, 30, Color(0.4, 0.62, 0.9, 0.5))
+	# vitorias-regias
 	for pos in [[700, 750], [780, 680], [730, 660]]:
 		_draw_circle(img, pos[0], pos[1], 7, Color(0.35, 0.65, 0.35))
 		_draw_circle(img, pos[0], pos[1], 3, Color(0.45, 0.75, 0.45))
+	# pier de madeira
 	for i in range(5):
 		_draw_rect(img, 610 + i * 22, 695, 16, 26, Color(0.52, 0.38, 0.22))
 		_draw_rect(img, 610 + i * 22, 695, 16, 5, Color(0.62, 0.46, 0.28))
+	# ARVORES organicas (copa em camadas)
 	for pos in [[360, 320], [560, 320], [360, 560], [170, 430], [850, 430], [500, 770], [920, 580], [100, 580]]:
 		_draw_tree(img, pos[0], pos[1])
+	# flores
 	for i in range(40):
 		var fx = 20 + randi() % (W - 40)
 		var fy = 20 + randi() % (H - 40)
 		if img.get_pixel(fx, fy).g > 0.5:
 			var fc = [Color(0.9, 0.8, 0.3), Color(0.9, 0.5, 0.6), Color(0.8, 0.8, 0.95)][randi() % 3]
 			_draw_circle(img, fx, fy, 1.5, fc)
+	# BUEIRO (entrada da caverna) - grade de ferro redonda
 	_draw_circle(img, W / 2, 800, 26, Color(0.32, 0.32, 0.35))
 	_draw_circle(img, W / 2, 800, 21, Color(0.15, 0.15, 0.17))
 	for i in range(5):
@@ -300,72 +341,90 @@ static func _map_city() -> Texture2D:
 
 static func _draw_building(img: Image, x: int, y: int, w: int, h: int, roof: Color) -> void:
 	var roof_d := roof.darkened(0.25)
+	# parede com textura organica
 	_draw_ellipse(img, x + w / 2, y + h * 0.72, w / 2 - 4, h * 0.36, Color(0.84, 0.76, 0.62))
 	_draw_ellipse(img, x + w / 2 - 20, y + h * 0.78, w / 3, h * 0.28, Color(0.78, 0.7, 0.56))
+	# vigas de madeira
 	_draw_rect(img, x + 8, y + h * 0.5, 6, h * 0.5, Color(0.5, 0.36, 0.22))
 	_draw_rect(img, x + w - 14, y + h * 0.5, 6, h * 0.5, Color(0.5, 0.36, 0.22))
+	# telhado (triangulo arredondado em camadas)
 	for i in range(int(h * 0.52)):
 		var t = float(i) / (h * 0.52)
 		var rw = w / 2 * (1 - t * 0.85) + 8
 		_draw_ellipse(img, x + w / 2, y + h * 0.52 - i, rw, 4, roof if i % 6 != 0 else roof_d)
+	# beiral
 	_draw_ellipse(img, x + w / 2, y + h * 0.54, w / 2 - 2, 6, roof.darkened(0.35))
+	# porta arredondada
 	_draw_ellipse(img, x + w / 2, y + h - 16, 11, 17, Color(0.45, 0.3, 0.18))
 	_draw_circle(img, x + w / 2 + 5, y + h - 16, 1.5, Color(0.8, 0.65, 0.3))
+	# placa pendurada
 	_draw_rect(img, x + w / 2 - 20, y + h * 0.6, 1.5, 10, Color(0.4, 0.3, 0.2))
 	_draw_circle(img, x + w / 2 - 20, y + h * 0.6 + 14, 7, roof)
 	_draw_circle(img, x + w / 2 - 20, y + h * 0.6 + 14, 4, Color(1, 1, 1, 0.85))
 
 static func _draw_tree(img: Image, x: int, y: int) -> void:
+	# tronco
 	_draw_ellipse(img, x, y + 2, 4.5, 10, Color(0.48, 0.34, 0.2))
 	_draw_ellipse(img, x - 1, y + 2, 2, 8, Color(0.4, 0.28, 0.16))
+	# raiz
 	_draw_ellipse(img, x - 5, y + 10, 3, 2, Color(0.44, 0.31, 0.18))
 	_draw_ellipse(img, x + 5, y + 10, 3, 2, Color(0.44, 0.31, 0.18))
+	# copa em 3 camadas organicas
 	_draw_circle(img, x, y - 14, 17, Color(0.24, 0.48, 0.2))
 	_draw_circle(img, x - 9, y - 8, 11, Color(0.24, 0.48, 0.2))
 	_draw_circle(img, x + 9, y - 8, 11, Color(0.24, 0.48, 0.2))
 	_draw_circle(img, x - 4, y - 18, 10, Color(0.3, 0.55, 0.26))
 	_draw_circle(img, x + 6, y - 16, 9, Color(0.3, 0.55, 0.26))
 	_draw_circle(img, x, y - 22, 8, Color(0.35, 0.6, 0.3))
+	# frutinhas
 	_draw_circle(img, x - 6, y - 12, 1.5, Color(0.8, 0.4, 0.4))
 	_draw_circle(img, x + 7, y - 18, 1.5, Color(0.8, 0.4, 0.4))
 
-# ---------- CAVERNA ORGANICA ----------
+# ---------- CAVERNA ORGANICA (pedra escura, grade de saida, caixas, cristais) ----------
 static func _map_cave() -> Texture2D:
 	var W := 1024
 	var H := 1024
 	var img = Image.create(W, H, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.14, 0.11, 0.09))
+	# piso de pedra com variacao organica
 	for y in range(70, H - 70):
 		for x in range(70, W - 70):
 			var n = sin(x * 0.05) * cos(y * 0.05) * 0.03 + randf() * 0.04
 			img.set_pixel(x, y, Color(0.4 + n, 0.35 + n, 0.3 + n))
+	# manchas de musgo
 	for i in range(60):
 		var mx = 90 + randi() % (W - 180)
 		var my = 90 + randi() % (H - 180)
 		_draw_ellipse(img, mx, my, 4 + randf() * 8, 3 + randf() * 6, Color(0.3, 0.42, 0.25, 0.4))
+	# paredes rochosas organicas (borda irregular)
 	for i in range(120):
 		var rx = randi() % W
 		var ry = randi() % H
 		var edge = min(min(rx, W - rx), min(ry, H - ry))
 		if edge < 90:
 			_draw_circle(img, rx, ry, 4 + randf() * 10, Color(0.2, 0.17, 0.14))
+	# saida (grade) no topo
 	_draw_circle(img, W / 2, 95, 30, Color(0.32, 0.32, 0.35))
 	_draw_circle(img, W / 2, 95, 24, Color(0.1, 0.1, 0.12))
 	for i in range(5):
 		_draw_rect(img, W / 2 - 24, 85 + i * 5, 48, 2, Color(0.45, 0.45, 0.5))
+	# caixas de madeira organicas
 	for pos in [[200, 300], [248, 325], [800, 500], [300, 700], [700, 250]]:
 		_draw_rect(img, pos[0] - 19, pos[1] - 19, 38, 38, Color(0.52, 0.38, 0.22))
 		_draw_rect(img, pos[0] - 19, pos[1] - 19, 38, 7, Color(0.62, 0.46, 0.28))
 		_draw_rect(img, pos[0] - 19, pos[1] - 12, 38, 3, Color(0.42, 0.3, 0.18))
 		_draw_ellipse(img, pos[0], pos[1] + 22, 20, 4, Color(0, 0, 0, 0.25))
+	# barris
 	for pos in [[830, 620], [180, 550]]:
 		_draw_ellipse(img, pos[0], pos[1], 14, 17, Color(0.55, 0.4, 0.24))
 		_draw_ellipse(img, pos[0], pos[1], 14, 5, Color(0.68, 0.52, 0.32))
 		_draw_rect(img, pos[0] - 14, pos[1] - 4, 28, 3, Color(0.35, 0.28, 0.2))
+	# cristais brilhantes nas paredes
 	for pos in [[110, 210], [905, 300], [150, 800], [880, 760], [500, 950]]:
 		_draw_circle(img, pos[0], pos[1], 6, Color(0.45, 0.7, 0.88))
 		_draw_circle(img, pos[0] - 1, pos[1] - 2, 3, Color(0.7, 0.88, 0.98))
 		_draw_circle(img, pos[0], pos[1] + 10, 8, Color(0.45, 0.7, 0.88, 0.15))
+	# pedras soltas
 	for i in range(30):
 		var px = 100 + randi() % (W - 200)
 		var py = 100 + randi() % (H - 200)
