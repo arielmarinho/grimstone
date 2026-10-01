@@ -230,11 +230,22 @@ func _use_skill(slot: String) -> void:
 				mob.stunned = 3.0
 				mob.take_damage(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2)
 				print("ATORDOADO!")
+			else:
+				GameManager.mana += sk["mana"]
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				_show_feedback("Nenhum monstro por perto para Atordoar!")
 		"certeiro":
 			buff_certeiro = true
 			print("TIRO CERTEIRO armado!")
 		"chuva":
-			GameManager.arrows = max(0, GameManager.arrows - 5)
+			if GameManager.arrows < 5:
+				_show_feedback("Chuva de Flechas precisa de 5 flechas!")
+				GameManager.mana += sk["mana"]
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				return
+			GameManager.arrows -= 5
 			_skill_aoe(1.5)
 		"fogo":
 			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
@@ -243,6 +254,11 @@ func _use_skill(slot: String) -> void:
 				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
 				proj.setup(global_position, mob.global_position, dmg, "staff", false, true)
 				get_parent().add_child(proj)
+			else:
+				GameManager.mana += sk["mana"]
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				_show_feedback("Nenhum monstro por perto para Bola de Fogo!")
 		"cura":
 			var cura = int(GameManager.hp_max * 0.4)
 			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
@@ -257,7 +273,10 @@ func _use_skill(slot: String) -> void:
 				mob.take_damage(int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5))
 				print("INVESTIDA!")
 			else:
-				print("nenhum alvo para a investida")
+				GameManager.mana += sk["mana"]
+				skill_ready[slot] = true
+			skill_cd[slot] = 0.0
+				_show_feedback("Nenhum alvo para a Investida!")
 		"terremoto":
 			_skill_aoe_stun(2.5, 2.0)
 		"golpe_duplo":
@@ -273,10 +292,10 @@ func _use_skill(slot: String) -> void:
 			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				if GameManager.arrows < 2:
-					print("sem flechas!")
+					_show_feedback("Tiro Multiplo precisa de 2 flechas!")
+					GameManager.mana += sk["mana"]
 					skill_ready[slot] = true
 					skill_cd[slot] = 0.0
-					GameManager.mana += sk["mana"]
 					return
 				GameManager.arrows -= 2
 				var proj = preload("res://scripts/entities/projectile.gd").new()
@@ -290,8 +309,13 @@ func _use_skill(slot: String) -> void:
 					proj2.setup(global_position, target2, int(dmg * 0.5), "bow", false)
 					get_parent().add_child(proj2)
 				print("TIRO MULTIPLo!")
+			else:
+				GameManager.mana += sk["mana"]
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				_show_feedback("Nenhum alvo para o Tiro Multiplo!")
 		"nevasca":
-			_skill_aoe(3.0)
+			_skill_aoe_stun(2.2, 1.5)
 			# efeito visual: anel de gelo
 			var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)
 			img.fill(Color(0, 0, 0, 0))
@@ -309,8 +333,8 @@ func _use_skill(slot: String) -> void:
 			tw2.tween_callback(ring.queue_free)
 			print("NEVASCA!")
 		"escudo":
-			buff_escudo_time = 8.0
-			print("ESCUDO SAGRADO! -50% dano por 8s")
+			buff_escudo_time = 10.0
+			print("ESCUDO ARCANO! -50% dano por 10s")
 		"grito":
 			buff_grito_time = 10.0
 			print("GRITO DE GUERRA! +30% dano por 10s")

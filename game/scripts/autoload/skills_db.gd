@@ -12,7 +12,7 @@ const SKILLS = {
 		{"id": "rodopio", "nome": "Rodopio", "tecla": "E", "mana": 35, "cd": 12.0,
 			"desc": "Golpeia todos os monstros ao redor (dano x2)"},
 		{"id": "golpe_duplo", "nome": "Golpe Duplo", "tecla": "R", "mana": 45, "cd": 14.0,
-			"desc": "O proximo ataque acerta 2 vezes seguidas"},
+			"desc": "Os proximos 2 ataques acertam 2 vezes (o 2o golpe causa 50%)"},
 		{"id": "investida", "nome": "Investida", "tecla": "G", "mana": 40, "cd": 12.0,
 			"desc": "Avanca ate o alvo e causa dano x2.5"},
 	],
@@ -28,7 +28,7 @@ const SKILLS = {
 	],
 	"bow": [
 		{"id": "certeiro", "nome": "Tiro Certeiro", "tecla": "Q", "mana": 20, "cd": 8.0,
-			"desc": "A proxima flecha e critico garantido (3x)"},
+			"desc": "A proxima flecha e critico garantido (x2)"},
 		{"id": "chuva", "nome": "Chuva de Flechas", "tecla": "E", "mana": 40, "cd": 16.0,
 			"desc": "Acerta todos os monstros ao redor (gasta 5 flechas)"},
 		{"id": "precisao", "nome": "Precisao", "tecla": "R", "mana": 45, "cd": 18.0,
