@@ -132,6 +132,9 @@ func _build_frames() -> void:
 	sprite.sprite_frames = sf
 	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# mobs menores (rato/slime/bat) ganham presenca na tela (estilo Rucoy)
+	var small := mob_type in ["rat", "slime", "bat"]
+	sprite.scale = Vector2(1.4, 1.4) if small else Vector2(1.15, 1.15)
 
 func _strip_tex(t: Texture2D) -> Texture2D:
 	var im = t.get_image()
