@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/entities/hp_bar.gd" id="2_bar"]
 
 [sub_resource type="CircleShape2D" id="shape_p"]
-radius = 14.0
+radius = 11.0
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_pl")
@@ -16,6 +16,8 @@ shape = SubResource("shape_p")
 
 [node name="Camera" type="Camera2D" parent="."]
 zoom = Vector2(1.2, 1.2)
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
 
 [node name="HpBar" type="ProgressBar" parent="."]
 offset_left = -28.0

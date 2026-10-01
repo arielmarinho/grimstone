@@ -522,9 +522,22 @@ func take_damage(amount: int) -> void:
 		amount = int(amount * 0.5)
 	GameManager.hp = max(0, GameManager.hp - amount)
 	AudioManager.play_sfx("player_hurt")
+	_flash_hurt()
 	GameManager.add_skill_xp("defesa", 2)
 	if GameManager.hp <= 0:
 		die()
+
+func _flash_hurt() -> void:
+	# flash vermelho no player + tremida curta na camera (feedback de dano)
+	sprite.modulate = Color(2.5, 0.6, 0.6)
+	var tw = create_tween()
+	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.18)
+	var cam = get_node_or_null("Camera")
+	if cam:
+		var tw2 = create_tween()
+		tw2.tween_property(cam, "offset", Vector2(4, -3), 0.04)
+		tw2.tween_property(cam, "offset", Vector2(-4, 2), 0.04)
+		tw2.tween_property(cam, "offset", Vector2.ZERO, 0.05)
 
 func die() -> void:
 	dead = true
