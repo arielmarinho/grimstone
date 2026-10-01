@@ -2,6 +2,15 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.2 (ciclo 20: ESTIMATIVAS DE TEMPO na tela K — estilo Tibia)
+
+- game_manager.gd: skill_xp_need(skill) (lvl^2*5), skill_time_left(skill) e level_time_left() — taxas medidas: skill 240 xp/min, defesa 60 xp/min, level 450 xp/min (~1 kill a cada 8s)
+- FIX formula errada: skill XP era level*100, agora level^2*5 (curva quadratica estilo Tibia — lvl 10 = 500 xp, lvl 30 = 4500)
+- hud.gd tela K: cada skill mostra "up em ~Xmin" e rodape mostra "Proximo LEVEL N em ~Ymin" — o player sabe quanto falta sem adivinhar
+- Teste unitario tests/test_estimates.gd: ESTIMATE_TEST_OK (formulas, formato 12s/30min/2.0h)
+- Validado Godot headless --import + --quit: 0 erros de script
+- Proximo: teste no Mac do usuario (raridade+fusao+estimativas+multiplayer) OU polish offline
+
 ## 2026-10-01 — v0.6.1 (ciclo 19: FUSAO DE ITENS — 3 iguais do mesmo tier -> 1 do tier seguinte)
 
 - game_manager.gd: can_fuse(id)/fuse_item(id) — 3 itens IGUAIS do mesmo tier + 50 moedas = 1 do tier SEGUINTE (espada#1 x3 -> espada#2); Lendario (tier 4) nao funde
