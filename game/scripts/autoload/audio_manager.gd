@@ -18,6 +18,8 @@ var _music_current: String = ""
 var _music_use_a: bool = true
 var _sfx: Dictionary = {}
 var _music: Dictionary = {}
+var _music_thread: Thread = null
+var _pending_music: String = ""
 
 func _ready() -> void:
 	for i in range(POOL_SIZE):
@@ -30,7 +32,10 @@ func _ready() -> void:
 	add_child(_music_a)
 	add_child(_music_b)
 	_build_sfx()
-	_build_music()
+	# musica sintetizada em THREAD — nao trava o boot (a sintese custa ~1.1s no desktop,
+	# pode custar 3-5s no Android; play_music espera o thread so se a musica ainda nao existe)
+	_music_thread = Thread.new()
+	_music_thread.start(_build_music)
 
 func play_sfx(sfx_name: String, pitch_var: float = 0.1) -> void:
 	if not _sfx.has(sfx_name):
@@ -41,7 +46,30 @@ func play_sfx(sfx_name: String, pitch_var: float = 0.1) -> void:
 	p.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	p.play()
 
+func _exit_tree() -> void:
+	# shutdown limpo: nunca destruir o Thread com a sintese ainda rodando (segfault na saida)
+	if _music_thread != null and _music_thread.is_alive():
+		_music_thread.wait_to_finish()
+		_music_thread = null
+
+func _process(_delta: float) -> void:
+	# sintese da musica roda em thread; quando termina, toca a musica pedida (se ha pedido pendente)
+	if _music_thread != null and not _music_thread.is_alive():
+		_music_thread.wait_to_finish()
+		_music_thread = null
+		if _pending_music != "" and _music.has(_pending_music):
+			var m := _pending_music
+			_pending_music = ""
+			_start_music(m)
+
 func play_music(music_name: String) -> void:
+	# sintese em background: se ainda rodando, guarda o pedido (toca quando pronta)
+	if _music_thread != null and _music_thread.is_alive():
+		_pending_music = music_name
+		return
+	_start_music(music_name)
+
+func _start_music(music_name: String) -> void:
 	if music_name == _music_current or not _music.has(music_name):
 		return
 	_music_current = music_name
@@ -58,6 +86,11 @@ func play_music(music_name: String) -> void:
 	tw.tween_callback(old.stop)
 
 func stop_music() -> void:
+	# garante que a sintese em background terminou antes de mexer nos players
+	if _music_thread != null and _music_thread.is_alive():
+		_music_thread.wait_to_finish()
+		_music_thread = null
+	_pending_music = ""
 	_music_current = ""
 	_music_a.stop()
 	_music_b.stop()
