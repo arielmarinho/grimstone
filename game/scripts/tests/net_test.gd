@@ -29,6 +29,7 @@ var _main = null
 var _t := 0.0
 var _phase := 0
 var _fail := false
+var _phase_mobs_wait := 0
 var _deadline := 24.0  # saída LIMPA antes do timeout do shell (stdout morre no SIGTERM)
 
 func _ready() -> void:
@@ -82,13 +83,53 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 				_flog("[NETTEST][", name_tag, "] FALHOU: não registrou 2 players em 25s — players=", NetworkManager.players.keys())
 				get_tree().quit(1)
 		2:
-			# envia chat e anda
-			NetworkManager.send_chat(chat_text)
-			_flog("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
-			if _main and _main.player:
-				_main.player.moving = true
-			_phase = 3
-			_t = 0.0
+			# fase MOBS: espera espelhos de mob chegarem do servidor, aproxima, pede dano
+			_t += get_physics_process_delta_time()
+			var nm = _main.net_mobs if _main != null else {}
+			if _phase_mobs_wait == 0:
+				# chat continua sendo validado (fase 3)
+				NetworkManager.send_chat(chat_text)
+				_flog("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
+				if nm.size() > 0:
+					_phase_mobs_wait = 1
+					_flog("[NETTEST][", name_tag, "] mobs espelhados: ", nm.size())
+					_t = 0.0
+			elif _phase_mobs_wait == 1 and _t > 1.0:
+				# teleporta o player pra BEIRA de um mob (anti-cheat do servidor exige proximidade)
+				for mid in nm:
+					var m = nm[mid]
+					if is_instance_valid(m) and not m.dead:
+						if _main.player != null:
+							_main.player.global_position = m.global_position + Vector2(70, 0)
+						_phase_mobs_wait = 2
+						_t = 0.0
+					break
+			elif _phase_mobs_wait == 2 and _t > 1.5:
+				# pede dano no primeiro mob espelhado
+				for mid in nm:
+					var m = nm[mid]
+					if is_instance_valid(m) and not m.dead:
+						var hp_before = m.hp
+						NetworkManager.request_mob_damage(mid, 5)
+						_flog("[NETTEST][", name_tag, "] pediu dano 5 no mob ", mid, " (hp=", hp_before, ")")
+						_phase_mobs_wait = 3
+						_t = 0.0
+					break
+			elif _phase_mobs_wait == 3 and _t > 2.0:
+				# valida: hp do espelho caiu (snapshot autoritativo chegou)
+				var ok := false
+				for mid in nm:
+					var m2 = nm[mid]
+					if is_instance_valid(m2) and m2.hp < m2.max_hp:
+						ok = true
+				if ok:
+					_flog("[NETTEST][", name_tag, "] MOB OK — hp caiu no snapshot autoritativo")
+				else:
+					_fail = true
+					_flog("[NETTEST][", name_tag, "] FALHOU: hp do mob nao caiu apos request_mob_damage")
+					get_tree().quit(1)
+				_phase = 3
+				_t = 0.0
 		3:
 			# escuta por 4s: chat do outro + estados de posição
 			_t += get_physics_process_delta_time()
