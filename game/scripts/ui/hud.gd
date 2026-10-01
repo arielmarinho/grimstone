@@ -19,6 +19,7 @@ var class_label: Label
 var skills_label: Label
 var coins_label: Label
 var arrows_label: Label
+var fed_label: Label
 var bag_panel: Control
 var bag_grid: GridContainer
 var fuse_grid: GridContainer
@@ -48,6 +49,8 @@ func _ready() -> void:
 	skills_label = _make_label(Vector2(20, 136), 12, Color(0.8, 0.9, 1.0))
 	coins_label = _make_label(Vector2(20, 158), 14, Color(0.95, 0.8, 0.25))
 	arrows_label = _make_label(Vector2(20, 180), 14, Color(0.8, 0.7, 0.5))
+	fed_label = _make_label(Vector2(20, 202), 12, Color(0.55, 0.9, 0.5))
+	fed_label.visible = false
 	_build_hotbar()
 	_build_skill_buttons()
 	_build_bag()
@@ -56,6 +59,24 @@ func _ready() -> void:
 	_build_skills_panel()
 	_build_feedback()
 	_build_chat()
+	GameManager.quest_ready.connect(_on_quest_ready)
+
+# quest concluida (falta entregar): aviso fixo no HUD
+var quest_alert: Label
+
+func _on_quest_ready(id: String) -> void:
+	if quest_alert == null:
+		quest_alert = _make_label(Vector2(0, 560), 15, Color(0.4, 1.0, 0.5))
+		quest_alert.size = Vector2(1280, 26)
+		quest_alert.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		add_child(quest_alert)
+	var q: Dictionary = GameManager.QUESTS.get(id, {})
+	quest_alert.text = "MISSAO PRONTA: %s — entregue no Mestre das Missoes [J]!" % q.get("desc", id)
+	quest_alert.visible = true
+	var tw = quest_alert.create_tween()
+	tw.tween_interval(6.0)
+	tw.tween_property(quest_alert, "modulate:a", 0.0, 1.0)
+	tw.tween_callback(func(): quest_alert.visible = false)
 
 # ---------- CHAT (Area 9 multiplayer) ----------
 var chat_panel: Control
@@ -172,9 +193,15 @@ func _process(_delta: float) -> void:
 	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
 	arrows_label.text = "Flechas: %d" % GameManager.arrows
 	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
+	# comida/energia: indicador "BEM ALIMENTADO" com minutos restantes
+	if GameManager.well_fed_time > 0.0:
+		fed_label.text = "BEM ALIMENTADO (%s) — regen 2x" % GameManager.fmt_time_min(GameManager.well_fed_time / 60.0)
+		fed_label.visible = true
+	else:
+		fed_label.visible = false
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | Enter chat]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | J missoes | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -487,6 +514,10 @@ func _use_bag_item(id: String) -> void:
 	elif it["tipo"] == "uso":
 		if GameManager.use_item(id):
 			AudioManager.play_sfx("potion")
+			if it.has("comida"):
+				_show_feedback("Nham! Bem alimentado — regen 2x por %s" % GameManager.fmt_time_min(float(it["comida"]) / 60.0))
+			elif it.has("hp") or it.has("mana"):
+				_show_feedback("Usou %s" % it["nome"])
 
 # ---------- TELA DE MORTE ----------
 func _build_death_screen() -> void:
@@ -737,3 +768,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_K:
 			AudioManager.play_sfx("ui_click")
 			toggle_skills_panel()
+		elif event.keycode == KEY_J:
+			# J: abre o painel de missoes se estiver perto do NPC (feedback se longe)
+			var qnpc = get_tree().get_first_node_in_group("quest_npc")
+			if qnpc != null and qnpc.has_method("open"):
+				var pl = player_ref.global_position if player_ref != null else Vector2.ZERO
+				if pl.distance_to(qnpc.global_position) < 120.0:
+					qnpc.open()
+				else:
+					_show_feedback("Procure o MESTRE DAS MISSOES na cidade (marcado no mapa)!")

@@ -363,6 +363,7 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		shop.queue_free()
 		shop = null
 	if quest_npc != null:
+		quest_npc.remove_from_group("quest_npc")
 		quest_npc.queue_free()
 		quest_npc = null
 	if MAPS[current].has("shop"):
@@ -379,6 +380,7 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		map_layer.add_child(sign_l)
 	if QUEST_NPC_POS.has(current):
 		quest_npc = load("res://scripts/world/quest_npc.gd").new()
+		quest_npc.add_to_group("quest_npc")
 		quest_npc.city = current
 		quest_npc.position = QUEST_NPC_POS[current]
 		add_child(quest_npc)
