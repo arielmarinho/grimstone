@@ -24,6 +24,12 @@ static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 		return out
 	return _procedural(path)
 
+static func load_sheet_procedural_custom(path: String, weapon: String, hair: String, tunic: String, pants: String = "marrom") -> Array[Texture2D]:
+	# pula o PNG do disco e vai DIRETO pro procedural com 4 DIRECOES reais
+	# (o PNG so existe pra "down" — usar ele fazia o player andar so pra baixo)
+	CURRENT_PANTS = pants
+	return _procedural(path, weapon, hair, tunic)
+
 static func load_sheet_custom(path: String, weapon: String, hair: String, tunic: String, pants: String = "marrom") -> Array[Texture2D]:
 	var img := _load_image(path)
 	if img != null:
