@@ -409,6 +409,9 @@ func _physics_process(delta: float) -> void:
 		var dir = (target - global_position).normalized()
 		velocity = dir * SPEED
 		move_and_slide()
+		# cinto de seguranca: player NUNCA sai do mapa (2048x2048), mesmo se um
+		# colisor falhar — centro clampado em 40..2008
+		global_position = global_position.clamp(Vector2(40, 40), Vector2(2008, 2008))
 		_update_facing(dir)
 		_play("walk")
 		var mob = _mob_in_range(w["alcance"])
