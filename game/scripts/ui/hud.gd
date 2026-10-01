@@ -1,10 +1,11 @@
 extends CanvasLayer
-## HUD polido: barras com NUMEROS, moedas, classe, skills,
-## mochila (B) exclusiva, hotbar (1-4), tela de morte, painel roupas (C)
+## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
+## mochila (B), roupas+calça (C), tela de skills (K), morte
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
+const SKILLS = preload("res://scripts/autoload/skills_db.gd")
 
 var hp_bar: ProgressBar
 var mana_bar: ProgressBar
@@ -16,14 +17,15 @@ var map_label: Label
 var class_label: Label
 var skills_label: Label
 var coins_label: Label
-var hint_label: Label
+var arrows_label: Label
 var bag_panel: Control
 var bag_grid: GridContainer
 var death_screen: Control
 var cloth_panel: Control
-var preview: TextureRect
+var skills_panel: Control
 var player_ref: Node = null
 var hotbar_slots: Array = []
+var skill_btns := {}
 
 const WEAPON_KEYS = ["sword", "axe", "bow", "staff"]
 
@@ -38,12 +40,13 @@ func _ready() -> void:
 	class_label = _make_label(Vector2(20, 114), 14, Color(1.0, 0.85, 0.4))
 	skills_label = _make_label(Vector2(20, 136), 12, Color(0.8, 0.9, 1.0))
 	coins_label = _make_label(Vector2(20, 158), 14, Color(0.95, 0.8, 0.25))
-	hint_label = _make_label(Vector2(400, 600), 13, Color(1, 1, 1, 0.9))
-	hint_label.text = "Objetivo: desca pelo BUEIRO (grade ao sul da fonte)"
+	arrows_label = _make_label(Vector2(20, 180), 14, Color(0.8, 0.7, 0.5))
 	_build_hotbar()
+	_build_skill_buttons()
 	_build_bag()
 	_build_death_screen()
 	_build_cloth_panel()
+	_build_skills_panel()
 
 func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 	var l = Label.new()
@@ -68,22 +71,21 @@ func _process(_delta: float) -> void:
 	mana_num.text = "%d / %d" % [GameManager.mana, GameManager.mana_max]
 	xp_num.text = "%d XP" % (GameManager.xp - prev_xp)
 	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
+	arrows_label.text = "Flechas: %d" % GameManager.arrows
+	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | B mochila | C roupas]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E skill | B mochila | C roupas | K skills]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
 		skills_label.text = " | ".join(parts)
 		_process_hotbar_highlight()
+		_process_skill_buttons()
 		if player_ref.dead and not death_screen.visible:
 			death_screen.visible = true
 		elif not player_ref.dead and death_screen.visible:
 			death_screen.visible = false
-		if GameManager.current_map == "city1":
-			hint_label.visible = player_ref.global_position.distance_to(Vector2(1024, 1600)) > 240.0
-		else:
-			hint_label.visible = false
 	coins_label.text = "Moedas: %d" % GameManager.coins
 	if bag_panel.visible:
 		_refresh_bag()
@@ -145,7 +147,54 @@ func _process_hotbar_highlight() -> void:
 		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- MOCHILA (tecla B) — centro, exclusiva ----------
+# ---------- BOTÕES DE SKILL (Q/E, estilo Rucoy) ----------
+func _build_skill_buttons() -> void:
+	for i in range(2):
+		var slot = String.chr(81 + i)  # Q, E
+		var btn = Button.new()
+		btn.position = Vector2(760 + i * 50, 640)
+		btn.size = Vector2(46, 46)
+		var key_l = Label.new()
+		key_l.text = slot
+		key_l.position = Vector2(4, 2)
+		key_l.add_theme_font_size_override("font_size", 13)
+		key_l.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
+		key_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(key_l)
+		var name_l = Label.new()
+		name_l.name = "SkillName"
+		name_l.position = Vector2(2, 26)
+		name_l.add_theme_font_size_override("font_size", 8)
+		name_l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
+		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(name_l)
+		btn.pressed.connect(_press_skill.bind(slot))
+		add_child(btn)
+		skill_btns[slot] = btn
+
+func _press_skill(slot: String) -> void:
+	if player_ref != null and not player_ref.dead:
+		player_ref._use_skill(slot)
+
+func _process_skill_buttons() -> void:
+	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
+	for i in range(2):
+		var slot = String.chr(81 + i)
+		var btn = skill_btns[slot]
+		var name_l = btn.get_node("SkillName")
+		if i < list.size():
+			name_l.text = list[i]["nome"].split(" ")[0]
+		var stn = StyleBoxFlat.new()
+		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
+		stn.set_corner_radius_all(8)
+		stn.set_border_width_all(2)
+		if player_ref.skill_ready[slot]:
+			stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
+		else:
+			stn.border_color = Color(0.6, 0.2, 0.2)
+		btn.add_theme_stylebox_override("normal", stn)
+
+# ---------- MOCHILA (tecla B) ----------
 func _build_bag() -> void:
 	bag_panel = Control.new()
 	bag_panel.visible = false
@@ -196,7 +245,7 @@ func _refresh_bag() -> void:
 			qty.add_theme_font_size_override("font_size", 11)
 			qty.add_theme_color_override("font_color", Color(1, 1, 0.8))
 			qty.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			slot.add_child(qty)
+		slot.add_child(qty)
 			slot.tooltip_text = ITEMS_DB.ITEMS[id]["nome"]
 			slot.pressed.connect(_use_bag_item.bind(id))
 		bag_grid.add_child(slot)
@@ -259,18 +308,18 @@ func _respawn() -> void:
 		main.switch_map("city1")
 	death_screen.visible = false
 
-# ---------- PAINEL DE ROUPAS (tecla C) — centro, exclusivo ----------
+# ---------- PAINEL DE ROUPAS (tecla C) — tunica, cabelo E CALCA ----------
 func _build_cloth_panel() -> void:
 	cloth_panel = Control.new()
 	cloth_panel.visible = false
 	add_child(cloth_panel)
 	var bg = ColorRect.new()
 	bg.position = Vector2(400, 130)
-	bg.size = Vector2(480, 420)
+	bg.size = Vector2(480, 460)
 	bg.color = Color(0.1, 0.09, 0.12, 0.95)
 	cloth_panel.add_child(bg)
 	var title = _make_label(Vector2(430, 145), 20, Color(1, 1, 1))
-	title.text = "CUSTOMIZAR ROUPAS"
+	title.text = "CUSTOMIZAR PERSONAGEM"
 	cloth_panel.add_child(title)
 	preview = TextureRect.new()
 	preview.position = Vector2(620, 180)
@@ -284,6 +333,9 @@ func _build_cloth_panel() -> void:
 	var lh = _make_label(Vector2(430, 310), 14, Color(1, 1, 1))
 	lh.text = "CABELO (clique a cor)"
 	cloth_panel.add_child(lh)
+	var lp = _make_label(Vector2(430, 430), 14, Color(1, 1, 1))
+	lp.text = "CALCA (clique a cor)"
+	cloth_panel.add_child(lp)
 	var cores = EQUIPS.CLOTHES_COLORS.keys()
 	for i in range(cores.size()):
 		var c_name = cores[i]
@@ -305,18 +357,21 @@ func _build_cloth_panel() -> void:
 		sw2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
 		cloth_panel.add_child(sw2)
-	var hint = _make_label(Vector2(430, 520), 12, Color(0.7, 0.7, 0.75))
+	var pcores = EQUIPS.PANTS_COLORS.keys()
+	for i in range(pcores.size()):
+		var p_name = pcores[i]
+		var sw3 = Button.new()
+		sw3.position = Vector2(430 + i * 34, 456)
+		sw3.size = Vector2(30, 30)
+		var st3 = StyleBoxFlat.new()
+		st3.bg_color = EQUIPS.PANTS_COLORS[p_name]
+		st3.set_corner_radius_all(6)
+		sw3.add_theme_stylebox_override("normal", st3)
+		sw3.pressed.connect(_set_pants.bind(p_name))
+		cloth_panel.add_child(sw3)
+	var hint = _make_label(Vector2(430, 560), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "C para fechar"
 	cloth_panel.add_child(hint)
-
-func _make_preview(weapon: String, hair: String, tunic: String) -> Texture2D:
-	var texs = TEXHELPER.load_sheet_custom(TEXHELPER.KNIGHT_IDLE, weapon, hair, tunic)
-	if texs.size() > 0:
-		return texs[0]
-	var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	TEXHELPER._draw_knight(img, 0, false, false, false, weapon, hair, tunic)
-	return ImageTexture.create_from_image(img)
 
 func _set_tunic(c: String) -> void:
 	if player_ref != null:
@@ -328,15 +383,79 @@ func _set_hair(c: String) -> void:
 		player_ref.hair_color = c
 		player_ref._build_frames()
 
+func _set_pants(c: String) -> void:
+	if player_ref != null:
+		player_ref.pants_color = c
+		player_ref._build_frames()
+
+# ---------- TELA DE SKILLS (tecla K) — estilo Rucoy ----------
+func _build_skills_panel() -> void:
+	skills_panel = Control.new()
+	skills_panel.visible = false
+	add_child(skills_panel)
+	var bg = ColorRect.new()
+	bg.position = Vector2(340, 120)
+	bg.size = Vector2(600, 480)
+	bg.color = Color(0.08, 0.08, 0.11, 0.97)
+	skills_panel.add_child(bg)
+	var title = Label.new()
+	title.text = "SKILLS"
+	title.position = Vector2(370, 135)
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	skills_panel.add_child(title)
+
+func toggle_skills_panel() -> void:
+	skills_panel.visible = not skills_panel.visible
+	if skills_panel.visible:
+		_refresh_skills_panel()
+		bag_panel.visible = false
+		cloth_panel.visible = false
+
+func _refresh_skills_panel() -> void:
+	for c in skills_panel.get_children():
+		if c is Label and c.text != "SKILLS":
+			c.queue_free()
+		elif c is Button:
+			c.queue_free()
+	var y := 180.0
+	var combat = {"espada": "Espada", "machado": "Machado", "distancia": "Distancia", "magia": "Magia", "defesa": "Defesa"}
+	for sk in combat:
+		if GameManager.skills.has(sk):
+			var l = _make_label(Vector2(370, y), 15, Color(0.9, 0.9, 0.95))
+			l.text = "%s: nivel %d  (%d/%d xp)" % [combat[sk], GameManager.skills[sk]["level"], GameManager.skills[sk]["xp"], GameManager.skills[sk]["level"] * 100]
+			y += 26
+	y += 10
+	if player_ref != null:
+		var st = _make_label(Vector2(370, y), 16, Color(0.6, 0.9, 1.0))
+		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
+		y += 30
+		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
+		for i in range(list.size()):
+			var sk = list[i]
+			var ready := player_ref.skill_ready[sk["tecla"]]
+			var l = _make_label(Vector2(370, y), 14, Color(0.4, 0.8, 0.4) if ready else Color(0.7, 0.3, 0.3))
+			l.text = "[%s] %s  (mana %d, recarga %.0fs) — %s" % [sk["tecla"], sk["nome"], sk["mana"], sk["cd"], sk["desc"]]
+			y += 24
+		y += 10
+		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[player_ref.weapon]["skill"], {"level": 10})["level"]
+		var lc = _make_label(Vector2(370, y), 14, Color(1.0, 0.85, 0.3))
+		lc.text = "Chance de critico: %.1f%% (dano x2)" % (SKILLS.crit_chance(crit_lv) * 100.0)
+	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
+	hint.text = "K para fechar"
+	skills_panel.add_child(hint)
+
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
 		bag_panel.visible = false
+		skills_panel.visible = false
 
 func toggle_bag() -> void:
 	bag_panel.visible = not bag_panel.visible
 	if bag_panel.visible:
 		cloth_panel.visible = false
+		skills_panel.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -344,3 +463,5 @@ func _unhandled_input(event: InputEvent) -> void:
 			toggle_cloth_panel()
 		elif event.keycode == KEY_B:
 			toggle_bag()
+		elif event.keycode == KEY_K:
+			toggle_skills_panel()
