@@ -1,3 +1,10 @@
+
+## v0.4.8 — Audio (Area 8)
+- AudioManager autoload (audio_manager.gd): audio 100% procedural, sintetizado em GDScript no startup — zero arquivos binarios
+- 12 SFX (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door) com pool de 8 players e pitch variavel
+- 3 musicas chiptune em loop com crossfade: titulo / cidade / caverna+floresta
+- Sons integrados: combate, loot, pocao, loja, UI, portao, level up, morte
+
 ## v0.4.7 (ciclo 8 — Area 7 Balanceamento)
 - game_manager.gd: hp_max/mana_max DERIVADOS do level (100+10/level, 50+5/level) — save antigo nunca mais desincroniza
 - Level up estilo Tibia: NAO enche HP/mana em combate (+30/+15 parcial); fora de combate enche tudo

@@ -14,7 +14,7 @@
 | 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, precos, drops, pocoes | OK (ciclo 6) |
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
-| 8 | **Audio** | gs-audio | (area nova — implementar do zero) | pendente |
+| 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | pendente (apos polish) |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | pendente |
 
@@ -45,14 +45,16 @@
 - Spawns fora do alcance de aggro (280px) do spawn do player em todos os mapas
 - Validado: Godot headless --import + --quit = 0 erros de script
 
-### Area 5 — Itens & Economia (03:28-03:38) OK
+### Area 5 — Itens & Economia (03:28-03:38) implementado
 - Auditoria com SIMULACAO numerica (regra 5 da skill: nunca balancear no escuro)
 - Regra 1 (TTK 5-10s): arco/cajado tinham DPS 40% abaixo da espada — arco 10->14 dano / 0.9->0.8s CD, cajado 18->19; TTK de todas as 4 armas agora dentro de 2% entre si em todos os 8 mobs
 - Regra 2 (player aguenta 8+ hits): dano de mobs endgame cortado — spider 14->12, goblin 16->12, wolf 20->13, skeleton 24->14, orc 30->16; player base agora aguenta 8-16 hits em qualquer mapa (lvl 5: 10-23)
 - Regra 3 (loot/min >= 2 pocoes do mapa): loot de moedas +30% nos mobs de farm — goblin 15-30->20-40, skeleton 25-50->35-70, wolf 20-40->28-55, orc 30-60->40-80, spider 12-25->14-28; economia fechada: 130-193 moedas/min endgame vs pocao M=60
 - Regra 4 (skill up ~2min no inicio): curva de skill XP mudou de linear (level*100) pra QUADRATICA estilo Tibia (lvl^2*5) — lvl 10->11 em ~1.7min de combate, lvl 30 em ~15min por nivel
-- Complemento (ciclo 6b, e91d1d2/cce7084): dano de mob com VARIANCIA ±10% (estilo Tibia); pocoes G agora dropam (orc/skeleton 10%) — antes so na loja; goblin dropa pocao M (12%)
 - Validado: Godot headless --import + --quit = 0 erros de script
+
+- Complemento (ciclo 6b, e91d1d2/cce7084): dano de mob com VARIANCIA ±10% (estilo Tibia); pocoes G agora dropam (orc/skeleton 10%) — antes so na loja; goblin dropa pocao M (12%)
+- Validado Godot headless: 0 erros
 
 ### Area 6 — UI/UX (ciclo 7, 03:33-03:45) implementada
 - BUG 1 (grave): _make_label adicionava o label ao ROOT do HUD — labels de titulo/hint dos paineis mochila/roupas/skills ficavam SEMPRE visiveis sobre o jogo e se ACUMULAVAM a cada refresh da tela K. Fix: _make_label so cria; quem adiciona e o painel
@@ -73,3 +75,10 @@
 - Pocoes P mais baratas (15/18) — economia do primeiro minuto fecha com loot de rat/slime
 - TTK/curvas/economia ja equalizados na Area 5 (regras 1-4 da skill); Area 7 consolidou stats derivados + regen
 - Validado Godot headless: 0 erros de script
+
+### Area 8 — Audio (ciclo 9, 03:49-04:00) OK
+- AudioManager autoload 100% PROCEDURAL: sintetiza 12 SFX + 3 musicas chiptune em GDScript no startup (sem arquivos binarios no repo — mesma filosofia dos sprites)
+- SFX: hit, shoot (flecha), cast (magia), mob_death, player_hurt, player_death, level_up (arpejo), coin, pickup, potion, ui_click, door — pool de 8 players, pitch variavel +/-10%
+- Musicas com crossfade: title (fanfarra 112bpm), city (C maior 120bpm nas 2 cidades), cave (Am menor 100bpm na floresta/caverna); loop automatico, SFX -8dB / musica -18dB
+- Ligado em: ataque melee/distancia, dano no mob e no player, morte de mob/player, level up, moeda/drop pickup, pocao (mochila), compra na loja, clique de UI, portao/troca de mapa, tela de titulo
+- Validado: Godot headless 0 erros de script; fallback silencioso se stream faltar
