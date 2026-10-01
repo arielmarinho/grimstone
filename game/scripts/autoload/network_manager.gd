@@ -1,20 +1,25 @@
 extends Node
 ## NetworkManager — multiplayer online estilo Tibia (cliente-servidor autoritativo)
-## Servidor: godot --headless -- --server  |  Cliente: conecta por IP no título
+## Servidor: Godot headless rodando este mesmo projeto com --server
+## Cliente: conecta por IP na tela de título
+## v2: registro com aparência (arma/cores), spawn/despawn de players remotos,
+##     chat com eventos de join/leave, nomes sobre os avatares
 
 const PORT := 7777
 const MAX_PLAYERS := 64
 
 var is_server: bool = false
 var peer: ENetMultiplayerPeer = null
-var players := {}  # peer_id -> {name, level, map, pos}
+var players := {}  # peer_id -> {name, level, map, app{weapon,hair,tunic,pants}}
 var my_id: int = 1
 
 signal player_joined(id: int, info: Dictionary)
 signal player_left(id: int)
-signal chat_message(sender: String, text: String, channel: String)
+signal player_state(id: int, pos: Vector2, map: String, anim: String)
+signal chat_message(sender: String, text: String, kind: String)  # kind: "msg"|"join"|"leave"|"system"
 
 func _ready() -> void:
+	# servidor dedicado: godot --headless -- --server
 	var args = OS.get_cmdline_user_args()
 	if "--server" in args:
 		start_server()
@@ -45,19 +50,30 @@ func start_client(host: String) -> void:
 	multiplayer.server_disconnected.connect(_on_server_lost)
 	print("[CLIENT] Conectando em ", host, "...")
 
+func _my_appearance() -> Dictionary:
+	return {
+		"weapon": GameManager.weapon,
+		"hair": GameManager.hair_color,
+		"tunic": GameManager.tunic_color,
+		"pants": GameManager.pants_color,
+	}
+
 func _on_connected() -> void:
 	my_id = multiplayer.get_unique_id()
 	print("[CLIENT] Conectado! meu id: ", my_id)
-	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map)
+	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
+	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
 
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
+	players.clear()
 
 func _on_server_lost() -> void:
 	print("[SERVER] Conexao perdida — jogando offline")
 	multiplayer.multiplayer_peer = null
 	players.clear()
+	chat_message.emit("", "Conexao perdida — voltando ao modo OFFLINE.", "system")
 
 # ---------- REGISTRO DE PLAYERS ----------
 func _on_peer_connected(id: int) -> void:
@@ -71,24 +87,32 @@ func _on_peer_disconnected(id: int) -> void:
 		_broadcast_player_left.rpc(id)
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_register(name: String, level: int, map: String) -> void:
+func _rpc_register(name: String, level: int, map: String, app: Dictionary) -> void:
 	if not multiplayer.is_server():
 		return
 	var sender = multiplayer.get_remote_sender_id()
-	players[sender] = {"name": name, "level": level, "map": map}
+	players[sender] = {"name": name, "level": level, "map": map, "app": app}
+	# manda a lista completa pro novo e avisa todos
 	_rpc_sync_players.rpc(players)
 	print("[SERVER] ", name, " (nivel ", level, ") registrou — ", players.size(), " online")
 
 @rpc("authority", "call_remote", "reliable")
 func _rpc_sync_players(all: Dictionary) -> void:
+	# dif: spawna os que são novos pra mim
+	var known := players.keys()
 	players = all
-	for id in players:
-		player_joined.emit(id, players[id])
+	for id in all:
+		if not known.has(id):
+			player_joined.emit(id, all[id])
+	chat_message.emit("", "Voce entrou no mundo online! %d jogador(es) conectado(s)." % all.size(), "system")
 
 @rpc("authority", "call_remote", "reliable")
 func _broadcast_player_left(id: int) -> void:
+	var info = players.get(id, {})
 	players.erase(id)
 	player_left.emit(id)
+	if info.has("name"):
+		chat_message.emit(str(info["name"]), "saiu do jogo.", "leave")
 
 # ---------- POSIÇÃO (15 Hz, unreliable) ----------
 func send_position(pos: Vector2, map: String, anim: String) -> void:
@@ -111,14 +135,16 @@ func _rpc_position(pos: Vector2, map: String, anim: String) -> void:
 func _relay_position(id: int, pos: Vector2, map: String, anim: String) -> void:
 	if id == my_id:
 		return
-	player_joined.emit(id, {"pos": pos, "map": map, "anim": anim, "update": true})
+	player_state.emit(id, pos, map, anim)
 
 # ---------- CHAT ----------
 func send_chat(text: String) -> void:
 	if multiplayer.multiplayer_peer == null:
-		chat_message.emit(GameManager.player_name, text, "global")
+		# offline: eco local
+		chat_message.emit(GameManager.player_name, text, "msg")
 		return
 	if is_server:
+		chat_message.emit(GameManager.player_name, text, "msg")
 		_relay_chat.rpc(GameManager.player_name, text)
 	else:
 		_rpc_chat.rpc_id(1, text)
@@ -129,11 +155,12 @@ func _rpc_chat(text: String) -> void:
 		return
 	var sender = multiplayer.get_remote_sender_id()
 	var name = players.get(sender, {}).get("name", "???")
+	chat_message.emit(GameManager.player_name, text, "msg")  # eco pro autor
 	_relay_chat.rpc(name, text)
 
 @rpc("authority", "call_remote", "reliable")
 func _relay_chat(sender: String, text: String) -> void:
-	chat_message.emit(sender, text, "global")
+	chat_message.emit(sender, text, "msg")
 
 # ---------- HELPERS ----------
 func is_online() -> bool:
