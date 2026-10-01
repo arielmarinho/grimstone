@@ -66,6 +66,8 @@ func _init():
 	# matar mais ratos NAO progride (ja done)
 	gm.quest_on_kill("rat")
 	assert(gm.quest_state("q_ratos")["progress"] == 5)
+	# done mas NAO entregue: AINDA disponivel (pra entregar no NPC)
+	assert(gm.quest_available("q_ratos") == true)
 	# entregar: moedas + xp; entrega dupla falha
 	assert(gm.quest_claim("q_ratos") == true)
 	assert(gm.coins == 40 and gm.xp == 100)
