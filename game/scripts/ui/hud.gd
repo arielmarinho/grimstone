@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## HUD polido: barras com NUMEROS (hp/mana/xp), moedas, classe, skills,
 ## mochila (tecla B) com uso de itens, hotbar de armas (1-4), tela de morte
+## Painéis são EXCLUSIVOS: abrir um fecha o outro
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -16,6 +17,7 @@ var map_label: Label
 var class_label: Label
 var skills_label: Label
 var coins_label: Label
+var hint_label: Label
 var bag_panel: Control
 var bag_grid: GridContainer
 var death_screen: Control
@@ -37,6 +39,8 @@ func _ready() -> void:
 	class_label = _make_label(Vector2(20, 114), 14, Color(1.0, 0.85, 0.4))
 	skills_label = _make_label(Vector2(20, 136), 12, Color(0.8, 0.9, 1.0))
 	coins_label = _make_label(Vector2(20, 158), 14, Color(0.95, 0.8, 0.25))
+	hint_label = _make_label(Vector2(360, 620), 13, Color(1, 1, 1, 0.9))
+	hint_label.text = "Objetivo: desça pelo BUEIRO (grade no chao, ao sul da fonte)"
 	_build_hotbar()
 	_build_bag()
 	_build_death_screen()
@@ -77,6 +81,11 @@ func _process(_delta: float) -> void:
 			death_screen.visible = true
 		elif not player_ref.dead and death_screen.visible:
 			death_screen.visible = false
+		# dica some quando o player chega perto do bueiro
+		if GameManager.current_map == "city1":
+			hint_label.visible = player_ref.global_position.distance_to(Vector2(512, 800)) > 120.0
+		else:
+			hint_label.visible = false
 	coins_label.text = "Moedas: %d" % GameManager.coins
 	if bag_panel.visible:
 		_refresh_bag()
@@ -138,26 +147,26 @@ func _process_hotbar_highlight() -> void:
 		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- MOCHILA (tecla B) ----------
+# ---------- MOCHILA (tecla B) — centro da tela, exclusiva ----------
 func _build_bag() -> void:
 	bag_panel = Control.new()
 	bag_panel.visible = false
 	add_child(bag_panel)
 	var bg = ColorRect.new()
-	bg.position = Vector2(960, 150)
+	bg.position = Vector2(495, 130)
 	bg.size = Vector2(290, 380)
 	bg.color = Color(0.1, 0.09, 0.12, 0.95)
 	bag_panel.add_child(bg)
-	var title = _make_label(Vector2(975, 160), 18, Color(1, 1, 1))
+	var title = _make_label(Vector2(510, 140), 18, Color(1, 1, 1))
 	title.text = "MOCHILA"
 	bag_panel.add_child(title)
 	bag_grid = GridContainer.new()
 	bag_grid.columns = 5
-	bag_grid.position = Vector2(975, 195)
+	bag_grid.position = Vector2(510, 175)
 	bag_grid.add_theme_constant_override("h_separation", 6)
 	bag_grid.add_theme_constant_override("v_separation", 6)
 	bag_panel.add_child(bag_grid)
-	var hint = _make_label(Vector2(975, 500), 12, Color(0.7, 0.7, 0.75))
+	var hint = _make_label(Vector2(510, 480), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "Clique para usar/equipar | B fecha"
 	bag_panel.add_child(hint)
 
@@ -252,36 +261,36 @@ func _respawn() -> void:
 		main.switch_map("city1")
 	death_screen.visible = false
 
-# ---------- PAINEL DE ROUPAS (tecla C) ----------
+# ---------- PAINEL DE ROUPAS (tecla C) — centro, exclusivo ----------
 func _build_cloth_panel() -> void:
 	cloth_panel = Control.new()
 	cloth_panel.visible = false
 	add_child(cloth_panel)
 	var bg = ColorRect.new()
-	bg.position = Vector2(400, 150)
+	bg.position = Vector2(400, 130)
 	bg.size = Vector2(480, 420)
 	bg.color = Color(0.1, 0.09, 0.12, 0.95)
 	cloth_panel.add_child(bg)
-	var title = _make_label(Vector2(430, 165), 20, Color(1, 1, 1))
+	var title = _make_label(Vector2(430, 145), 20, Color(1, 1, 1))
 	title.text = "CUSTOMIZAR ROUPAS"
 	cloth_panel.add_child(title)
 	preview = TextureRect.new()
-	preview.position = Vector2(620, 200)
+	preview.position = Vector2(620, 180)
 	preview.custom_minimum_size = Vector2(192, 192)
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	cloth_panel.add_child(preview)
-	var lt = _make_label(Vector2(430, 210), 14, Color(1, 1, 1))
+	var lt = _make_label(Vector2(430, 190), 14, Color(1, 1, 1))
 	lt.text = "TUNICA (clique a cor)"
 	cloth_panel.add_child(lt)
-	var lh = _make_label(Vector2(430, 330), 14, Color(1, 1, 1))
+	var lh = _make_label(Vector2(430, 310), 14, Color(1, 1, 1))
 	lh.text = "CABELO (clique a cor)"
 	cloth_panel.add_child(lh)
 	var cores = EQUIPS.CLOTHES_COLORS.keys()
 	for i in range(cores.size()):
 		var c_name = cores[i]
 		var sw = Button.new()
-		sw.position = Vector2(430 + i * 34, 236)
+		sw.position = Vector2(430 + i * 34, 216)
 		sw.size = Vector2(30, 30)
 		var st = StyleBoxFlat.new()
 		st.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
@@ -290,7 +299,7 @@ func _build_cloth_panel() -> void:
 		sw.pressed.connect(_set_tunic.bind(c_name))
 		cloth_panel.add_child(sw)
 		var sw2 = Button.new()
-		sw2.position = Vector2(430 + i * 34, 356)
+		sw2.position = Vector2(430 + i * 34, 336)
 		sw2.size = Vector2(30, 30)
 		var st2 = StyleBoxFlat.new()
 		st2.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
@@ -298,7 +307,7 @@ func _build_cloth_panel() -> void:
 		sw2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
 		cloth_panel.add_child(sw2)
-	var hint = _make_label(Vector2(430, 530), 12, Color(0.7, 0.7, 0.75))
+	var hint = _make_label(Vector2(430, 520), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "C para fechar"
 	cloth_panel.add_child(hint)
 
@@ -323,9 +332,13 @@ func _set_hair(c: String) -> void:
 
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
+	if cloth_panel.visible:
+		bag_panel.visible = false  # exclusivo
 
 func toggle_bag() -> void:
 	bag_panel.visible = not bag_panel.visible
+	if bag_panel.visible:
+		cloth_panel.visible = false  # exclusivo
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:

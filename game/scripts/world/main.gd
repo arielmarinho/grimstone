@@ -1,6 +1,6 @@
 extends Node2D
 ## Main — controla qual mapa está ativo e o spawn do player
-## O player é criado POR CÓDIGO (a cena principal não depende mais do player.tscn no boot)
+## O player é criado POR CÓDIGO. Cada mapa tem um MARCADOR visível na saída.
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
@@ -9,12 +9,12 @@ const MAPS = {
 	"city1": {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(512, 620),
-		"exit": {"pos": Vector2(512, 800), "radius": 42, "to": "rat_cave"},
+		"exit": {"pos": Vector2(512, 800), "radius": 42, "to": "rat_cave", "label": "BUEIRO ↓"},
 	},
 	"rat_cave": {
 		"texture": "res://assets/maps/rat_cave.png",
 		"player_spawn": Vector2(512, 400),
-		"exit": {"pos": Vector2(512, 90), "radius": 42, "to": "city1"},
+		"exit": {"pos": Vector2(512, 90), "radius": 42, "to": "city1", "label": "SAÍDA ↑"},
 	},
 }
 
@@ -89,6 +89,21 @@ func switch_map(name: String) -> void:
 		var spawner = load("res://scripts/world/rat_cave.gd").new()
 		entities.add_child(spawner)
 	COLLIDERS.build_colliders(name, map_layer)
+	# MARCADOR da saida — seta pulsante sobre o bueiro/grade
+	var ex = MAPS[current].get("exit")
+	if ex:
+		var marker = Label.new()
+		marker.text = ex["label"]
+		marker.position = ex["pos"] + Vector2(-45, -95)
+		marker.add_theme_font_size_override("font_size", 16)
+		marker.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+		marker.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		marker.add_theme_constant_override("outline_size", 4)
+		map_layer.add_child(marker)
+		var tw = marker.create_tween()
+		tw.set_loops()
+		tw.tween_property(marker, "position:y", marker.position.y - 8.0, 0.6)
+		tw.tween_property(marker, "position:y", marker.position.y, 0.6)
 	if player != null:
 		GameManager.weapon = player.weapon
 		GameManager.hair_color = player.hair_color
