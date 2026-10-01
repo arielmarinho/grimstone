@@ -1,7 +1,8 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
 ## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
-## ANIMACOES: HIBRIDO — down usa a ARTE REAL aprovada; up/side usam procedural alinhado
+## ANIMACOES: ARTE REAL em TODAS as direcoes — down original, up derivado (costas),
+## side = arte de frente com flip_h (estilo Tibia classico). Identidade 100%.
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
@@ -41,7 +42,7 @@ var buff_perfurante: bool = false
 var _last_level: int = 1
 var _regen_timer: float = 0.0
 
-# ANIMS com paths up/side REAIS — down carrega o PNG real, up/side o procedural desenha
+# ANIMS: down aponta pro PNG real; up/side derivam do MESMO PNG real em runtime
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
 	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
@@ -98,14 +99,17 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
-		# art com rosto/expressao); up/side usam o PROCEDURAL alinhado as cores reais
-		# (os PNGs up/side nao existem). Nunca mais "so anda pra baixo".
+		# ARTE REAL em TODAS as direcoes (identidade visual 100%):
+		# - down/death: o PNG real original (a aprovada — rosto/expressao)
+		# - up: o MESMO PNG real com o rosto substituido por cabelo (costas de verdade)
+		# - side: o MESMO PNG real de frente (flip_h cobre esquerda/direita — Tibia)
 		var texs: Array
 		if "_down" in anim or anim == "death":
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		elif "_up" in anim:
+			texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
 		else:
-			texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+			texs = TEXHELPER.load_sheet_custom(ANIMS[anim].replace("/side/", "/down/"), GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
