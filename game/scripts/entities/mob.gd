@@ -2,8 +2,7 @@ extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, 4 direcoes, timers filhos, strip magenta
 ## 8 tipos: rat, slime, bat, spider, wolf, goblin, orc, skeleton
 ## FEEDBACK: flash de dano + numero flutuante + morte com fade
-## SPRITES: rato usa a arte REAL (unico mob com PNG no repo); os outros 7 usam
-## procedural roteado por CURRENT_MOB
+## SPRITES: TODOS os mobs usam procedural (arte unificada, mesmo estilo do knight)
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
@@ -89,13 +88,9 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		# O RATO usa a arte REAL (o unico mob com PNG no repo).
-		# Os outros 7 tipos usam procedural (roteado por CURRENT_MOB).
-		var texs: Array[Texture2D]
-		if mob_type == "rat":
-			texs = TEXHELPER.load_sheet(ANIMS[anim])
-		else:
-			texs = TEXHELPER.load_sheet_procedural(ANIMS[anim])
+		# TODOS os mobs usam procedural (arte unificada, mesmo estilo do knight).
+		# A arte real antiga do rato era pequena/zuada — descartada pelo usuario.
+		var texs: Array[Texture2D] = TEXHELPER.load_sheet_procedural(ANIMS[anim])
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
