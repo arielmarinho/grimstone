@@ -279,8 +279,8 @@ signal damage_local_player(dmg: int)   # servidor manda dano pro player local (c
 signal mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String)  # xp/loot do mob que EU matei
 
 func request_mob_damage(mob_id: int, dmg: int) -> void:
-	# cliente pede pro servidor aplicar dano num mob autoritativo
-	if multiplayer.multiplayer_peer == null or is_server:
+	# cliente pede pro servidor aplicar dano no mob (servidor valida)
+	if not is_online() or is_server:
 		return
 	_rpc_mob_damage.rpc_id(1, mob_id, dmg)
 
@@ -295,3 +295,6 @@ func _rpc_mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String = "") 
 	if is_server:
 		return
 	mob_reward.emit(xp, loot, pos, mob_type)
+	# bestiário: o kill contou no SERVIDOR — registra aqui no cliente também
+	if mob_type != "":
+		GameManager.bestiary_kill(mob_type)

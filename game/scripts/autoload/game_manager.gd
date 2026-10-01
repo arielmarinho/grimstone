@@ -33,6 +33,9 @@ const WELL_FED_MAX: float = 600.0  # cap de 10min empilhando comidas
 # banco/depósito estilo Tibia: itens guardados fora da mochila (id -> qty)
 var bank := {}
 
+# bestiário estilo Tibia: quantos de cada monstro o player já derrotou (mob_type -> kills)
+var bestiary := {}
+
 signal quest_done(id: String)
 
 ## sinal de quest concluida (progresso cheio, falta ENTREGAR no NPC) — HUD mostra aviso
@@ -57,6 +60,27 @@ const QUESTS := {
 
 func quest_state(id: String) -> Dictionary:
 	return quests.get(id, {"progress": 0, "done": false, "claimed": false})
+
+# ---------- BESTIÁRIO: ficha de cada monstro (dados + lore) ----------
+const BESTIARY_INFO := {
+	"rat": {"nome": "Rato dos Bueiros", "onde": "Bueiro (sul da cidade)",
+		"desc": "Praga comum nos esgotos. Fraco, mas ataca em grupo. Cai fácil — bom pra quem começa."},
+	"slime": {"nome": "Gosma Verde", "onde": "Bueiro (sul da cidade)",
+		"desc": "Bola de gosma lenta e grudenta. Dói pouco, mas regenera a paciência de quem acha que é fácil."},
+	"bat": {"nome": "Morcego Sanguíneo", "onde": "Bueiro e Floresta",
+		"desc": "Voa rápido e errado. Difícil de acertar com flecha, fácil de subestimar."},
+	"spider": {"nome": "Aranha da Floresta", "onde": "Floresta (sul da vila)",
+		"desc": "Tece teias entre as árvores. Venenosa, rápida e não gosta de visitantes."},
+	"wolf": {"nome": "Lobo Cinzento", "onde": "Floresta (sul da vila)",
+		"desc": "Caçador nato da floresta. Morde forte e persegue longe. Leve poção antes de encarar."},
+	"goblin": {"nome": "Goblin Saqueador", "onde": "Floresta (sul da vila)",
+		"desc": "Pequeno, covarde e ladrão. Ataca em bando e carrega o que roubou — inclusive moedas."},
+	"orc": {"nome": "Orc Guerreiro", "onde": "Floresta (sul da vila)",
+		"desc": "Brutamontes de machado. Aguenta pancada e devolve em dobro. Só enfrente bem equipado."},
+	"skeleton": {"nome": "Esqueleto Guerreiro", "onde": "Floresta (sul da vila)",
+		"desc": "Ossos animados por magia antiga. Não sente medo nem cansaço — só para quando desmonta."},
+}
+
 
 func quest_available(id: String) -> bool:
 	if quests.has(id) and quests[id].get("done", false):
@@ -248,7 +272,7 @@ func save_game() -> void:
 		"pants_color": pants_color, "arrows": arrows, "city2_visited": city2_visited,
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 		"quests": quests, "well_fed": int(well_fed_time),
-		"bank": bank,
+		"bank": bank, "bestiary": bestiary,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -295,7 +319,30 @@ func load_game() -> bool:
 	bank = parsed.get("bank", {})
 	if not bank is Dictionary:
 		bank = {}
+	# bestiário: save antigo sem "bestiary" = vazio (contadores começam do zero)
+	bestiary = parsed.get("bestiary", {})
+	if not bestiary is Dictionary:
+		bestiary = {}
 	return true
+
+# ---------- BESTIÁRIO (estilo Tibia: registro de caça) ----------
+## registra 1 derrota do tipo de monstro (chamado em todo kill, offline e online)
+func bestiary_kill(mob_type: String) -> void:
+	if mob_type == "" or mob_type == "dummy":
+		return
+	bestiary[mob_type] = int(bestiary.get(mob_type, 0)) + 1
+
+## quantas vezes o player derrotou esse tipo (0 se nunca)
+func bestiary_count(mob_type: String) -> int:
+	return int(bestiary.get(mob_type, 0))
+
+## tipos já vistos (com pelo menos 1 kill), na ordem do bestiário
+func bestiary_seen() -> Array:
+	var out: Array = []
+	for t in BESTIARY_INFO:
+		if bestiary_count(t) > 0:
+			out.append(t)
+	return out
 
 # ---------- BANCO/DEPÓSITO (estilo Tibia) ----------
 ## deposita qty do item da mochila pro banco (tier conta: "espada#2" é slot próprio)
