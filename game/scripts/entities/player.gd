@@ -275,7 +275,7 @@ func _use_skill(slot: String) -> void:
 			else:
 				GameManager.mana += sk["mana"]
 				skill_ready[slot] = true
-			skill_cd[slot] = 0.0
+				skill_cd[slot] = 0.0
 				_show_feedback("Nenhum alvo para a Investida!")
 		"terremoto":
 			_skill_aoe_stun(2.5, 2.0)
@@ -340,7 +340,7 @@ func _use_skill(slot: String) -> void:
 			print("GRITO DE GUERRA! +30% dano por 10s")
 		"perfurante":
 			buff_perfurante = true
-			print("FLECHA PERFURANTE armada!")
+			print("FLECHA PERFURANTE armado!")
 		"meteoro":
 			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
