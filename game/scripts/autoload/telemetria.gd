@@ -78,5 +78,5 @@ func _enviar(origem: String) -> void:
 		"Content-Type: application/json",
 		"X-Webhook-Secret: " + SECRET,
 	]), HTTPClient.METHOD_POST, body)
-	var ok := await http.request_completed
+	await http.request_completed
 	busy = false
