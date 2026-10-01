@@ -257,7 +257,7 @@ func _rpc_mob_state(id: int, data: Dictionary) -> void:
 	_lag_delay(func(): mob_state.emit(id, data))
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_mob_removed(id: int) -> void:
+func _rpc_mob_removed(id: int = 0) -> void:
 	if is_server:
 		return
 	mobs.erase(id)
