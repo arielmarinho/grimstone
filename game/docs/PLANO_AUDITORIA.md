@@ -115,6 +115,12 @@
 - AudioManager 100% procedural (12 SFX + 3 musicas chiptune em GDScript, zero binarios), pool 8 players, crossfade por mapa
 ### Area 7 — Balanceamento (ciclo 8) OK
 - hp/mana max funcao do level (save nunca desincroniza), level-up Tibia (+30/+15 em combate), cura fora de combate 5%/2s, XP mobs iniciais +75%, pocoes P 15/18
+### Area 7 — Balanceamento RE-AUDITADA (ciclo 59b, v0.6.32) OK — sem mudanças
+- Re-simulacao com quests/runas/fusao no jogo (scripts/81724fd159dae26a/area5_resim.py): TTK alvo OK, sustentabilidade fecha (slime = caso mais aperto: 95/min de pocao vs 135/min ganhos = positivo), XP/skill curves OK
+- Quests = one-time (cadeia com req), nao sao fonte farmavel — nao distorcem economia
+- Runas = sink de moedas (55-60/uso, eficiencia 1.3 dano/moeda < pocao 3.3 hp/moeda = conveniencia, nao exploit); fusao = sink (50/uso)
+- VEREDITO: nenhuma mudanca necessaria — economia fecha com o conteudo novo
+
 ### Area 6 — UI/UX (ciclo 7) implementado
 - 4 bugs de HUD corrigidos + cooldown numerico Q/E/R/G + feedback na tela + loja/titulo polidos
 ### Area 5 — Itens & Economia (ciclo 6) OK
