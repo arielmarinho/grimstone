@@ -34,7 +34,7 @@ const CITY2_DECOR := [
 	[CRATE, Vector2(1470, 1620), true], [CRATE, Vector2(1650, 1500), true],
 	[BARREL, Vector2(1660, 720), true],
 	[FLAG, Vector2(280, 900), false], [FLAG, Vector2(280, 1150), false],
-	[STALL, Vector2(1320, 420), true],
+	[STALL, Vector2(1320, 380), true],
 ]
 
 static func build_decor(map_name: String, parent: Node) -> void:
