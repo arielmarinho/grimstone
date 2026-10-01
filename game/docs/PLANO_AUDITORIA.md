@@ -113,3 +113,10 @@
 - NetTest: server fase 2 estendida 8s->20s; fix break que teleportava sem mob vivo
 - NetTest COM LAG PASSOU: server + A + B com --netlag=150 — registro, chat, posicao, dano em mob via RPC, hp caiu no snapshot (RESULT OK nos 3 roles)
 - Validado headless 0 erros; pendente: teste no Mac do usuario
+
+### Ciclo 17 (05:25, 01/10) — pendencias do ciclo 16 resolvidas
+- player.gd (joystick) CONFIRMADO idêntico no GitHub (diff = só newline no fim)
+- CHANGELOG v0.5.6 pushado no remoto (a outra instância do cron pushou o mesmo conteúdo em paralelo — colisão detectada, recuo da escrita, sem duplicar)
+- Orientação Android sensor_landscape (`window/handheld/orientation=4`) adicionada ao project.godot e pushada (523b2282) — pendência do ciclo 16 fechada
+- BUILD_ANDROID.md atualizado (pendências 1 e 2 = FEITAS, commit 1185e70)
+- Headless 0 erros. Próximo: teste no Mac do usuário OU build APK real no Mac (guia pronto)
