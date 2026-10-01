@@ -41,22 +41,17 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var tex: Texture2D = _load_tex(ANIMS[anim])
-		if tex == null:
+		var texs = TexHelper.load_sheet(ANIMS[anim])
+		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
 		sf.set_animation_speed(anim, 8.0)
 		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
-		sf.add_frame(anim, tex)
+		for t in texs:
+			sf.add_frame(anim, t)
 	sprite.sprite_frames = sf
 	sprite.play("idle")
-
-func _load_tex(path: String) -> Texture2D:
-	var img = Image.load_from_file(ProjectSettings.globalize_path(path))
-	if img == null:
-		push_error("nao achei textura: " + path)
-		return null
-	return ImageTexture.create_from_image(img)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _physics_process(delta: float) -> void:
 	if dying or dead:
