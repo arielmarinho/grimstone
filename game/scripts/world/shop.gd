@@ -3,15 +3,28 @@ extends Node2D
 
 const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
-const CATALOG = {
-	"pocao_vida": 20,
-	"pocao_mana": 25,
+# catalogo por cidade: city1 = base, city2 = tiers melhores + bulk
+const CATALOG_CITY1 = {
+	"pocao_vida_p": 20,
+	"pocao_mana_p": 25,
 	"flecha": 2,
 	"espada": 50,
 	"machado": 120,
 	"arco": 150,
 	"cajado": 180,
 }
+const CATALOG_CITY2 = {
+	"pocao_vida_m": 60,
+	"pocao_vida_g": 110,
+	"pocao_mana_m": 70,
+	"pocao_mana_g": 130,
+	"flecha": 1,
+	"machado": 100,
+	"arco": 130,
+	"cajado": 160,
+}
+
+var city: String = "city1"
 
 var panel: Control
 var grid: GridContainer
@@ -34,7 +47,7 @@ func _build_panel() -> void:
 	bg.offset_bottom = 590
 	panel.add_child(bg)
 	var title = Label.new()
-	title.text = "LOJA"
+	title.text = "LOJA — " + ("CIDADE" if city == "city1" else "VILA")
 	title.position = Vector2(430, 145)
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
@@ -63,11 +76,14 @@ func _build_panel() -> void:
 	panel.add_child(hint)
 	refresh()
 
+func _catalog() -> Dictionary:
+	return CATALOG_CITY2 if city == "city2" else CATALOG_CITY1
+
 func refresh() -> void:
 	coins_label.text = "Moedas: %d" % GameManager.coins
 	for c in grid.get_children():
 		c.queue_free()
-	var ids = CATALOG.keys()
+	var ids = _catalog().keys()
 	for id in ids:
 		var slot = Button.new()
 		slot.custom_minimum_size = Vector2(100, 90)
@@ -93,7 +109,7 @@ func refresh() -> void:
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(name_l)
 		var price = Label.new()
-		price.text = "%d moedas" % CATALOG[id]
+		price.text = "%d moedas" % _catalog()[id]
 		price.position = Vector2(6, 68)
 		price.add_theme_font_size_override("font_size", 11)
 		price.add_theme_color_override("font_color", Color(0.95, 0.8, 0.25))
@@ -103,10 +119,11 @@ func refresh() -> void:
 		grid.add_child(slot)
 
 func _buy(id: String) -> void:
-	var price: int = CATALOG[id]
+	var price: int = _catalog()[id]
 	if GameManager.coins < price:
 		msg_label.text = "Moedas insuficientes!"
 		return
+	# flechas vao direto pro contador de municao
 	if id == "flecha":
 		GameManager.coins -= price
 		GameManager.arrows += 10
