@@ -264,18 +264,28 @@ func _refresh_fuse() -> void:
 
 func _item_display_name(id: String) -> String:
 	var base: String = id.split("#")[0]
-	var nome: String = ITEMS_DB.ITEMS.get(base, {}).get("nome", base)
+	var it = ITEMS_DB.ITEMS.get(base, null)
+	if it == null:
+		return base
 	var tier := RARITY.tier_of(id)
-	if tier > 0:
-		nome += " " + RARITY.NAMES[tier]
-	return nome
+	if tier > 0 and it.get("tipo", "") == "arma":
+		return "%s %s" % [it["nome"], RARITY.sufixo(tier)]
+	return it["nome"]
 
 func _fuse_click(id: String) -> void:
-	if GameManager.fuse_item(id):
-		_show_feedback("FUSAO! %s fundido!" % _item_display_name(id))
-		GameManager.save_game()
-	else:
-		_show_feedback("Nao foi possivel fundir (3 iguais + 50 moedas)")
+	if player_ref == null or player_ref.dead:
+		return
+	var nome_antes := _item_display_name(id)
+	var tier := RARITY.tier_of(id)
+	if not GameManager.fuse_item(id):
+		return
+	AudioManager.play_sfx("level_up")
+	var novo_id := RARITY.key_with_tier(id.split("#")[0], tier + 1)
+	_show_feedback("FUSAO! %s -> %s!" % [nome_antes, _item_display_name(novo_id)])
+	# se a arma equipada era uma das fundidas e sumiu, re-equipa a base
+	if not GameManager.bag.has(player_ref.weapon) and player_ref.weapon.split("#")[0] == id.split("#")[0]:
+		player_ref.weapon = id.split("#")[0]
+		player_ref._build_frames()
 	_refresh_fuse()
 
 func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
