@@ -42,39 +42,49 @@ static func draw_weapon(img: Image, weapon: String, cx: int, sy: int, f: int, is
 	match weapon:
 		"sword":
 			var steel: Color = w["cor"]
+			var steel_l: Color = Color(0.9, 0.91, 0.94)
 			if is_attack and f >= 2:
-				_draw_blade(img, cx + 10, sy + 4, 14, 4, steel)
-				_draw_blade(img, cx + 6, sy + 2, 6, 8, Color(0.9, 0.92, 0.95, 0.6))
+				_draw_blade(img, cx - 2, sy + 8, 22, 3, steel)
+				_draw_blade(img, cx - 6, sy + 5, 8, 8, Color(0.95, 0.95, 1.0, 0.45))
 			else:
-				_draw_blade(img, cx + 14, sy, 4, 22, steel)
-			_draw_blade(img, cx + 13, sy + 20, 6, 3, w["cor_cabo"])
+				for i in range(18):
+					var wdt = 3.0 - i * 0.12
+					_draw_blade(img, cx + 4 - wdt / 2, sy + i, int(wdt) + 1, 1, steel if i % 3 != 0 else steel_l)
+				_draw_blade(img, cx - 1, sy + 17, 10, 3, Color(0.55, 0.42, 0.2))
+				_draw_circle(img, cx + 4, sy + 21, 1.8, w["cor_cabo"])
 		"axe":
 			var steel: Color = w["cor"]
 			if is_attack and f >= 2:
-				_draw_blade(img, cx + 10, sy + 2, 14, 4, steel)
+				_draw_blade(img, cx - 2, sy + 6, 22, 3, steel)
+				_draw_circle(img, cx + 12, sy + 7, 4, Color(0.95, 0.95, 1.0, 0.4))
 			else:
-				_draw_blade(img, cx + 15, sy, 4, 22, w["cor_cabo"])
-				_draw_blade(img, cx + 13, sy - 2, 10, 10, steel)
-				_draw_blade(img, cx + 15, sy - 2, 6, 10, Color(0.85, 0.87, 0.9))
+				_draw_blade(img, cx + 3, sy - 2, 3, 24, w["cor_cabo"])
+				_draw_ellipse(img, cx + 9, sy + 2, 6, 7, steel)
+				_draw_ellipse(img, cx + 10.5, sy + 2, 3.5, 5, Color(0.88, 0.9, 0.93))
 		"bow":
 			var wood: Color = w["cor"]
 			var string_c: Color = w["cor_cabo"]
-			for i in range(10):
-				var off = abs(i - 5)
-				_draw_blade(img, cx + 16 + off / 2, sy + i * 2, 3, 2, wood)
-			_draw_blade(img, cx + 21, sy, 1, 20, string_c)
+			for i in range(14):
+				var ang = -1.2 + i * (2.4 / 13)
+				var bx = cx + 6 + cos(ang) * 4
+				var by = sy + 10 + sin(ang) * 11
+				_draw_circle(img, bx, by, 1.6, wood)
+			_draw_blade(img, cx + 10, sy - 1, 1, 22, string_c)
 			if is_attack and f >= 2:
-				_draw_blade(img, cx + 22, sy + 8, 12, 2, Color(0.9, 0.85, 0.7))
+				_draw_blade(img, cx + 10, sy + 9, 14, 2, Color(0.9, 0.85, 0.7))
+				_draw_blade(img, cx + 22, sy + 8, 3, 4, Color(0.85, 0.85, 0.85))
 		"staff":
 			var wood: Color = w["cor"]
 			var orb: Color = w["cor_orb"]
-			_draw_blade(img, cx + 15, sy, 4, 24, wood)
+			_draw_blade(img, cx + 3, sy - 2, 3, 26, wood)
 			var orb_c := orb
 			if is_attack and f >= 2:
-				orb_c = Color(0.7, 0.85, 1.0)
-			_draw_blade(img, cx + 14, sy - 6, 6, 6, orb_c)
+				orb_c = Color(0.75, 0.9, 1.0)
+			_draw_circle(img, cx + 4.5, sy - 5, 3.5, orb_c)
+			_draw_circle(img, cx + 3.5, sy - 6, 1.2, Color(1, 1, 1, 0.8))
 			if is_attack and f >= 2:
-				_draw_blade(img, cx + 24, sy + 2, 8, 8, Color(0.95, 0.6, 0.2))
+				_draw_circle(img, cx + 16, sy + 8, 4, Color(0.95, 0.6, 0.2))
+				_draw_circle(img, cx + 18, sy + 8, 2.2, Color(0.98, 0.85, 0.4))
 
 static func _draw_blade(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 	for j in range(h):
@@ -83,3 +93,16 @@ static func _draw_blade(img: Image, x: int, y: int, w: int, h: int, c: Color) ->
 			var py = y + j
 			if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height():
 				img.set_pixel(px, py, c)
+
+static func _draw_ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, c: Color) -> void:
+	for j in range(int(cy - ry) - 1, int(cy + ry) + 2):
+		for i in range(int(cx - rx) - 1, int(cx + rx) + 2):
+			if i < 0 or j < 0 or i >= img.get_width() or j >= img.get_height():
+				continue
+			var dx = (i - cx) / max(rx, 0.1)
+			var dy = (j - cy) / max(ry, 0.1)
+			if dx * dx + dy * dy <= 1.0:
+				img.set_pixel(i, j, c)
+
+static func _draw_circle(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
+	_draw_ellipse(img, cx, cy, r, r, c)
