@@ -13,7 +13,7 @@ const MAPS = {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(1024, 1240),
 		"exits": [
-			{"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓", "arrive": Vector2(1024, 1000)},
+			{"pos": Vector2(1024, 1750), "radius": 110, "to": "rat_cave", "label": "BUEIRO ↓", "arrive": Vector2(1024, 1000)},
 			{"pos": Vector2(1990, 1024), "radius": 84, "to": "city2", "label": "VILA →", "arrive": Vector2(340, 1024)},
 		],
 		"shop": Vector2(580, 1340),
