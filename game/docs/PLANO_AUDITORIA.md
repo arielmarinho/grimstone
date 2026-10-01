@@ -18,7 +18,7 @@
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
 | 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO+ESTIMATIVAS implementadas ciclos 18-20 (v0.6.0/v0.6.1/v0.6.2) — aguarda usuario |
-| 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) — aguarda usuario |
+| 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) + polish ciclo 22 (v0.6.4) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -132,4 +132,11 @@
 - NPC Mestre das Missões nas 2 cidades (tecla J): 6 missões de caça em cadeia (ratos->slimes->aranhas->goblins->orcs->esqueletos), recompensas 40-250 moedas + 100-900 xp
 - Kill conta offline (mob.gd) e online (_rpc_mob_reward carrega mob_type); persistido no save; NOVO JOGO zera
 - Teste unitário QUEST_TEST_OK; headless 0 erros
+- Pendente: teste no Mac do usuário
+
+## Ciclo 22 (06:07, 01/10) — polish v0.6.4: quests + comida/energia
+- Tecla J funciona em QUALQUER lugar (perto do NPC abre o painel; longe mostra dica) — NPC no grupo quest_npc
+- Aviso "MISSAO PRONTA: ..." no HUD quando quest completa (signal quest_ready)
+- Comida/energia estilo Tibia: carne/queijo/peixe (empilha até 10min, regen 2x bem alimentado, indicador no HUD); queijo/peixe no loot e nas lojas
+- Testes QUEST/ESTIMATE/FUSION/FED OK; headless 0 erros
 - Pendente: teste no Mac do usuário
