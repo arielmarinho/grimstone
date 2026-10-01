@@ -272,26 +272,26 @@ func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
 func _build_hotbar() -> void:
 	for i in range(4):
 		var slot = Button.new()
-	slot.position = Vector2(560 + i * 46, 640)
-	slot.size = Vector2(42, 42)
-	var icon = TextureRect.new()
-	icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
-	icon.position = Vector2(7, 7)
-	icon.custom_minimum_size = Vector2(28, 28)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.add_child(icon)
-	var num = Label.new()
-	num.text = str(i + 1)
-	num.position = Vector2(3, 2)
-	num.add_theme_font_size_override("font_size", 10)
-	num.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.add_child(num)
-	slot.pressed.connect(_select_weapon.bind(WEAPON_KEYS[i]))
-	add_child(slot)
-	hotbar_slots.append(slot)
+		slot.position = Vector2(560 + i * 46, 640)
+		slot.size = Vector2(42, 42)
+		var icon = TextureRect.new()
+		icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
+		icon.position = Vector2(7, 7)
+		icon.custom_minimum_size = Vector2(28, 28)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(icon)
+		var num = Label.new()
+		num.text = str(i + 1)
+		num.position = Vector2(3, 2)
+		num.add_theme_font_size_override("font_size", 10)
+		num.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(num)
+		slot.pressed.connect(_select_weapon.bind(WEAPON_KEYS[i]))
+		add_child(slot)
+		hotbar_slots.append(slot)
 
 func _select_weapon(wid: String) -> void:
 	if player_ref != null and not player_ref.dead:
@@ -592,7 +592,7 @@ func _build_cloth_panel() -> void:
 		sw3.position = Vector2(430 + i * 34, 456)
 		sw3.size = Vector2(30, 30)
 		var st3 = StyleBoxFlat.new()
-		st3.bg_color = EQUIPS.PANTS_COLORS[c_name]
+		st3.bg_color = EQUIPS.PANTS_COLORS[p_name]
 		st3.set_corner_radius_all(6)
 		sw3.add_theme_stylebox_override("normal", st3)
 		sw3.pressed.connect(_set_pants.bind(p_name))
@@ -620,7 +620,7 @@ func _set_pants(c: String) -> void:
 	_update_preview()
 
 func _update_preview() -> void:
-	# preview do knight com as cores atuais (idle down, base, frame 0) — antes NUNCA era renderizado
+	# preview do knight com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado
 	if player_ref == null:
 		return
 	var texs = TEXHELPER.load_sheet_custom(
