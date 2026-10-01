@@ -1,5 +1,12 @@
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.10 (ciclo 28: AUDITORIA PROFUNDA de integridade GitHub↔local)
+
+- Auditoria completa de TODOS os arquivos do repo (blob SHA git hash-object local vs get_file_contents remoto): scripts/autoload, entities, world, ui, tests, scenes, project.godot, export_presets.cfg, docs, assets (sprites .b64, README)
+- Resultado: 32/36 byte-exatos. 4 divergencias investigadas uma a uma: game_manager.gd (conteudo remoto SEMANTICAMENTE COMPLETO, 12/12 features — divergencia = encoding de acentos + newline do MCP, licao do ciclo 25, SEM reparo necessario); hp_bar.gd (newline final cosmico); drop.gd/projectile.gd/rat_cave.gd (remoto = local sem acentos + newline, conteudo funcional identico)
+- CONCLUSAO: NENHUM arquivo corrompido ou truncado no remoto — o protocolo blob SHA pegou so diferencas de encoding do push_files
+- Godot headless: 0 erros de script
+
 ## 2026-10-01 — v0.6.9 (ciclo 27: SPRITES DIRECIONAIS dos mobs)
 
 - NOVO: mobs agora desenham direcoes REAIS (down/up/side) em vez da mesma cara de frente pra tudo — up = costas sem rosto, side = perfil (flip_h cobre a esquerda)
