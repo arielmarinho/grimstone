@@ -109,6 +109,8 @@ const ANIMS = {
 	"attack_side": "res://assets/sprites/animation/enemy/rat/attack/side/rat_attack_side.png",
 	"death": "res://assets/sprites/animation/enemy/rat/death/down/rat_death_down.png",
 }
+# paths dos sprites de monstro (compartilhados entre tipos — o procedural roteia por CURRENT_MOB)
+# NOTA: os PNGs do rato so existem pra "down" (up/side caem no procedural, que agora desenha o rato)
 
 func _build_frames() -> void:
 	# roteia o sprite procedural pro tipo certo (paths sao compartilhados)

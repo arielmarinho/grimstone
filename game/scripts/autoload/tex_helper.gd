@@ -79,7 +79,7 @@ static func _procedural(path: String, weapon: String = "sword", hair: String = "
 		var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
 		img.fill(Color(0, 0, 0, 0))
 		if "enemy" in path:
-			preload("res://scripts/entities/mob_sprites.gd").draw_mob(img, CURRENT_MOB, f, is_attack, is_death, is_walk)
+			preload("res://scripts/entities/mob_sprites.gd").draw_mob(img, CURRENT_MOB, f, is_attack, is_death, is_walk, dir)
 		else:
 			_draw_knight(img, f, is_attack, is_death, is_walk, weapon, hair, tunic, dir)
 		frames.append(ImageTexture.create_from_image(img))
