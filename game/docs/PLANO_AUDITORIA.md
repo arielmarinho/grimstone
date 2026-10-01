@@ -1,3 +1,10 @@
+### Area 28 — Player ARTE REAL nas 4 direcoes + fallback (ciclo 47, v0.6.21) OK
+- Player up/side usam ARTE REAL PROPRIA (b64 up/side no estilo da referencia) quando existir; fallback v0.6.17/v0.6.19 sem o b64 — nunca fica sem animacao
+- Validacao visual obrigatoria: preview_final3 (artifacts/player_real4_dirs.png) + check_real4 programatico (up = costas: 1 px de pele vs 114 no down; up/side = 3000+ px diferentes do down)
+- INCIDENTE: 1o push do player.gd reconstruido de memoria saiu truncado (6998 bytes) — reparado byte-exato (15e0fdd); regra: NUNCA reconstruir arquivo grande de memoria
+- Pendente: push dos 6 b64 up/side (filtro de contexto omite base64); fallback cobre o jogo no estado atual
+- Validacao: headless 0 erros + run real 0 erros + 7/7 testes OK
+
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
 > Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
@@ -29,6 +36,7 @@
 | 22 | **Portao sul + integridade pos-fix** | gs-level-design + gs-qa-testing | muralha SUL fiel ao cenario (caminho ate a borda), trigger do bueiro, auditoria blob SHA pos-fix | OK ciclo 37b (v0.6.14) — colliders/main byte-exatos, NetTest 3/3, 7/7 testes |
 | 24 | **Player 4 direcoes REAIS** | gs-pixel-art + gs-qa-testing | ANIMS up/side reais no player (bug so-anda-pra-baixo), validacao visual | OK ciclo 39 (v0.6.16) — preview_player 8x4 confirmado, headless 0 erros, 7/7 testes |
 | 25 | **Player 100% ARTE REAL (hibrido up/side)** | gs-pixel-art + gs-qa-testing | UP = arte real editada (rosto vira cabelo), SIDE = arte real com flip_h; preview + check de pixels | OK ciclo 41 (v0.6.17) — preview_hybrid2 validado, headless 0 erros |
+| 28 | **Player ARTE REAL 4 direcoes + fallback** | gs-pixel-art + gs-qa-testing | up/side = b64 real proprio; fallback v0.6.17/19 sem o b64; preview_final3 + check_real4 | OK ciclo 47 (v0.6.21) — pendente push dos 6 b64 |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
