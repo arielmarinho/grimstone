@@ -207,6 +207,16 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		if Equips.WEAPONS.has(weapon):
 			Equips.draw_weapon(img, weapon, cx + 11, 52 + bob, f, is_attack)
 
+static func _tri(img: Image, cx: float, cy: float, w: float, h: float, c: Color) -> void:
+	for y in range(int(h)):
+		var t = float(y) / maxf(h, 1.0)
+		var rw = w * (1.0 - t) / 2.0
+		for x in range(int(-rw), int(rw) + 1):
+			var px = int(cx) + x
+			var py = int(cy) + y - int(h / 2.0)
+			if px >= 0 and px < img.get_width() and py >= 0 and py < img.get_height():
+				img.set_pixel(px, py, c)
+
 static func _draw_ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, c: Color) -> void:
 	for j in range(int(cy - ry) - 1, int(cy + ry) + 2):
 		for i in range(int(cx - rx) - 1, int(cx + rx) + 2):
@@ -488,67 +498,131 @@ static func _map_forest() -> Texture2D:
 
 # ---------- CAVERNA (pedra escura, escada de saida, caixas, cristais) ----------
 static func _map_cave() -> Texture2D:
+	# CAVERNA DOS RATOS — escura, umida, com tochas, cristais e teias (estilo Tibia)
 	var W := 1024
 	var H := 1024
 	var img = Image.create(W, H, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0.14, 0.11, 0.09))
-	for y in range(70, H - 70):
-		for x in range(70, W - 70):
-			var n = sin(x * 0.05) * cos(y * 0.05) * 0.03 + randf() * 0.04
-			img.set_pixel(x, y, Color(0.4 + n, 0.35 + n, 0.3 + n))
-	for i in range(60):
-		var mx = 90 + randi() % (W - 180)
-		var my = 90 + randi() % (H - 180)
-		_draw_ellipse(img, mx, my, 4 + randf() * 8, 3 + randf() * 6, Color(0.3, 0.42, 0.25, 0.4))
-	for i in range(120):
-		var rx = randi() % W
-		var ry = randi() % H
-		var edge = min(min(rx, W - rx), min(ry, H - ry))
-		if edge < 90:
-			_draw_circle(img, rx, ry, 4 + randf() * 10, Color(0.2, 0.17, 0.14))
+	# fundo: rocha escura com veios
+	img.fill(Color(0.09, 0.08, 0.1))
+	for y in range(60, H - 60):
+		for x in range(60, W - 60):
+			var n = sin(x * 0.045) * cos(y * 0.038) * 0.05 + randf() * 0.05
+			var v = 0.30 + n
+			img.set_pixel(x, y, Color(v * 0.95, v * 0.88, v * 0.8))
+	# veios de rocha (linhas sinuosas escuras)
+	for k in range(14):
+		var vx = randi() % W
+		var vy = randi() % H
+		var ang = randf() * TAU
+		for step in range(60 + randi() % 80):
+			vx += cos(ang) * 3.0
+			vy += sin(ang) * 3.0
+			ang += (randf() - 0.5) * 0.4
+			if vx < 70 or vx > W - 70 or vy < 70 or vy > H - 70:
+				break
+			_draw_circle(img, int(vx), int(vy), 2 + randf() * 2, Color(0.16, 0.14, 0.13, 0.7))
+	# borda de rocha irregular (paredao da caverna)
+	for i in range(260):
+		var edge = randi() % 4
+		var t = randi() % W
+		var px = 0
+		var py = 0
+		if edge == 0:
+			px = t; py = 20 + randi() % 55
+		elif edge == 1:
+			px = t; py = H - 20 - randi() % 55
+		elif edge == 2:
+			px = 20 + randi() % 55; py = t
+		else:
+			px = W - 20 - randi() % 55; py = t
+		_draw_circle(img, px, py, 6 + randf() * 14, Color(0.13, 0.11, 0.12))
+	# pocas d'agua (reflexo azul escuro com brilho)
+	for pos in [[280, 640], [760, 380], [520, 820]]:
+		_draw_ellipse(img, pos[0], pos[1], 46 + randf() * 20, 26 + randf() * 10, Color(0.1, 0.16, 0.24))
+		_draw_ellipse(img, pos[0], pos[1], 40, 22, Color(0.13, 0.22, 0.32))
+		_draw_ellipse(img, pos[0] - 8, pos[1] - 4, 14, 5, Color(0.3, 0.45, 0.6, 0.6))
+		_draw_ellipse(img, pos[0] + 14, pos[1] + 6, 8, 3, Color(0.3, 0.45, 0.6, 0.4))
+	# cristais brilhantes (azuis e roxos, com glow)
+	for pos in [[180, 240], [840, 700], [640, 180], [350, 880], [900, 250]]:
+		var cc = Color(0.35, 0.6, 0.95) if randf() > 0.5 else Color(0.7, 0.4, 0.9)
+		_draw_circle(img, pos[0], pos[1], 14, Color(cc.r, cc.g, cc.b, 0.12))
+		_draw_circle(img, pos[0], pos[1], 9, Color(cc.r, cc.g, cc.b, 0.25))
+		_tri(img, pos[0] - 6, pos[1] + 5, 12, 14, cc)
+		_tri(img, pos[0] + 2, pos[1] + 3, 8, 9, cc.lightened(0.3))
+		_tri(img, pos[0] - 2, pos[1] - 4, 5, 7, Color(1, 1, 1, 0.5))
+	# tochas na parede (luz quente — 4 cantos + centro)
+	for pos in [[120, 120], [904, 120], [120, 904], [904, 904], [512, 90]]:
+		_draw_circle(img, pos[0], pos[1], 40, Color(1.0, 0.6, 0.25, 0.1))
+		_draw_circle(img, pos[0], pos[1], 26, Color(1.0, 0.65, 0.3, 0.16))
+		_draw_rect(img, pos[0] - 3, pos[1] - 6, 6, 16, Color(0.4, 0.28, 0.16))
+		_draw_circle(img, pos[0], pos[1] - 10, 7, Color(1.0, 0.75, 0.3))
+		_draw_circle(img, pos[0], pos[1] - 12, 4, Color(1.0, 0.95, 0.6))
+	# teias de aranha nos cantos
+	for pos in [[90, 90], [934, 90], [90, 934], [934, 934]]:
+		for r in range(4):
+			_draw_circle(img, pos[0], pos[1], 8 + r * 7, Color(1, 1, 1, 0.12))
+		for a in range(6):
+			var ang = a * TAU / 6.0
+			for r in range(30):
+				img.set_pixel(int(pos[0] + cos(ang) * r), int(pos[1] + sin(ang) * r), Color(1, 1, 1, 0.14))
+	# pedras grandes espalhadas
+	for pos in [[400, 300], [700, 550], [250, 450], [850, 850], [600, 700]]:
+		_draw_ellipse(img, pos[0], pos[1], 18 + randf() * 8, 12 + randf() * 6, Color(0.24, 0.22, 0.24))
+		_draw_ellipse(img, pos[0] - 4, pos[1] - 4, 10, 6, Color(0.34, 0.32, 0.34))
+	# ossos no chao (clima de masmorra)
+	for pos in [[320, 520], [780, 620], [500, 260], [680, 900]]:
+		_draw_rect(img, pos[0] - 10, pos[1], 20, 3, Color(0.75, 0.72, 0.62))
+		_draw_circle(img, pos[0] - 12, pos[1] + 1, 3, Color(0.78, 0.75, 0.65))
+		_draw_circle(img, pos[0] + 12, pos[1] - 1, 3, Color(0.78, 0.75, 0.65))
+	# entrada: bueiro de grade no topo (casando com o portao norte)
 	var sx := W / 2
-	var sy := 95
-	_draw_circle(img, sx, sy, 30, Color(0.32, 0.32, 0.35))
-	_draw_circle(img, sx, sy, 24, Color(0.55, 0.75, 0.95))
-	_draw_rect(img, sx - 12, sy - 14, 3, 30, Color(0.52, 0.38, 0.22))
-	_draw_rect(img, sx + 9, sy - 14, 3, 30, Color(0.52, 0.38, 0.22))
+	_draw_circle(img, sx, 95, 34, Color(0.2, 0.18, 0.2))
+	_draw_circle(img, sx, 95, 28, Color(0.5, 0.55, 0.6))
 	for i in range(5):
-		_draw_rect(img, sx - 12, sy - 12 + i * 6, 24, 3, Color(0.62, 0.46, 0.28))
-	for pos in [[200, 300], [248, 325], [800, 500], [300, 700], [700, 250]]:
-		_draw_rect(img, pos[0] - 19, pos[1] - 19, 38, 38, Color(0.52, 0.38, 0.22))
-		_draw_rect(img, pos[0] - 19, pos[1] - 19, 38, 7, Color(0.62, 0.46, 0.28))
-		_draw_rect(img, pos[0] - 19, pos[1] - 12, 38, 3, Color(0.42, 0.3, 0.18))
-		_draw_ellipse(img, pos[0], pos[1] + 22, 20, 4, Color(0, 0, 0, 0.25))
-	for pos in [[830, 620], [180, 550]]:
-		_draw_ellipse(img, pos[0], pos[1], 14, 17, Color(0.55, 0.4, 0.24))
-		_draw_ellipse(img, pos[0], pos[1], 14, 5, Color(0.68, 0.52, 0.32))
-		_draw_rect(img, pos[0] - 14, pos[1] - 4, 28, 3, Color(0.35, 0.28, 0.2))
-	for pos in [[110, 210], [905, 300], [150, 800], [880, 760], [500, 950]]:
-		_draw_circle(img, pos[0], pos[1], 6, Color(0.45, 0.7, 0.88))
-		_draw_circle(img, pos[0] - 1, pos[1] - 2, 3, Color(0.7, 0.88, 0.98))
-		_draw_circle(img, pos[0], pos[1] + 10, 8, Color(0.45, 0.7, 0.88, 0.15))
-	for i in range(30):
-		var px = 100 + randi() % (W - 200)
-		var py = 100 + randi() % (H - 200)
-		_draw_ellipse(img, px, py, 2 + randf() * 4, 1.5 + randf() * 3, Color(0.33, 0.29, 0.25))
+		_draw_rect(img, sx - 26, 75 + i * 10, 52, 4, Color(0.3, 0.28, 0.3))
+	_draw_rect(img, sx - 3, 68, 6, 56, Color(0.3, 0.28, 0.3))
 	return ImageTexture.create_from_image(img)
 
 static func _draw_building(img: Image, x: int, y: int, w: int, h: int, roof: Color) -> void:
-	var roof_d := roof.darkened(0.25)
-	_draw_ellipse(img, x + w / 2, y + h * 0.72, w / 2 - 4, h * 0.36, Color(0.84, 0.76, 0.62))
-	_draw_ellipse(img, x + w / 2 - 20, y + h * 0.78, w / 3, h * 0.28, Color(0.78, 0.7, 0.56))
-	_draw_rect(img, x + 8, y + h * 0.5, 6, h * 0.5, Color(0.5, 0.36, 0.22))
-	_draw_rect(img, x + w - 14, y + h * 0.5, 6, h * 0.5, Color(0.5, 0.36, 0.22))
-	for i in range(int(h * 0.52)):
-		var t = float(i) / (h * 0.52)
-		var rw = w / 2 * (1 - t * 0.85) + 8
-		_draw_ellipse(img, x + w / 2, y + h * 0.52 - i, rw, 4, roof if i % 6 != 0 else roof_d)
-	_draw_ellipse(img, x + w / 2, y + h * 0.54, w / 2 - 2, 6, roof.darkened(0.35))
-	_draw_ellipse(img, x + w / 2, y + h - 16, 11, 17, Color(0.45, 0.3, 0.18))
-	_draw_circle(img, x + w / 2 + 5, y + h - 16, 1.5, Color(0.8, 0.65, 0.3))
-	_draw_rect(img, x + w / 2 - 20, y + h * 0.6, 1.5, 10, Color(0.4, 0.3, 0.2))
-	_draw_circle(img, x + w / 2 - 20, y + h * 0.6 + 14, 7, roof)
-	_draw_circle(img, x + w / 2 - 20, y + h * 0.6 + 14, 4, Color(1, 1, 1, 0.85))
+	# CASA RETANGULAR estilo Tibia: parede de pedra/tinta, telhado de duas aguas, porta, janela
+	var wall := Color(0.82, 0.74, 0.6)
+	var wall_d := Color(0.7, 0.62, 0.48)
+	var roof_d := roof.darkened(0.3)
+	var roof_l := roof.lightened(0.15)
+	var hy := y + int(h * 0.45)  # topo da parede
+	# sombra no chao
+	_draw_ellipse(img, x + w / 2, y + h - 6, w / 2 + 6, 8, Color(0, 0, 0, 0.22))
+	# parede
+	_draw_rect(img, x + 6, hy, w - 12, h - int(h * 0.45) - 4, wall)
+	_draw_rect(img, x + 6, hy, w - 12, 4, wall_d)
+	# textura de pedra na parede
+	for yy in range(hy + 8, y + h - 6, 10):
+		for xx in range(x + 8, x + w - 10, 16):
+			_draw_rect(img, xx, yy, 14, 7, wall_d if (xx / 16 + yy / 10) % 2 == 0 else wall)
+	# telhado de duas aguas (triangulo largo com beiral)
+	var peak := y + 6
+	for i in range(hy - peak + 6):
+		var t = float(i) / maxf(hy - peak + 6, 1)
+		var rw = int(w / 2 * (1.0 - t) + 10)
+		var c = roof if i % 7 != 0 else roof_d
+		_draw_rect(img, x + w / 2 - rw, peak + i, rw * 2, 1, c)
+	# linha do beiral
+	_draw_rect(img, x + 2, hy - 2, w - 4, 4, roof_d)
+	# cumeeira
+	_draw_rect(img, x + w / 2 - 3, peak - 2, 6, 4, roof_l)
+	# porta (arco de madeira)
+	var dx := x + w / 2 - 9
+	_draw_rect(img, dx, y + h - 26, 18, 24, Color(0.45, 0.3, 0.16))
+	_draw_circle(img, x + w / 2, y + h - 26, 9, Color(0.45, 0.3, 0.16))
+	_draw_circle(img, x + w / 2 + 5, y + h - 14, 1.5, Color(0.85, 0.7, 0.3))
+	# janelas com moldura
+	for wx in [x + 16, x + w - 26]:
+		if abs(wx + 5 - (x + w / 2)) > 16:
+			_draw_rect(img, wx, hy + 10, 10, 10, Color(0.35, 0.5, 0.65))
+			_draw_rect(img, wx - 2, hy + 8, 14, 3, Color(0.5, 0.36, 0.22))
+			_draw_rect(img, wx - 2, hy + 8, 3, 14, Color(0.5, 0.36, 0.22))
+			_draw_rect(img, wx + 9, hy + 8, 3, 14, Color(0.5, 0.36, 0.22))
+			_draw_rect(img, wx, hy + 14, 10, 2, Color(0.5, 0.36, 0.22))
 
 static func _draw_tree(img: Image, x: int, y: int) -> void:
 	_draw_ellipse(img, x, y + 2, 4.5, 10, Color(0.48, 0.34, 0.2))
