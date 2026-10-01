@@ -1,5 +1,15 @@
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.9 (ciclo 27: SPRITES DIRECIONAIS dos mobs)
+
+- NOVO: mobs agora desenham direcoes REAIS (down/up/side) em vez da mesma cara de frente pra tudo — up = costas sem rosto, side = perfil (flip_h cobre a esquerda)
+- FIX GRAVE: o RATO estava INVISIVEL nas direcoes up/side — so existiam PNGs "down" e o fallback procedural nao tinha case "rat". Agora rato procedural completo (3 direcoes + death: orelhas rosa, olhos vermelhos, dentes, cauda)
+- Aplicado a: slime/bat/spider/wolf/goblin/orc/skeleton (rosto so no down; up = costas); orc/goblin/esqueleto mantem arma no perfil
+- draw_mob ganhou parametro dir (thread via tex_helper._dir_from_path); ANIMS do mob.gd agora cai no procedural pro rat (up/side)
+- Teste visual tests/preview_mobs.gd (folha PNG das 8 criaturas x 3 direcoes); 7 testes unitarios OK; headless 0 erros
+- Local f7a60ae
+- Proximo: teste no Mac do usuario (acumulado grande) OU build APK no Mac
+
 ## 2026-10-01 — v0.6.8 (ciclo 26: DECOR — decoracao das cidades)
 
 - NOVO: decoracao procedural nas 2 cidades (scripts/world/decor.gd) — postes de luz com braco e lampada + brilho aditivo (BLEND_MODE_ADD), canteiros de flores ao redor da fonte/estatua, barris de madeira com aros de metal, caixotes com diagonal, bandeiras vermelhas onduladas nos portoes e barraca de feira com toldo listrado + mercadorias
@@ -21,6 +31,8 @@ Formato: [data] versão — o que mudou (commit)
 - Loot: skeleton dropa fogo 8% / gelo 6%, goblin trovoada 5%, slime cura 4%
 - Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
 - Proximo: teste no Mac do usuario (acumulado grande) OU house/decoracao OU build APK
+
+Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
 
@@ -185,7 +197,7 @@ Formato: [data] versão — o que mudou (commit)
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim morte, preview roupas) + cooldown numerico Q/E/R/G + feedback na tela + loja/titulo polidos; GitHub v0.4.6 (32f33c1), headless 0 erros. Proximo: Area 7 Balanceamento.
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
 - Titulo: v0.4.5 + ESC sai
 
