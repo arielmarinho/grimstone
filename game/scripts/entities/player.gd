@@ -36,6 +36,7 @@ var buff_grito_time: float = 0.0
 var buff_perfurante: bool = false
 
 var _last_level: int = 1
+var _regen_timer: float = 0.0
 
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
@@ -270,7 +271,7 @@ func _use_skill(slot: String) -> void:
 			print("GOLPE DUPLO armado! proximos 2 golpes acertam 2x")
 		"grito":
 			buff_grito_time = 12.0
-			print("GRITO DE GUERRA! +50% dano por 12s")
+			print("GRITO DE GUERRA! +50%% dano por 12s")
 		"giratorio":
 			_skill_aoe(3.0)
 		"sangue_frio":
@@ -356,6 +357,19 @@ func _physics_process(delta: float) -> void:
 		buff_escudo_time -= delta
 	if buff_grito_time > 0.0:
 		buff_grito_time -= delta
+	# REGEN estilo Tibia: mana sempre (lenta), HP so fora de combate
+	_regen_timer += delta
+	if _regen_timer >= 2.0:
+		_regen_timer = 0.0
+		var in_combat := false
+		for m in get_tree().get_nodes_in_group("mobs"):
+			if not m.dead and not m.dying and m.state == "attack" and global_position.distance_to(m.global_position) < 400.0:
+				in_combat = true
+				break
+		if GameManager.mana < GameManager.mana_max:
+			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + GameManager.level / 10)
+		if not in_combat and GameManager.hp < GameManager.hp_max:
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + 1 + GameManager.level / 15)
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
