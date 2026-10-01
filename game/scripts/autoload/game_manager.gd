@@ -36,6 +36,15 @@ var bank := {}
 # bestiário estilo Tibia: quantos de cada monstro o player já derrotou (mob_type -> kills)
 var bestiary := {}
 
+## runas (estilo Tibia): magia guardada em pedra — qualquer classe usa, NAO gasta mana,
+## consome a pedra. Dano fixo + escala com a skill "magia" (dano = base * (1 + lvl*0.02)).
+const RUNAS := {
+	"runa_fogo": {"dano": 60, "efeito": "fogo"},
+	"runa_gelo": {"dano": 35, "efeito": "gelo"},
+	"runa_trovoada": {"dano": 45, "efeito": "trovoada"},
+	"runa_cura": {"dano": 0, "efeito": "cura"},
+}
+
 signal quest_done(id: String)
 
 ## sinal de quest concluida (progresso cheio, falta ENTREGAR no NPC) — HUD mostra aviso
@@ -70,7 +79,7 @@ const BESTIARY_INFO := {
 	"bat": {"nome": "Morcego Sanguíneo", "onde": "Bueiro e Floresta",
 		"desc": "Voa rápido e errado. Difícil de acertar com flecha, fácil de subestimar."},
 	"spider": {"nome": "Aranha da Floresta", "onde": "Floresta (sul da vila)",
-		"desc": "Tece teias entre as árvores. Venenosa, rápida e não gosta de visitantes."},
+		"desc": "Tecete teias entre as árvores. Venenosa, rápida e não gosta de visitantes."},
 	"wolf": {"nome": "Lobo Cinzento", "onde": "Floresta (sul da vila)",
 		"desc": "Caçador nato da floresta. Morde forte e persegue longe. Leve poção antes de encarar."},
 	"goblin": {"nome": "Goblin Saqueador", "onde": "Floresta (sul da vila)",
@@ -261,7 +270,20 @@ func use_item(id: String) -> bool:
 		if it.has("comida"):
 			# comida/energia estilo Tibia: empilha até o cap, regen acelerado
 			well_fed_time = min(WELL_FED_MAX, well_fed_time + float(it["comida"]))
+	if it.get("tipo", "") == "runa":
+		# runa de cura cura direto (como pocao); runas de dano: o HUD aplica o efeito no mundo
+		if id == "runa_cura":
+			hp = min(hp_max, hp + int(float(hp_max) * 0.4))
+		return true
 	return true
+
+## dano da runa escalado pela skill "magia" (base * (1 + lvl*0.02))
+func runa_dano(id: String) -> int:
+	var r = RUNAS.get(id, null)
+	if r == null:
+		return 0
+	var magia_lvl: int = skills.get("magia", {"level": 10})["level"]
+	return int(float(r["dano"]) * (1.0 + magia_lvl * 0.02))
 
 func save_game() -> void:
 	var data := {
