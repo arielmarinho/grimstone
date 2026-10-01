@@ -24,78 +24,131 @@ static func draw_mob(img: Image, type: String, f: int, is_attack: bool, is_death
 
 # ---------- RATO (marrom, orelhas rosa, cauda longa) — procedural, 3 direcoes ----------
 static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, dir: String = "down") -> void:
-	# RATO GRANDE (estilo Rucoy): ocupa ~64x44 do frame 96x96 — presenca de monstro
+	# RATO estilo Tibia/Rucoy: contorno escuro, pelo texturizado, orelhas grandes
 	var cx := 48
-	var fur := Color(0.55, 0.42, 0.3)
-	var fur_d := Color(0.42, 0.31, 0.22)
-	var belly := Color(0.75, 0.65, 0.52)
-	var ear := Color(0.85, 0.6, 0.65)
-	var eye := Color(0.9, 0.15, 0.15)
-	var tail := Color(0.8, 0.55, 0.55)
+	var fur := Color(0.52, 0.38, 0.26)
+	var fur_d := Color(0.38, 0.27, 0.18)
+	var fur_l := Color(0.63, 0.48, 0.34)
+	var outline := Color(0.16, 0.11, 0.07)
+	var belly := Color(0.78, 0.68, 0.55)
+	var ear := Color(0.88, 0.62, 0.66)
+	var ear_d := Color(0.72, 0.46, 0.5)
+	var eye := Color(0.95, 0.12, 0.12)
+	var tail := Color(0.78, 0.52, 0.52)
+	var tail_d := Color(0.62, 0.4, 0.4)
 	if is_death:
-		# deitado de lado, patas pra cima
-		_ell(img, cx, 82, 26, 8, fur)
-		_ell(img, cx, 76, 18, 6, belly)
-		_ell(img, cx - 32, 80, 11, 4, tail)
-		_ell(img, cx + 24, 76, 6, 8, fur_d)
-		_circ(img, cx + 27, 68, 4, ear)
-		_circ(img, cx + 25, 72, 2, eye)
+		# deitado de lado, X nos olhos
+		_ell(img, cx, 80, 26, 9, outline)
+		_ell(img, cx, 80, 24, 7, fur)
+		_ell(img, cx, 84, 16, 4, belly)
+		_ell(img, cx - 34, 78, 12, 4, tail_d)
+		_ell(img, cx - 44, 74, 7, 3, tail_d)
+		_ell(img, cx + 22, 74, 6, 8, fur_d)
+		_circ(img, cx + 26, 66, 5, fur)
+		_circ(img, cx + 26, 66, 3, ear)
+		# X nos olhos
+		for o in [[-2, -2], [2, 2], [-2, 2], [2, -2]]:
+			_rect(img, cx + 24 + o[0], 64 + o[1], 2, 2, Color(0.1, 0.05, 0.05))
 		return
 	var bob: int = [0, 1, 0, 1][f]
 	var step: int = [4, 0, -4, 0][f] if is_walk else 0
-	_ell(img, cx, 84, 24, 4, Color(0, 0, 0, 0.25))
-	# cauda (curva pra tras)
-	_ell(img, cx - 34, 74 - bob, 14, 4, tail)
-	_ell(img, cx - 44, 68 - bob, 8, 3, tail)
+	# sombra
+	_ell(img, cx, 86, 26, 4, Color(0, 0, 0, 0.28))
+	# cauda grossa com curva em S
+	_ell(img, cx - 32, 76 - bob, 13, 4, tail_d)
+	_ell(img, cx - 32, 76 - bob, 11, 2.5, tail)
+	_ell(img, cx - 44, 70 - bob, 8, 3, tail_d)
+	_ell(img, cx - 44, 70 - bob, 6, 2, tail)
+	_ell(img, cx - 52, 66 - bob, 4, 2, tail)
 	if dir == "up":
-		# visto de tras: corpo + costas, sem rosto, orelhas de costas
-		_ell(img, cx, 70 + bob, 24, 14, fur)
-		_ell(img, cx, 76 + bob, 16, 8, fur_d)
-		_ell(img, cx - 13, 78 + step, 5, 6, fur_d)
-		_ell(img, cx + 13, 78 - step, 5, 6, fur_d)
-		_circ(img, cx - 9, 54 + bob, 6, fur)
-		_circ(img, cx + 9, 54 + bob, 6, fur)
-		_circ(img, cx - 9, 54 + bob, 3, ear)
-		_circ(img, cx + 9, 54 + bob, 3, ear)
+		# COSTAS: corpo, orelhas de costas, sem rosto
+		_ell(img, cx, 72 + bob, 25, 15, outline)
+		_ell(img, cx, 72 + bob, 23, 13, fur)
+		_ell(img, cx, 77 + bob, 15, 8, fur_d)
+		# textura de pelo (tufos escuros)
+		for i in range(6):
+			var px = cx - 16 + (i * 7)
+			_ell(img, px, 68 + bob + (i % 2) * 6, 2.5, 1.5, fur_d)
+		_ell(img, cx - 13, 80 + step, 5, 7, fur_d)
+		_ell(img, cx + 13, 80 - step, 5, 7, fur_d)
+		_ell(img, cx - 13, 86 + step, 5, 3, Color(0.24, 0.17, 0.11))
+		_ell(img, cx + 13, 86 - step, 5, 3, Color(0.24, 0.17, 0.11))
+		# orelhas de costas
+		_circ(img, cx - 10, 56 + bob, 7, outline)
+		_circ(img, cx + 10, 56 + bob, 7, outline)
+		_circ(img, cx - 10, 56 + bob, 5.5, fur)
+		_circ(img, cx + 10, 56 + bob, 5.5, fur)
 		if is_attack and f >= 2:
-			_ell(img, cx, 56 + bob, 8, 5, fur_d)
+			_ell(img, cx, 58 + bob, 9, 6, fur_d)
 		return
-	# frente (down) e perfil (side)
-	_ell(img, cx, 70 + bob, 24, 14, fur)
-	_ell(img, cx, 76 + bob, 16, 8, belly)
-	# patas
-	_ell(img, cx - 13, 78 + step, 5, 6, fur_d)
-	_ell(img, cx + 13, 78 - step, 5, 6, fur_d)
-	# cabeca
+	# FRENTE (down) e PERFIL (side)
+	# corpo com contorno
+	_ell(img, cx, 72 + bob, 25, 15, outline)
+	_ell(img, cx, 72 + bob, 23, 13, fur)
+	_ell(img, cx, 77 + bob, 16, 8, belly)
+	# textura de pelo (tufos)
+	for i in range(5):
+		var px = cx - 14 + (i * 7)
+		_ell(img, px, 66 + bob + (i % 2) * 5, 2.5, 1.5, fur_d)
+	# brilho no lombo
+	_ell(img, cx - 6, 64 + bob, 8, 3, fur_l)
+	# patas com contorno
+	_ell(img, cx - 13, 80 + step, 6, 7, outline)
+	_ell(img, cx + 13, 80 - step, 6, 7, outline)
+	_ell(img, cx - 13, 80 + step, 4.5, 5.5, fur_d)
+	_ell(img, cx + 13, 80 - step, 4.5, 5.5, fur_d)
+	# cabeca grande (presenca de monstro)
 	var hy := 52 + bob
 	if dir == "side":
-		# perfil: focinho apontado pra direita (flip_h cobre esquerda)
+		# PERFIL: focinho pra direita
+		_circ(img, cx + 6, hy, 13, outline)
 		_circ(img, cx + 6, hy, 11, fur)
-		_ell(img, cx + 19, hy + 3, 8, 5, fur)
-		_circ(img, cx + 27, hy + 3, 2, Color(0.15, 0.1, 0.1))
-		_circ(img, cx + 3, hy - 10, 5.5, fur)
-		_circ(img, cx + 3, hy - 10, 3, ear)
-		_circ(img, cx + 9, hy - 2, 2.4, eye)
-		_tri(img, cx + 22, hy + 6, 5, 3, Color(0.95, 0.93, 0.85))
+		_ell(img, cx + 20, hy + 3, 9, 5, outline)
+		_ell(img, cx + 20, hy + 3, 7, 3.5, fur)
+		_circ(img, cx + 28, hy + 3, 2.2, Color(0.12, 0.08, 0.08))
+		# orelha
+		_circ(img, cx + 2, hy - 12, 7, outline)
+		_circ(img, cx + 2, hy - 12, 5.5, fur)
+		_circ(img, cx + 2, hy - 12, 3.5, ear)
+		# olho vermelho brilhante
+		_circ(img, cx + 10, hy - 2, 3, Color(0.4, 0.05, 0.05))
+		_circ(img, cx + 10, hy - 2, 2.2, eye)
+		_circ(img, cx + 9, hy - 3, 0.8, Color(1, 0.6, 0.6))
+		# dentes
+		_tri(img, cx + 24, hy + 7, 5, 4, Color(0.95, 0.93, 0.85))
 		if is_attack and f >= 2:
-			_tri(img, cx + 28, hy + 8, 6, 5, Color(0.95, 0.95, 0.9))
+			_tri(img, cx + 30, hy + 9, 7, 6, Color(0.95, 0.95, 0.9))
+			_tri(img, cx + 26, hy + 10, 5, 4, Color(0.9, 0.88, 0.8))
 	else:
-		# frente: orelhas redondas + olhos vermelhos + dentes
-		_circ(img, cx - 10, hy - 10, 6.5, fur)
-		_circ(img, cx + 10, hy - 10, 6.5, fur)
-		_circ(img, cx - 10, hy - 10, 3.2, ear)
-		_circ(img, cx + 10, hy - 10, 3.2, ear)
+		# FRENTE: orelhas GRANDES rosas, olhos vermelhos, dentes
+		# orelhas com contorno
+		_circ(img, cx - 11, hy - 12, 8, outline)
+		_circ(img, cx + 11, hy - 12, 8, outline)
+		_circ(img, cx - 11, hy - 12, 6.5, fur)
+		_circ(img, cx + 11, hy - 12, 6.5, fur)
+		_circ(img, cx - 11, hy - 12, 4, ear)
+		_circ(img, cx + 11, hy - 12, 4, ear)
+		_circ(img, cx - 12, hy - 13, 1.8, ear_d)
+		_circ(img, cx + 10, hy - 13, 1.8, ear_d)
+		# cabeca com contorno
+		_circ(img, cx, hy, 13, outline)
 		_circ(img, cx, hy, 11, fur)
-		_circ(img, cx - 5, hy - 2, 2.4, eye)
-		_circ(img, cx + 5, hy - 2, 2.4, eye)
-		_circ(img, cx - 4, hy - 2.5, 0.8, Color(1, 0.9, 0.9))
-		_circ(img, cx + 6, hy - 2.5, 0.8, Color(1, 0.9, 0.9))
-		_ell(img, cx, hy + 6, 5, 3, Color(0.7, 0.5, 0.5))
-		_rect(img, cx - 3, hy + 8, 2.5, 3, Color(0.95, 0.93, 0.85))
-		_rect(img, cx + 1, hy + 8, 2.5, 3, Color(0.95, 0.93, 0.85))
+		_ell(img, cx, hy + 5, 8, 4, fur_l)
+		# olhos vermelhos brilhantes
+		_circ(img, cx - 5, hy - 2, 3, Color(0.4, 0.05, 0.05))
+		_circ(img, cx + 5, hy - 2, 3, Color(0.4, 0.05, 0.05))
+		_circ(img, cx - 5, hy - 2, 2.2, eye)
+		_circ(img, cx + 5, hy - 2, 2.2, eye)
+		_circ(img, cx - 6, hy - 3, 0.8, Color(1, 0.6, 0.6))
+		_circ(img, cx + 4, hy - 3, 0.8, Color(1, 0.6, 0.6))
+		# nariz + dentes
+		_ell(img, cx, hy + 7, 5, 3, Color(0.72, 0.5, 0.52))
+		_circ(img, cx, hy + 6, 1.5, Color(0.35, 0.2, 0.2))
+		_rect(img, cx - 3, hy + 9, 2.5, 4, Color(0.95, 0.93, 0.85))
+		_rect(img, cx + 1, hy + 9, 2.5, 4, Color(0.95, 0.93, 0.85))
 		if is_attack and f >= 2:
-			_tri(img, cx - 3, hy + 9, 5, 5, Color(0.95, 0.95, 0.9))
-			_tri(img, cx + 3, hy + 9, 5, 5, Color(0.95, 0.95, 0.9))
+			_tri(img, cx - 4, hy + 10, 6, 6, Color(0.95, 0.95, 0.9))
+			_tri(img, cx + 3, hy + 10, 6, 6, Color(0.95, 0.95, 0.9))
 
 # ---------- DUMMY DE TREINO (boneco de madeira, imortal) ----------
 static func _draw_dummy(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
