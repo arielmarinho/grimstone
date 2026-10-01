@@ -57,6 +57,7 @@ func _ready() -> void:
 	_build_death_screen()
 	_build_cloth_panel()
 	_build_skills_panel()
+	_build_bestiary_panel()
 	_build_feedback()
 	_build_chat()
 	GameManager.quest_ready.connect(_on_quest_ready)
@@ -201,7 +202,7 @@ func _process(_delta: float) -> void:
 		fed_label.visible = false
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | J missoes | T banco | Enter chat]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -734,6 +735,65 @@ func _refresh_skills_panel() -> void:
 		est.text = "Proximo LEVEL %d em ~%s (mata ~1 mob a cada 8s)" % [GameManager.level + 1, GameManager.level_time_left()]
 		skills_panel.add_child(est)
 
+# ---------- BESTIARIO (v0.6.6, tecla N): registro de caca estilo Tibia ----------
+var bestiary_panel: Control
+
+func _build_bestiary_panel() -> void:
+	bestiary_panel = Control.new()
+	bestiary_panel.visible = false
+	add_child(bestiary_panel)
+	var bg = ColorRect.new()
+	bg.position = Vector2(340, 120)
+	bg.size = Vector2(600, 480)
+	bg.color = Color(0.08, 0.08, 0.11, 0.97)
+	bestiary_panel.add_child(bg)
+	var title = Label.new()
+	title.text = "BESTIARIO"
+	title.position = Vector2(370, 135)
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	bestiary_panel.add_child(title)
+
+func toggle_bestiary_panel() -> void:
+	bestiary_panel.visible = not bestiary_panel.visible
+	if bestiary_panel.visible:
+		_refresh_bestiary_panel()
+		bag_panel.visible = false
+		cloth_panel.visible = false
+		skills_panel.visible = false
+
+func _refresh_bestiary_panel() -> void:
+	for c in bestiary_panel.get_children():
+		if c is Label and c.text != "BESTIARIO":
+			c.queue_free()
+	var y := 180.0
+	var seen := 0
+	for t in GameManager.BESTIARY_INFO:
+		var info: Dictionary = GameManager.BESTIARY_INFO[t]
+		var kills: int = GameManager.bestiary_count(t)
+		if kills > 0:
+			seen += 1
+			var l = _make_label(Vector2(370, y), 14, Color(0.9, 0.9, 0.95))
+			l.text = "%s — %d derrotado(s)   (%s)" % [info["nome"], kills, info["onde"]]
+			bestiary_panel.add_child(l)
+			y += 22
+			var d = _make_label(Vector2(384, y), 12, Color(0.6, 0.65, 0.7))
+			d.text = info["desc"]
+			bestiary_panel.add_child(d)
+			y += 24
+		else:
+			# nunca derrotado: fica oculto (estilo Tibia — descobre caçando)
+			var l = _make_label(Vector2(370, y), 14, Color(0.45, 0.45, 0.5))
+			l.text = "??? — monstro ainda nao enfrentado"
+			bestiary_panel.add_child(l)
+			y += 24
+	var foot = _make_label(Vector2(370, y + 8), 13, Color(0.95, 0.75, 0.4))
+	foot.text = "Descobertos: %d de %d" % [seen, GameManager.BESTIARY_INFO.size()]
+	bestiary_panel.add_child(foot)
+	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
+	hint.text = "N para fechar"
+	bestiary_panel.add_child(hint)
+
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
@@ -777,3 +837,6 @@ func _unhandled_input(event: InputEvent) -> void:
 					qnpc.open()
 				else:
 					_show_feedback("Procure o MESTRE DAS MISSOES na cidade (marcado no mapa)!")
+		elif event.keycode == KEY_N:
+			AudioManager.play_sfx("ui_click")
+			toggle_bestiary_panel()
