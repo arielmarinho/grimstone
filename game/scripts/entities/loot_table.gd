@@ -15,6 +15,7 @@ const TABLES = {
 		{"id": "moeda", "chance": 1.0, "min": 5, "max": 12},
 		{"id": "pocao_vida_p", "chance": 0.25, "min": 1, "max": 1},
 		{"id": "pocao_mana_p", "chance": 0.15, "min": 1, "max": 1},
+		{"id": "runa_cura", "chance": 0.04, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.2, "min": 1, "max": 3},
 	],
 	"bat": [
@@ -40,6 +41,7 @@ const TABLES = {
 		{"id": "moeda", "chance": 1.0, "min": 20, "max": 40},
 		{"id": "pocao_vida_p", "chance": 0.3, "min": 1, "max": 1},
 		{"id": "pocao_vida_m", "chance": 0.12, "min": 1, "max": 1},
+		{"id": "runa_trovoada", "chance": 0.05, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.35, "min": 2, "max": 5},
 		{"id": "espada", "chance": 0.06, "min": 1, "max": 1},
 	],
@@ -54,6 +56,8 @@ const TABLES = {
 		{"id": "pocao_mana_m", "chance": 0.4, "min": 1, "max": 1},
 		{"id": "pocao_mana_g", "chance": 0.1, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.4, "min": 3, "max": 6},
+		{"id": "runa_fogo", "chance": 0.08, "min": 1, "max": 1},
+		{"id": "runa_gelo", "chance": 0.06, "min": 1, "max": 1},
 		{"id": "cajado", "chance": 0.08, "min": 1, "max": 1},
 	],
 }

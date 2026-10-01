@@ -14,6 +14,11 @@ const ITEMS = {
 	"pocao_mana_m": {"nome": "Frasco de Mana M", "tipo": "uso", "cor": Color(0.25, 0.4, 0.95), "mana": 120, "desc": "Recupera 120 Mana"},
 	"pocao_mana_g": {"nome": "Frasco de Mana G", "tipo": "uso", "cor": Color(0.2, 0.35, 1.0), "mana": 250, "desc": "Recupera 250 Mana"},
 	"flecha": {"nome": "Flechas", "tipo": "municao", "cor": Color(0.72, 0.58, 0.36), "desc": "Municao do arco"},
+	# ----- runas (estilo Tibia): magia guardada em pedra, qualquer classe usa, NAO gasta mana -----
+	"runa_fogo": {"nome": "Runa de Fogo", "tipo": "runa", "cor": Color(0.95, 0.45, 0.15), "desc": "Bola de fogo no monstro mais proximo (dano fixo + magia)"},
+	"runa_gelo": {"nome": "Runa de Gelo", "tipo": "runa", "cor": Color(0.4, 0.75, 0.95), "desc": "Congela o monstro mais proximo (dano + atordoa 2s)"},
+	"runa_trovoada": {"nome": "Runa da Trovoada", "tipo": "runa", "cor": Color(0.95, 0.9, 0.3), "desc": "Raio em area ao seu redor (dano em todos)"},
+	"runa_cura": {"nome": "Runa de Cura", "tipo": "runa", "cor": Color(0.35, 0.9, 0.45), "desc": "Recupera 40% do HP maximo"},
 	"espada": {"nome": "Espada", "tipo": "arma", "arma": "sword", "cor": Color(0.8, 0.82, 0.86)},
 	"machado": {"nome": "Machado", "tipo": "arma", "arma": "axe", "cor": Color(0.75, 0.77, 0.8)},
 	"arco": {"nome": "Arco", "tipo": "arma", "arma": "bow", "cor": Color(0.55, 0.4, 0.22)},
@@ -77,6 +82,21 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 				_ellipse(img2, cx, cy + 2, size * 0.22, size * 0.26, Color(0.2, 0.2, 0.25))
 				_ellipse(img2, cx, cy + 3, size * 0.17, size * 0.2, c)
 				_ellipse(img2, cx - 2, cy - 1, 2, 2, Color(1, 1, 1, 0.5))
+		"runa":
+			# pedra rúnica: losango de pedra com glifo na cor do elemento
+			for j in range(size):
+				for i in range(size):
+					var dx = absf(i - cx) / (size * 0.3)
+					var dy = absf(j - cy) / (size * 0.36)
+					if dx + dy <= 1.0:
+						var shade = 0.42 + 0.14 * (1.0 - dx - dy)
+						img2.set_pixel(i, j, Color(shade, shade * 0.96, shade * 0.9))
+			# glifo central (raio) na cor da runa
+			_rect(img2, int(cx) - 1, int(cy - size * 0.18), 3, int(size * 0.2), c)
+			_rect(img2, int(cx - 3), int(cy - size * 0.06), 3, 2, c)
+			_rect(img2, int(cx), int(cy + size * 0.02), 3, int(size * 0.16), c)
+			_ellipse(img2, cx + 2, cy - size * 0.16, 2, 2, c)
+			_ellipse(img2, cx - 2, cy + size * 0.16, 2, 2, c)
 		"municao":
 			for i in range(int(size * 0.5)):
 				_rect(img2, int(cx - size * 0.3) + i, int(cy + size * 0.3) - i, 2, 2, c)
