@@ -33,6 +33,9 @@ static func load_sheet_procedural_custom(path: String, weapon: String, hair: Str
 static func load_sheet_custom(path: String, weapon: String, hair: String, tunic: String, pants: String = "marrom") -> Array[Texture2D]:
 	var img := _load_image(path)
 	if img != null:
+		# recolore o PNG real se a cor escolhida nao e a base (tunica/cabelo)
+		if tunic != "castanho" or hair != "castanho":
+			img = _recolor_real(img, hair, tunic)
 		var out: Array[Texture2D] = []
 		var fw = img.get_width() / 4
 		for i in range(4):
@@ -41,6 +44,33 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 		return out
 	CURRENT_PANTS = pants
 	return _procedural(path, weapon, hair, tunic)
+
+# recolore a arte REAL do knight: troca os pixels da tunica/cabelo pela cor escolhida
+static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
+	var base_tunic := [Color(0.6, 0.36, 0.2), Color(0.47, 0.26, 0.14), Color(0.53, 0.31, 0.18)]
+	var base_hair := Color(0.29, 0.17, 0.14)
+	var new_tunic := Color(0.6, 0.36, 0.2)
+	if Equips.CLOTHES_COLORS.has(tunic):
+		new_tunic = Equips.CLOTHES_COLORS[tunic]
+	var new_hair := base_hair
+	if hair != "castanho" and Equips.CLOTHES_COLORS.has(hair):
+		new_hair = Equips.CLOTHES_COLORS[hair]
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			var c = img.get_pixel(x, y)
+			if c.a < 0.1:
+				continue
+			# tunica: tons de marrom medio/escuro na faixa do tronco
+			for bt in base_tunic:
+				if absf(c.r - bt.r) < 0.09 and absf(c.g - bt.g) < 0.09 and absf(c.b - bt.b) < 0.09:
+					var shade: float = c.r / maxf(bt.r, 0.01)
+					img.set_pixel(x, y, Color(new_tunic.r * shade, new_tunic.g * shade, new_tunic.b * shade, c.a))
+					break
+			# cabelo: tons castanho escuro no topo
+			if absf(c.r - base_hair.r) < 0.07 and absf(c.g - base_hair.g) < 0.07 and absf(c.b - base_hair.b) < 0.07:
+				var shade2: float = c.r / maxf(base_hair.r, 0.01)
+				img.set_pixel(x, y, Color(new_hair.r * shade2, new_hair.g * shade2, new_hair.b * shade2, c.a))
+	return img
 
 static func _strip_magenta(img: Image) -> Image:
 	img.convert(Image.FORMAT_RGBA8)
@@ -107,13 +137,14 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		bob = [0, 1, 0, 1][f]
 	elif not is_attack and not is_death:
 		bob = [0, 1, 1, 0][f]
-	var hair := Color(0.42, 0.28, 0.14)
+	# CORES DA ARTE REAL (extraidas do knight_idle_down_base.png — identidade visual)
+	var hair := Color(0.29, 0.17, 0.14)  # castanho escuro do cabelo real
 	if hair_color != "castanho" and Equips.CLOTHES_COLORS.has(hair_color):
 		hair = Equips.CLOTHES_COLORS[hair_color]
-	var skin := Color(0.88, 0.72, 0.58)
-	var skin_sh := Color(0.78, 0.6, 0.46)
-	var tunic := Color(0.58, 0.4, 0.22)
-	var tunic_d := Color(0.48, 0.32, 0.17)
+	var skin := Color(0.98, 0.73, 0.53)  # pele da arte real
+	var skin_sh := Color(0.85, 0.6, 0.42)
+	var tunic := Color(0.6, 0.36, 0.2)   # tunica marrom da arte real
+	var tunic_d := Color(0.47, 0.26, 0.14)
 	if tunic_color != "castanho" and Equips.CLOTHES_COLORS.has(tunic_color):
 		tunic = Equips.CLOTHES_COLORS[tunic_color]
 		tunic_d = tunic.darkened(0.2)
