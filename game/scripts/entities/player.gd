@@ -1,11 +1,12 @@
 extends CharacterBody2D
-## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E, flechas,
-## critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
-## POLISH: arte REAL em todas as direcoes (nunca procedural)
+## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
+## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const SKILLS = preload("res://scripts/autoload/skills_db.gd")
+
+signal feedback(msg: String)
 
 const SPEED = 260.0
 
@@ -23,14 +24,21 @@ var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
 
-# skills ativas (estilo Rucoy)
-var skill_ready := {"Q": true, "E": true}
-var skill_cd := {"Q": 0.0, "E": 0.0}
+# skills ativas (estilo Rucoy) — Q/E basicas, R/G avancadas (desbloqueia na city2)
+var skill_ready := {"Q": true, "E": true, "R": true, "G": true}
+var skill_cd := {"Q": 0.0, "E": 0.0, "R": 0.0, "G": 0.0}
 var buff_golpe: int = 0
 var buff_furia_time: float = 0.0
 var buff_certeiro: bool = false
+var buff_duplo: int = 0
+var buff_bersek_time: float = 0.0
+var buff_precisao: int = 0
+var buff_escudo_time: float = 0.0
+var buff_grito_time: float = 0.0
+var buff_perfurante: bool = false
 
 var _last_level: int = 1
+var _regen_timer: float = 0.0
 
 # POLISH: TODAS as animacoes usam a arte REAL (folhas down existentes).
 # flip_h cobre esquerda/direita; up reutiliza a arte de frente (nunca procedural).
@@ -90,7 +98,7 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color, pants_color)
+		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -121,10 +129,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		var weapons = ["sword", "axe", "bow", "staff"]
 		if event.keycode >= KEY_1 and event.keycode <= KEY_4:
 			var idx = event.keycode - KEY_1
-			if idx < weapons.size() and weapons[idx] != weapon:
+			var base = GameManager.weapon_base()
+			if idx < weapons.size() and weapons[idx] != base:
+				# troca de arma: perde o tier (tier vem do item dropado, teclas 1-4 = arma comum)
 				weapon = weapons[idx]
+				GameManager.weapon = weapon
 				_build_frames()
-				print("arma: ", EQUIPS.WEAPONS[weapon]["nome"], " (", EQUIPS.WEAPONS[weapon]["classe"], ")")
+				print("arma: ", EQUIPS.WEAPONS[GameManager.weapon_base()]["nome"], " (", EQUIPS.WEAPONS[GameManager.weapon_base()]["classe"], ")")
 		if event.keycode == KEY_T:
 			var cores = EQUIPS.CLOTHES_COLORS.keys()
 			var i = cores.find(tunic_color)
@@ -144,6 +155,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_use_skill("Q")
 		if event.keycode == KEY_E:
 			_use_skill("E")
+		if event.keycode == KEY_R:
+			_use_skill("R")
+		if event.keycode == KEY_G:
+			_use_skill("G")
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var world_pos = get_global_mouse_position()
@@ -157,19 +172,29 @@ func _unhandled_input(event: InputEvent) -> void:
 				break
 
 # ---------- SKILLS (estilo Rucoy) ----------
+func _skill_for_slot(slot: String) -> Dictionary:
+	var list = SKILLS.SKILLS.get(weapon, [])
+	for sk in list:
+		if sk["tecla"] == slot:
+			return sk
+	return {}
+
 func _use_skill(slot: String) -> void:
 	if dead or not skill_ready[slot]:
 		return
-	var list = SKILLS.SKILLS.get(weapon, [])
-	if list.is_empty():
+	var sk = _skill_for_slot(slot)
+	if sk.is_empty():
 		return
-	var sk = list[0] if slot == "Q" else list[1]
+	if not SKILLS.skill_unlocked(sk):
+		_show_feedback("%s desbloqueia ao chegar na VILA (city2)!" % sk["nome"])
+		return
 	if GameManager.mana < sk["mana"]:
-		print("mana insuficiente para ", sk["nome"])
+		_show_feedback("Mana insuficiente para %s (%d)" % [sk["nome"], sk["mana"]])
 		return
 	GameManager.mana -= sk["mana"]
 	skill_ready[slot] = false
 	skill_cd[slot] = sk["cd"]
+	AudioManager.play_sfx("cast")
 	match sk["id"]:
 		"golpe":
 			buff_golpe = 3
@@ -180,10 +205,10 @@ func _use_skill(slot: String) -> void:
 			buff_furia_time = 8.0
 			print("FURIA! +80% dano por 8s")
 		"atordoar":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				mob.stunned = 3.0
-				mob.take_damage(EQUIPS.WEAPONS[weapon]["dano"] * 2)
+				mob.take_damage(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2)
 				print("ATORDOADO!")
 		"certeiro":
 			buff_certeiro = true
@@ -192,21 +217,112 @@ func _use_skill(slot: String) -> void:
 			GameManager.arrows = max(0, GameManager.arrows - 5)
 			_skill_aoe(1.5)
 		"fogo":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				var proj = preload("res://scripts/entities/projectile.gd").new()
-				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
+				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
 				proj.setup(global_position, mob.global_position, dmg, "staff", false, true)
 				get_parent().add_child(proj)
 		"cura":
 			var cura = int(GameManager.hp_max * 0.4)
 			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
 			print("CURA! +", cura, " HP")
-	GameManager.add_skill_xp(EQUIPS.WEAPONS[weapon]["skill"], 10)
+		# ----- skills avancadas (city2) -----
+		"investida":
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"] * 1.5)
+			if mob != null:
+				var dir = (mob.global_position - global_position).normalized()
+				global_position = mob.global_position - dir * 60.0
+				_update_facing(dir)
+				mob.take_damage(int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5))
+				print("INVESTIDA!")
+			else:
+				print("nenhum alvo para a investida")
+		"terremoto":
+			_skill_aoe_stun(2.5, 2.0)
+		"golpe_duplo":
+			buff_duplo = 2
+			print("GOLPE DUPLO armado!")
+		"bersek":
+			buff_bersek_time = 10.0
+			print("BERSERK! +150% dano por 10s")
+		"precisao":
+			buff_precisao = 3
+			print("PRECISAO! proximas 3 flechas sao criticas")
+		"tiro_multi":
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
+			if mob != null:
+				if GameManager.arrows < 2:
+					print("sem flechas!")
+					skill_ready[slot] = true
+					skill_cd[slot] = 0.0
+					GameManager.mana += sk["mana"]
+					return
+				GameManager.arrows -= 2
+				var proj = preload("res://scripts/entities/projectile.gd").new()
+				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5)
+				proj.setup(global_position, mob.global_position, dmg, "bow", false)
+				get_parent().add_child(proj)
+				# explosao em area no impacto: marca o alvo
+				_multi_target = mob
+				print("TIRO MULTIPLO!")
+			else:
+				print("nenhum alvo")
+		"escudo":
+			buff_escudo_time = 10.0
+			print("ESCUDO ARCANO! -50% dano por 10s")
+		"nevasca":
+			_skill_aoe_stun(2.2, 1.5, 2.0)
+		# ----- skills avancadas v2 (R/G, desbloqueiam na VILA) -----
+		"duplo":
+			buff_duplo = 2
+			print("GOLPE DUPLO armado! proximos 2 golpes acertam 2x")
+		"grito":
+			buff_grito_time = 12.0
+			print("GRITO DE GUERRA! +50%% dano por 12s")
+		"giratorio":
+			_skill_aoe(3.0)
+		"sangue_frio":
+			var cura = int(GameManager.hp_max * 0.3)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
+			print("SANGUE FRIO! +", cura, " HP")
+		"perfurante":
+			buff_perfurante = true
+			print("FLECHA PERFURANTE armada! proxima flecha causa 4x")
+		"chuva_p":
+			if GameManager.arrows < 8:
+				print("sem flechas suficientes (precisa de 8)!")
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				GameManager.mana += sk["mana"]
+				return
+			GameManager.arrows -= 8
+			_skill_aoe(2.5)
+		"nova":
+			_skill_aoe_stun(2.0, 2.0)
+		"cura_m":
+			var cura2 = int(GameManager.hp_max * 0.7)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura2)
+			print("CURA MAIOR! +", cura2, " HP")
+	GameManager.add_skill_xp(EQUIPS.WEAPONS[GameManager.weapon_base()]["skill"], 10)
+
+var _multi_target = null
+
+func _skill_aoe_stun(mult: float, stun_time: float, dmg_mult: float = 1.0) -> void:
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	var dmg_base = int(w["dano"] * GameManager.weapon_dano_mult() * mult * dmg_mult)
+	var hit_any := false
+	for mob in get_tree().get_nodes_in_group("mobs"):
+		if not mob.dead and mob.global_position.distance_to(global_position) < 220.0:
+			mob.stunned = stun_time
+			mob.take_damage(dmg_base)
+			hit_any = true
+	if hit_any:
+		print("AREA! dano x%.1f + atordoados %.0fs" % [mult * dmg_mult, stun_time])
 
 func _skill_aoe(mult: float) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	var dmg_base = int(w["dano"] * mult)
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	var dmg_base = int(w["dano"] * GameManager.weapon_dano_mult() * mult)
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if not mob.dead and mob.global_position.distance_to(global_position) < 200.0:
 			var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
@@ -234,6 +350,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if GameManager.level > _last_level:
 		_last_level = GameManager.level
+		AudioManager.play_sfx("level_up")
 		_notify_level_up()
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	for slot in skill_cd:
@@ -243,12 +360,40 @@ func _physics_process(delta: float) -> void:
 				skill_ready[slot] = true
 	if buff_furia_time > 0.0:
 		buff_furia_time -= delta
+	if buff_bersek_time > 0.0:
+		buff_bersek_time -= delta
+	if buff_escudo_time > 0.0:
+		buff_escudo_time -= delta
+	if buff_grito_time > 0.0:
+		buff_grito_time -= delta
+	# REGEN estilo Tibia: mana sempre (lenta), HP so fora de combate
+	_regen_timer += delta
+	if _regen_timer >= 2.0:
+		_regen_timer = 0.0
+		var in_combat := false
+		for m in get_tree().get_nodes_in_group("mobs"):
+			if not m.dead and not m.dying and m.state == "attack" and global_position.distance_to(m.global_position) < 400.0:
+				in_combat = true
+				break
+		# comida/energia: bem alimentado = regen 2x mais rapido (mana e HP fora de combate)
+		var regen_mult := 2.0 if GameManager.well_fed_time > 0.0 else 1.0
+		GameManager.well_fed_time = max(0.0, GameManager.well_fed_time - 2.0)
+		if GameManager.mana < GameManager.mana_max:
+			GameManager.mana = min(GameManager.mana_max, GameManager.mana + int(ceil((1 + GameManager.level / 10) * regen_mult)))
+		if not in_combat and GameManager.hp < GameManager.hp_max:
+			# fora de combate cura rapido (estilo Rucoy): ~5% do max a cada 2s
+			var heal = max(3, int(GameManager.hp_max * 0.05 * regen_mult))
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + heal)
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
 		return
 
-	var w = EQUIPS.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	# touch (Android): joystick virtual define direcao continua (estilo Rucoy)
+	if TouchControls.joy_vec.length() > 0.2:
+		moving = true
+		target = global_position + TouchControls.joy_vec * 100.0
 	var dist = global_position.distance_to(target)
 	if moving and dist > 6.0:
 		var dir = (target - global_position).normalized()
@@ -299,25 +444,39 @@ func _play(base: String) -> void:
 		sprite.play(anim)
 
 func _attack(mob) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
 	# arco gasta flechas
-	if weapon == "bow":
+	if GameManager.weapon_base() == "bow":
 		if GameManager.arrows <= 0:
-			print("sem flechas! compre na loja")
+			_show_feedback("Sem flechas! Compre na loja.")
 			return
 		GameManager.arrows -= 1
+	if w["tipo"] == "melee":
+		AudioManager.play_sfx("hit")
+	else:
+		AudioManager.play_sfx("shoot" if GameManager.weapon_base() == "bow" else "cast")
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]
 	_play("attack")
-	var dmg: int = w["dano"] + randi() % 5 - 2
+	var dmg: int = int((w["dano"] + randi() % 5 - 2) * GameManager.weapon_dano_mult())
 	if buff_furia_time > 0.0:
 		dmg = int(dmg * 1.8)
+	if buff_bersek_time > 0.0:
+		dmg = int(dmg * 2.5)
+	if buff_grito_time > 0.0:
+		dmg = int(dmg * 1.5)
+	if buff_perfurante and GameManager.weapon_base() == "bow":
+		dmg *= 4
+		buff_perfurante = false
 	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
 	var crit := false
-	if buff_certeiro and weapon == "bow":
+	if buff_certeiro and GameManager.weapon_base() == "bow":
 		crit = true
 		buff_certeiro = false
+	elif buff_precisao > 0 and GameManager.weapon_base() == "bow":
+		crit = true
+		buff_precisao -= 1
 	else:
 		crit = randf() < SKILLS.crit_chance(skill_lv)
 	if buff_golpe > 0:
@@ -325,32 +484,66 @@ func _attack(mob) -> void:
 		buff_golpe = 0
 	if crit:
 		dmg *= 2
-	if w["tipo"] == "melee":
-		await get_tree().create_timer(0.3).timeout
-		if not dead and is_instance_valid(mob) and not mob.dead:
+	var hits := 1
+	if buff_duplo > 0 and w["tipo"] == "melee":
+		hits = 2
+		buff_duplo -= 1
+	for h in range(hits):
+		if w["tipo"] == "melee":
+			await get_tree().create_timer(0.3).timeout
+			if dead:
+				return
+			if is_instance_valid(mob) and not mob.dead:
+				GameManager.add_skill_xp(w["skill"], 4)
+				mob.take_damage(dmg)
+				if crit:
+					_spawn_crit_text(mob.global_position)
+		else:
+			await get_tree().create_timer(0.25).timeout
+			if dead:
+				return
+			var tgt = mob.global_position if is_instance_valid(mob) else global_position
+			var proj = preload("res://scripts/entities/projectile.gd").new()
+			proj.setup(global_position, tgt, dmg, "bow" if GameManager.weapon_base() == "bow" else "staff", crit)
+			get_parent().add_child(proj)
 			GameManager.add_skill_xp(w["skill"], 4)
-			mob.take_damage(dmg)
-			if crit:
-				_spawn_crit_text(mob.global_position)
-	else:
-		await get_tree().create_timer(0.25).timeout
-		if dead:
-			return
-		var proj = preload("res://scripts/entities/projectile.gd").new()
-		proj.setup(global_position, mob.global_position, dmg, "bow" if weapon == "bow" else "staff", crit)
-		get_parent().add_child(proj)
-		GameManager.add_skill_xp(w["skill"], 4)
+			# tiro multiplo: explosao em area ao redor do alvo
+			if _multi_target != null and is_instance_valid(_multi_target) and not _multi_target.dead:
+				for m2 in get_tree().get_nodes_in_group("mobs"):
+					if m2 != _multi_target and not m2.dead and m2.global_position.distance_to(_multi_target.global_position) < 150.0:
+						m2.take_damage(int(dmg * 0.6))
+			_multi_target = null
+
+func _show_feedback(msg: String) -> void:
+	feedback.emit(msg)
 
 func take_damage(amount: int) -> void:
 	if dead:
 		return
+	if buff_escudo_time > 0.0:
+		amount = int(amount * 0.5)
 	GameManager.hp = max(0, GameManager.hp - amount)
+	AudioManager.play_sfx("player_hurt")
+	_flash_hurt()
 	GameManager.add_skill_xp("defesa", 2)
 	if GameManager.hp <= 0:
 		die()
+
+func _flash_hurt() -> void:
+	# flash vermelho no player + tremida curta na camera (feedback de dano)
+	sprite.modulate = Color(2.5, 0.6, 0.6)
+	var tw = create_tween()
+	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.18)
+	var cam = get_node_or_null("Camera")
+	if cam:
+		var tw2 = create_tween()
+		tw2.tween_property(cam, "offset", Vector2(4, -3), 0.04)
+		tw2.tween_property(cam, "offset", Vector2(-4, 2), 0.04)
+		tw2.tween_property(cam, "offset", Vector2.ZERO, 0.05)
 
 func die() -> void:
 	dead = true
 	velocity = Vector2.ZERO
 	_play("death")
+	AudioManager.play_sfx("player_death")
 	print("player morreu")
