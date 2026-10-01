@@ -97,21 +97,20 @@ func _apply_type() -> void:
 	damage = t["dano"]
 	xp_reward = t["xp"]
 
-# POLISH: arte REAL em todas as direcoes (folhas down existentes; flip_h cobre os lados)
+# ANIMS com paths up/side REAIS — o procedural desenha cada direcao do mob
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
-	"idle_up": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
-	"idle_side": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
+	"idle_up": "res://assets/sprites/animation/enemy/rat/idle/up/rat_idle_up.png",
+	"idle_side": "res://assets/sprites/animation/enemy/rat/idle/side/rat_idle_side.png",
 	"walk_down": "res://assets/sprites/animation/enemy/rat/walk/down/rat_walk_down.png",
-	"walk_up": "res://assets/sprites/animation/enemy/rat/walk/down/rat_walk_down.png",
-	"walk_side": "res://assets/sprites/animation/enemy/rat/walk/down/rat_walk_down.png",
+	"walk_up": "res://assets/sprites/animation/enemy/rat/walk/up/rat_walk_up.png",
+	"walk_side": "res://assets/sprites/animation/enemy/rat/walk/side/rat_walk_side.png",
 	"attack_down": "res://assets/sprites/animation/enemy/rat/attack/down/rat_attack_down.png",
-	"attack_up": "res://assets/sprites/animation/enemy/rat/attack/down/rat_attack_down.png",
-	"attack_side": "res://assets/sprites/animation/enemy/rat/attack/down/rat_attack_down.png",
+	"attack_up": "res://assets/sprites/animation/enemy/rat/attack/up/rat_attack_up.png",
+	"attack_side": "res://assets/sprites/animation/enemy/rat/attack/side/rat_attack_side.png",
 	"death": "res://assets/sprites/animation/enemy/rat/death/down/rat_death_down.png",
 }
-# paths dos sprites de monstro (compartilhados entre tipos — o procedural roteia por CURRENT_MOB)
-# NOTA: os PNGs do rato so existem pra "down" (up/side caem no procedural, que agora desenha o rato)
+# paths compartilhados entre tipos — o procedural roteia por CURRENT_MOB
 
 func _build_frames() -> void:
 	# roteia o sprite procedural pro tipo certo (paths sao compartilhados)
