@@ -1,7 +1,6 @@
 extends CanvasLayer
-## HUD polido: barras com NUMEROS (hp/mana/xp), moedas, classe, skills,
-## mochila (tecla B) com uso de itens, hotbar de armas (1-4), tela de morte
-## Painéis são EXCLUSIVOS: abrir um fecha o outro
+## HUD polido: barras com NUMEROS, moedas, classe, skills,
+## mochila (B) exclusiva, hotbar (1-4), tela de morte, painel roupas (C)
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -39,8 +38,8 @@ func _ready() -> void:
 	class_label = _make_label(Vector2(20, 114), 14, Color(1.0, 0.85, 0.4))
 	skills_label = _make_label(Vector2(20, 136), 12, Color(0.8, 0.9, 1.0))
 	coins_label = _make_label(Vector2(20, 158), 14, Color(0.95, 0.8, 0.25))
-	hint_label = _make_label(Vector2(360, 620), 13, Color(1, 1, 1, 0.9))
-	hint_label.text = "Objetivo: desça pelo BUEIRO (grade no chao, ao sul da fonte)"
+	hint_label = _make_label(Vector2(400, 600), 13, Color(1, 1, 1, 0.9))
+	hint_label.text = "Objetivo: desca pelo BUEIRO (grade ao sul da fonte)"
 	_build_hotbar()
 	_build_bag()
 	_build_death_screen()
@@ -81,9 +80,8 @@ func _process(_delta: float) -> void:
 			death_screen.visible = true
 		elif not player_ref.dead and death_screen.visible:
 			death_screen.visible = false
-		# dica some quando o player chega perto do bueiro
 		if GameManager.current_map == "city1":
-			hint_label.visible = player_ref.global_position.distance_to(Vector2(512, 800)) > 120.0
+			hint_label.visible = player_ref.global_position.distance_to(Vector2(1024, 1600)) > 240.0
 		else:
 			hint_label.visible = false
 	coins_label.text = "Moedas: %d" % GameManager.coins
@@ -147,7 +145,7 @@ func _process_hotbar_highlight() -> void:
 		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- MOCHILA (tecla B) — centro da tela, exclusiva ----------
+# ---------- MOCHILA (tecla B) — centro, exclusiva ----------
 func _build_bag() -> void:
 	bag_panel = Control.new()
 	bag_panel.visible = false
@@ -333,12 +331,12 @@ func _set_hair(c: String) -> void:
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
-		bag_panel.visible = false  # exclusivo
+		bag_panel.visible = false
 
 func toggle_bag() -> void:
 	bag_panel.visible = not bag_panel.visible
 	if bag_panel.visible:
-		cloth_panel.visible = false  # exclusivo
+		cloth_panel.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
