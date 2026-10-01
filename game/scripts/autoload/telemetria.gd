@@ -5,8 +5,6 @@ extends Node
 ## (F12 é volume no Mac — tecla trocada pra P)
 ## Screenshot vai em CHUNKS pequenos (parte/total) + evento fim com diagnóstico
 ## — o canal do Grimstone filtra payloads base64 grandes, então dividimos.
-## v2: screenshot REDUZIDO (480px JPEG q55) + chunks de 380 chars + shot_id
-## — cai de ~950 chunks para ~40-60 por captura (transmissão em ~1 min).
 
 const WEBHOOK := "https://maestro.adapta.one/webhooks/generic/17b615cef93bd3dacaa1b07ca67dfa9aaa5111c5906f2c836ff10f9499676b14"
 const SECRET := "2219110b7a55954b7673eace1d7f2b37c4836adb3ae5f1bf1fdb3a070ae6da85"
@@ -16,8 +14,7 @@ var auto_interval := 0.0
 var auto_timer := 0.0
 var busy := false
 var erros_sessao: Array[String] = []
-var shot_seq := 0
-const CHUNK := 380
+var shot_id := 0
 
 func _ready() -> void:
 	http = HTTPRequest.new()
@@ -79,36 +76,33 @@ func _enviar(origem: String) -> void:
 	var img := get_viewport().get_texture().get_image()
 	var b64 := ""
 	if img != null:
-		# reduz pra 480px de largura e comprime em JPEG — screenshot leve
+		# downscale pra 480px de largura + JPEG q60: ~15-25KB em vez de ~240KB
 		var w := img.get_width()
-		var h := img.get_height()
 		if w > 480:
-			var nh := int(h * 480.0 / w)
-			img.resize(480, nh, Image.INTERPOLATE_BILINEAR)
-		var jpg := img.save_jpg_to_buffer(55)
+			var h := int(img.get_height() * 480.0 / w)
+			img.resize(480, h, Image.INTERPOLATE_BILINEAR)
+		var jpg := img.save_jpg_to_buffer(0.6)
 		b64 = Marshalls.raw_to_base64(jpg)
-	shot_seq += 1
-	var shot_id := "%d_%d" % [Time.get_unix_time_from_system() as int, shot_seq]
-	# envia em chunks de 380 chars (limite validado do filtro do canal)
-	var total := maxi(1, ceili(b64.length() / float(CHUNK)))
+	shot_id += 1
+	# envia em chunks de 380 chars (limite seguro do filtro do Grimstone)
+	var total := maxi(1, ceili(b64.length() / 380.0))
 	var i := 0
 	while i < b64.length():
-		var part := b64.substr(i, CHUNK)
+		var part := b64.substr(i, 380)
 		_post({
 			"comando": "telemetria_chunk",
 			"origem": origem,
-			"shot_id": shot_id,
-			"part": (i / CHUNK) + 1,
+			"shot": shot_id,
+			"part": (i / 380) + 1,
 			"total": total,
 			"data": part,
 		})
 		await http.request_completed
-		i += CHUNK
+		i += 380
 	# evento fim com o diagnóstico
 	_post({
 		"comando": "telemetria_fim",
 		"origem": origem,
-		"shot_id": shot_id,
 		"total": total,
 		"diagnostico": JSON.stringify(_estado()),
 	})
