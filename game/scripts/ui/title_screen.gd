@@ -100,9 +100,9 @@ func _ready() -> void:
 	ip_input.text = "127.0.0.1"
 	ip_input.add_theme_font_size_override("font_size", 14)
 	add_child(ip_input)
-	# versao
+	# versao (fonte unica: GameManager.GAME_VERSION)
 	var ver = Label.new()
-	ver.text = "v0.6.17"
+	ver.text = "v%s" % GameManager.GAME_VERSION
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
