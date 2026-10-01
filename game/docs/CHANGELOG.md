@@ -4,6 +4,15 @@
 - Validado Godot headless: 0 erros de script
 - Proximo: teste real multiplayer (2 clientes + servidor) + teste no Mac
 
+## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
+
+- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
+- FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
+- NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
+- TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
+- Validado: Godot headless --import 0 erros de script
+- Proximo: mobs autoritativos no servidor, teste no Mac do usuario
+
 ## 2026-10-01 — v0.5.0 (ciclo 10: Area 9 Multiplayer — integracao completa)
 
 - RemotePlayer novo (scripts/entities/remote_player.gd): avatar visual de outro player — sprite procedural com a APARENCIA dele (arma/cabelo/tunica/calca), nome em cima, interpolacao suave do snapshot 15Hz (teleport se >300px)
@@ -83,11 +92,3 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.4.1 (ciclo 3: skills R/G v2 completas + fix de unlock)
 
 - `2f380d0` Skills avancadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
-
-## 2026-10-01 — v0.5.2 (ciclo 12: Área 11 teste de rede localhost + fixes críticos)
-
-- FIX CRÍTICO main.gd:86: `NetworkManager._on_server_lost.connect(...)` conectava um MÉTODO como se fosse sinal — parse error que quebrava o main.gd INTEIRO. Criado sinal próprio `server_lost` no NetworkManager.
-- FIX network_manager.gd: `is_online()` agora exige `active` + CONNECTION_CONNECTED — modo offline não tenta mais RPC (fim do spam "RPC '_rpc_position' on yourself").
-- NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness quando o arg existe). Valida registro, chat e relay de posição.
-- Teste executado headless: conexão ENet OK, registro dos 2 clientes OK, chat OK. PENDENTE próximo ciclo: relay de posição entre clientes (server perde a entrada do 1º player no dict `players` — "registrou — 1 online" duas vezes).
-- Validado Godot headless: 0 erros de script.
