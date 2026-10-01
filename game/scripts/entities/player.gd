@@ -340,7 +340,7 @@ func _use_skill(slot: String) -> void:
 			print("GRITO DE GUERRA! +30% dano por 10s")
 		"perfurante":
 			buff_perfurante = true
-			print("FLECHA PERFURANTE armado!")
+			print("FLECHA PERFURANTE armada!")
 		"meteoro":
 			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
