@@ -583,6 +583,7 @@ func _build_cloth_panel() -> void:
 		var st2 = StyleBoxFlat.new()
 		st2.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
 		st2.set_corner_radius_all(6)
+		sw2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
 		cloth_panel.add_child(sw2)
 	var pcores = EQUIPS.PANTS_COLORS.keys()
@@ -594,6 +595,7 @@ func _build_cloth_panel() -> void:
 		var st3 = StyleBoxFlat.new()
 		st3.bg_color = EQUIPS.PANTS_COLORS[p_name]
 		st3.set_corner_radius_all(6)
+		sw3.add_theme_stylebox_override("normal", st3)
 		sw3.pressed.connect(_set_pants.bind(p_name))
 		cloth_panel.add_child(sw3)
 	var hint = _make_label(Vector2(430, 560), 12, Color(0.7, 0.7, 0.75))
