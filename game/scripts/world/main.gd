@@ -3,6 +3,7 @@ extends Node2D
 ## Cidade tem bueiro; ao andar até ele, desce pra caverna. Na caverna, a grade sobe.
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+const COLLIDERS = preload("res://scripts/world/colliders.gd")
 
 const MAPS = {
 	"city1": {
@@ -23,6 +24,7 @@ const MAPS = {
 
 var current: String = ""
 var switching: bool = false
+var _respawning: bool = false
 
 func _ready() -> void:
 	GameManager.load_game()
@@ -34,7 +36,19 @@ func _ready() -> void:
 	$HUD.set_player($Player)
 
 func _physics_process(_delta: float) -> void:
-	if switching or player.dead:
+	if switching:
+		return
+	if player.dead:
+		if not _respawning:
+			_respawning = true
+			await get_tree().create_timer(3.0).timeout
+			if is_instance_valid(player) and player.dead:
+				GameManager.hp = GameManager.hp_max
+				GameManager.mana = GameManager.mana_max
+				player.dead = false
+				player._play("idle")
+				switch_map("city1")
+			_respawning = false
 		return
 	var ex = MAPS[current].get("exit")
 	if ex and player.global_position.distance_to(ex["pos"]) < ex["radius"]:
@@ -61,6 +75,7 @@ func switch_map(name: String) -> void:
 	if name == "rat_cave":
 		var spawner = load("res://scripts/world/rat_cave.gd").new()
 		entities.add_child(spawner)
+	COLLIDERS.build_colliders(name, map_layer)
 	GameManager.weapon = player.weapon
 	GameManager.hair_color = player.hair_color
 	GameManager.tunic_color = player.tunic_color

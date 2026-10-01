@@ -2,6 +2,7 @@ extends Node
 ## GameManager — autoload: estado global do jogo (serializável, pronto pra online futuro)
 
 const SAVE_PATH = "user://savegame.json"
+const BAG_MAX = 20
 
 var player_name: String = "Grimstone"
 var level: int = 1
@@ -16,6 +17,7 @@ var skills := {
 }
 var current_map: String = "city1"
 var coins: int = 0
+var bag := {}
 var weapon: String = "sword"
 var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
@@ -44,12 +46,42 @@ func add_skill_xp(skill: String, amount: int) -> void:
 		need = skills[skill]["level"] * 100
 		print("SKILL UP: ", skill, " nivel ", skills[skill]["level"])
 
+func add_item(id: String, qty: int = 1) -> bool:
+	if bag.has(id):
+		bag[id] += qty
+		return true
+	if bag.size() >= BAG_MAX:
+		return false
+	bag[id] = qty
+	return true
+
+func remove_item(id: String, qty: int = 1) -> bool:
+	if not bag.has(id) or bag[id] < qty:
+		return false
+	bag[id] -= qty
+	if bag[id] <= 0:
+		bag.erase(id)
+	return true
+
+func use_item(id: String) -> bool:
+	var db = preload("res://scripts/autoload/items_db.gd")
+	var it = db.ITEMS.get(id, null)
+	if it == null or not remove_item(id):
+		return false
+	if it.get("tipo", "") == "uso":
+		if it.has("hp"):
+			hp = min(hp_max, hp + it["hp"])
+		if it.has("mana"):
+			mana = min(mana_max, mana + it["mana"])
+	return true
+
 func save_game() -> void:
 	var data := {
 		"player_name": player_name, "level": level, "xp": xp,
 		"hp": hp, "hp_max": hp_max, "mana": mana, "mana_max": mana_max,
 		"skills": skills, "current_map": current_map,
-		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color, "coins": coins,
+		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color,
+		"coins": coins, "bag": bag,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -72,6 +104,7 @@ func load_game() -> bool:
 	current_map = parsed.get("current_map", "city1")
 	weapon = parsed.get("weapon", "sword")
 	coins = int(parsed.get("coins", 0))
+	bag = parsed.get("bag", {})
 	hair_color = parsed.get("hair_color", "castanho")
 	tunic_color = parsed.get("tunic_color", "castanho")
 	return true
