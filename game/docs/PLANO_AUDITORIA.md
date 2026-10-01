@@ -128,3 +128,7 @@
 
 ### Area 26 — Housekeeping de versao (ciclo 42, v0.6.18) OK
 - title_screen.gd e export_presets.cfg alinhados a v0.6.17; headless 0 erros; 7/7 testes OK.
+### Area 27 — Auditoria pos-ciclo 43 + reparo do CHANGELOG (ciclo 44, v0.6.20) OK
+- CHANGELOG remoto destruido (26 bytes placeholder) restaurado byte-exato (43de58d)
+- Auditoria blob SHA de 30 arquivos: maioria byte-exata; game_manager/mob/drop/hp_bar = encoding MCP (semantica completa, nao mexer); rat_cave remoto mais novo adotado; test_fusion/preview_todas remotos velhos re-pushados do local
+- Validacao: headless 0 erros + run real 0 erros + 7/7 testes OK
