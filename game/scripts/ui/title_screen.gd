@@ -23,7 +23,7 @@ func _ready() -> void:
 		star.position = Vector2(sx, sy)
 		star.size = Vector2(2, 2)
 		var br = 0.4 + randf() * 0.6
-		star.color = Color(br, br * 1.05, 0.9)
+		star.color = Color(br, br, br * 1.05, 0.9)
 		add_child(star)
 	# lua
 	var moon = ColorRect.new()
@@ -176,3 +176,4 @@ func _join_game() -> void:
 		host = "127.0.0.1"
 	NetworkManager.start_client(host)
 	_start_game()
+
