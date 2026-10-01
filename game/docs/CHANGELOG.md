@@ -1,3 +1,12 @@
+## v0.6.31 — Auditoria Area 3 Monstros & IA online (ciclo 59, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 3 BUGS de recompensa no modo ONLINE corrigidos em mob.gd/network_manager.gd:
+  - (1) HOSTED: recompensa (xp/loot/quest/bestuario) ia pro HOST local mesmo quando um CLIENTE deu o golpe final — die() so mandava RPC de recompensa em modo dedicated; agora `is_server` cobre hosted+dedicated (recompensa sempre autoritativa online)
+  - (2) _rpc_mob_removed recebia o peer id do ATACANTE como se fosse id de mob (broadcast inutil) — agora broadcast sem id (espelho do cliente e gerenciado pelo snapshot d=true)
+  - (3) _last_hit_by do HOST nunca era setado: player chamava take_damage(dmg) sem from_peer — no servidor o golpe do host nao registrava e um hit velho de cliente podia "herdar" o kill; fix: from_peer=0 -> _last_hit_by=1 (peer id do host)
+- Validacao: gdparse OK, import 0 erros, run real --quit-after 120 0 erros, 7/7 testes unitarios OK, NetTest server+A+B localhost PASSOU 3/3 (registro, chat A<->B, posicao, 4 mobs espelhados, dano autoritativo)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.30 — Auditoria Area 8 Audio (ciclo 58, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - AUDITORIA da Area 8 (gs-audio): wiring de play_sfx/play_music conferido em TODOS os pontos (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door; musicas title/city/cave com crossfade no switch_map) — sem gaps
