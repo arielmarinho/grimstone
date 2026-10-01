@@ -1,4 +1,3 @@
-
 extends SceneTree
 func _init():
 	# preview DEFINITIVO: 4 classes x 4 direcoes x idle/walk — o que o jogo desenha
