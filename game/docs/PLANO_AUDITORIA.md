@@ -22,6 +22,7 @@
 | 13 | **Banco/Depósito** | gs-game-design | NPC banco, depositar/sacar itens | implementado ciclo 23 (v0.6.5) — aguarda usuario |
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
 | 15 | **Decoracao** | gs-level-design | postes, flores, barris, bandeiras, barraca | implementado ciclo 26 (v0.6.8) — aguarda usuario |
+| 16 | **Sprites direcionais** | gs-pixel-art | mobs com down/up/side reais, rato procedural | implementado ciclo 27 (v0.6.9) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -100,4 +101,96 @@
 
 ### Area 8 — Audio (ciclo 9, 03:49-04:00) OK
 - AudioManager autoload 100% PROCEDURAL: sintetiza 12 SFX + 3 musicas chiptune em GDScript no startup (sem arquivos binarios no repo — mesma filosofia dos sprites)
-- SFX: hit, shoot (flecha), cast (magia), mob_death, player_hurt, player_death, le
+- SFX: hit, shoot (flecha), cast (magia), mob_death, player_hurt, player_death, level_up (arpejo), coin, pickup, potion, ui_click, door — pool de 8 players, pitch variavel +/-10%
+- Musicas com crossfade: title (fanfarra 112bpm), city (C maior 120bpm nas 2 cidades), cave (Am menor 100bpm na floresta/caverna); loop automatico, SFX -8dB / musica -18dB
+- Ligado em: ataque melee/distancia, dano no mob e no player, morte de mob/player, level up, moeda/drop pickup, pocao (mochila), compra na loja, clique de UI, portao/troca de mapa, tela de titulo
+- Validado: Godot headless 0 erros de script; fallback silencioso se stream faltar
+- Auditoria (ciclo 10): 17 pontos OK; 2 gaps corrigidos — skills sem som de cast (player.gd) e teclas C/B/K/N/T/J sem ui_click (hud.gd). Area 8 = OK de verdade
+
+### Area 9 — Multiplayer (ciclo 10, 04:00-04:05) implementado
+- Fundacao (e47966d) estava ISOLADA: nada do jogo chamava o NetworkManager — nenhum player remoto aparecia, chat sem UI, titulo sem entrada online
+- Integrado: RemotePlayer (avatar com aparencia real + nome + interpolacao), main.gd spawna/remove/sincroniza a 15Hz, filtro por mapa, HUD com chat Enter + contador ONLINE, titulo com HOSPEDAR/CONECTAR(IP)
+- Validado headless 0 erros; teste real 2 clientes + 1 server pendente (proximo ciclo, regra da skill gs-netcode)
+
+### Area 10 — QA final (ciclo 11, 04:05+) auditoria estatica
+- BUG GRAVE 1: RemotePlayer usava @onready $Sprite mas e criado POR CODIGO (sem .tscn) — primeiro player remoto CRASHAVA ao entrar. Fix: sprite criado no _ready antes de _build_frames
+- BUG GRAVE 2: main.gd conectava NetworkManager._on_server_lost.connect(func(): ...) — connect de Callable de METODO e invalido (server_lost nunca limpava os remote players). Fix: connect direto do metodo
+- BUG 3: _rpc_chat no servidor emitia eco pro autor com GameManager.player_name (nome do SERVIDOR, nao do autor). Fix: eco unico via _relay_chat broadcast
+- BUG 4: tecla E conflitava skill E vs abrir loja (main usava Input.is_key_pressed). Fix: loja agora e tecla F (placa LOJA [F])
+- BUG 5: NOVO JOGO nao resetava skills/city2_visited/city2_unlocked — save novo herdava progresso. Fix: reset completo em title_screen.gd
+- Validado: Godot headless --import + --quit-after = 0 erros de script
+- PENDENTE (proximo ciclo): teste real 2 clientes + 1 servidor (regra gs-netcode), teste no Mac do usuario
+
+### Area 9 — fase 2: Mobs autoritativos (ciclo 14, 04:42+) implementado
+- Servidor roda a IA dos mobs e replica snapshot 10Hz; clientes so renderizam espelhos (NetMob) — regra gs-netcode #1/#3
+- Dano do cliente via RPC validado NO SERVIDOR (vivo + range 400px); XP/loot autoritativos via roll_loot_list -> RPC pro ultimo atacante (Rucoy)
+- Servidor dedicado (--server): NetTarget = alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
+- NetTest fase MOBS PASSOU (server+A+B localhost): espelhos chegaram, cliente pediu dano, servidor validou e aplicou, HP caiu no snapshot — RESULT OK nos 3 roles
+- Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
+- Validado headless 0 erros; pendente: teste no Mac do usuario
+
+## Ciclo 17 (05:25, 01/10) — pendências do ciclo 16 resolvidas
+- player.gd (joystick) CONFIRMADO idêntico no GitHub (diff = só newline no fim)
+- CHANGELOG v0.5.6 pushado no remoto (a outra instância do cron pushou o mesmo conteúdo em paralelo — colisão detectada, recuo da escrita, sem duplicar)
+- Orientação Android sensor_landscape (`window/handheld/orientation=4`) adicionada ao project.godot e pushada (523b2282) — pendência do ciclo 16 fechada
+- BUILD_ANDROID.md atualizado (pendência 2 = FEITA)
+- Headless 0 erros. Próximo: teste no Mac do usuário OU build APK real no Mac (guia pronto)
+
+## Ciclo 20 (05:50, 01/10) — Area 11: ESTIMATIVAS DE TEMPO na tela K (v0.6.2)
+- Tela K agora mostra quanto falta pra cada skill subir ("up em ~Xmin") e pro proximo level ("~Ymin") — taxas medidas no jogo (skill 240 xp/min, defesa 60 xp/min, level 450 xp/min)
+- FIX: tela K usava formula ERRADA de xp de skill (level*100) em vez da curva real (level^2*5) — mostrava necessidade 2x maior no lvl 10
+- Teste unitario tests/test_estimates.gd PASSOU; headless 0 erros
+- Pendente: teste no Mac do usuario
+
+## Ciclo 19 (05:37, 01/10) — Area 11: FUSAO DE ITENS implementada (v0.6.1)
+- 3 iguais do mesmo tier + 50 moedas -> 1 do tier seguinte (lendario nao funde) — conforme DESIGN_ONLINE.md secao 4
+- UI no painel da mochila (B): grid de fusao com borda na cor da raridade, tooltip com o resultado, feedback + som ao fundir
+- Arma equipada fundida = re-equipa a base automaticamente
+- Teste unitario headless tests/test_fusion.gd PASSOU (FUSION_TEST_OK); projeto 0 erros de script
+- Pendente: teste no Mac do usuario
+
+
+
+## Ciclo 21 (05:52, 01/10) — Area 12: QUESTS COM NPC (v0.6.3)
+- NPC Mestre das Missões nas 2 cidades (tecla J): 6 missões de caça em cadeia (ratos->slimes->aranhas->goblins->orcs->esqueletos), recompensas 40-250 moedas + 100-900 xp
+- Kill conta offline (mob.gd) e online (_rpc_mob_reward carrega mob_type); persistido no save; NOVO JOGO zera
+- Teste unitário QUEST_TEST_OK; headless 0 erros
+- Pendente: teste no Mac do usuário
+
+## Ciclo 22 (06:07, 01/10) — polish v0.6.4: quests + comida/energia
+- Tecla J funciona em QUALQUER lugar (perto do NPC abre o painel; longe mostra dica) — NPC no grupo quest_npc
+- Aviso "MISSAO PRONTA: ..." no HUD quando quest completa (signal quest_ready)
+- Comida/energia estilo Tibia: carne/queijo/peixe (empilha até 10min, regen 2x bem alimentado, indicador no HUD); queijo/peixe no loot e nas lojas
+- Testes QUEST/ESTIMATE/FUSION/FED OK; headless 0 erros
+- Pendente: teste no Mac do usuário
+
+## Ciclo 23 (06:10, 01/10) — Area 13: BANCO/DEPOSITO (v0.6.5)
+- NPC BANCO nas 2 cidades (tecla T perto dele, placa flutuante): deposita/saca itens da mochila — libera os 20 slots (BAG_MAX), estilo Tibia
+- Tier de raridade preservado ("espada#2" deposita como Raro e volta Raro); moedas ficam no bolso (Tibia clássico)
+- GameManager.bank persistido no save ("bank"); save antigo compatível; NOVO JOGO zera
+- Sprite procedural (banqueiro de túnica dourada + cofre); painel 2 colunas (mochila -> depositar / depósito -> sacar), refresh por assinatura (sem rebuild por frame)
+- Posições sem colisor: city1 (1024,1420) perto da fonte, city2 (1024,620)
+- Teste unitário tests/test_bank.gd PASSOU (BANK_TEST_OK — 8 casos: deposito/saque, tier, item inexistente, mochila cheia, JSON save/load); headless 0 erros
+- Push GitHub verificado por blob SHA: 5/6 byte-exatos (title_screen diverge só no newline final — cosmético)
+- Pendente: teste no Mac do usuário
+
+## Ciclo 23 (06:13, 01/10) — Area 12: BANCO/DEPOSITO (v0.6.5)
+- NPC banco nas 2 cidades (tecla T): depositar/sacar itens (libera os 20 slots da mochila), tier de raridade preservado
+- GameManager.bank persistido no save; NOVO JOGO zera; save antigo compativel
+- Teste unitario BANK_TEST_OK; headless 0 erros
+- Pendente: teste no Mac do usuario
+
+## Ciclo 25 (06:39, 01/10) — v0.6.7: RUNAS + polish de combate
+- RUNAS estilo Tibia (escopo expandido): 4 runas (fogo/gelo/trovoada/cura) — qualquer classe usa, NAO gasta mana, consome a pedra; dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02))
+- hud.gd: uso pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro; trovoada com anel de energia visual
+- Lojas: city1 vende cura (40); city2 vende as 4; loot: skeleton fogo 8%/gelo 6%, goblin trovoada 5%, slime cura 4%
+- Polish de combate: flash vermelho + shake de camera no player ao tomar dano; camera com position_smoothing
+- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
+- Push GitHub verificado por blob SHA: items_db/loot_table/shop/player.tscn/test_runes/CHANGELOG byte-exatos; game_manager e hud divergem so em encoding de acentos (cosmetico, conteudo funcional verificado)
+- Pendente: teste no Mac do usuario
+
+## Ciclo 26 (06:51, 01/10) — v0.6.8: DECOR (decoracao das cidades)
+- scripts/world/decor.gd NOVO: postes de luz (braco+lampada+glow aditivo), canteiros de flores (seed fixa), barris (aros de metal), caixotes (diagonal), bandeiras onduladas nos portoes, barraca de feira (toldo listrado + mercadorias)
+- Solidos com colisor (StaticBody2D r=26 no decor + rects casando no colliders.gd); integrado ao switch_map apos build_colliders
+- Headless 0 erros; blob SHA verificado 3/3 byte-exato (decor/main/colliders)
+- Pendente: teste no Mac do usuario
