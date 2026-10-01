@@ -1,6 +1,6 @@
 extends CanvasLayer
-## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
-## mochila (B), roupas+calça (C), tela de skills (K), morte
+## HUD: barras, hotbar (1-4), SKILLS Q/E/R/G com botoes (estilo Rucoy), flechas,
+## mochila (B), roupas+calca (C), tela de skills (K), morte
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -75,7 +75,7 @@ func _process(_delta: float) -> void:
 	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E skill | B mochila | C roupas | K skills]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -147,12 +147,13 @@ func _process_hotbar_highlight() -> void:
 		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- BOTÕES DE SKILL (Q/E, estilo Rucoy) ----------
+# ---------- BOTOES DE SKILL (Q/E/R/G, estilo Rucoy) ----------
 func _build_skill_buttons() -> void:
-	for i in range(2):
-		var slot = String.chr(81 + i)  # Q, E
+	var slots = ["Q", "E", "R", "G"]
+	for i in range(slots.size()):
+		var slot: String = slots[i]
 		var btn = Button.new()
-		btn.position = Vector2(760 + i * 50, 640)
+		btn.position = Vector2(710 + i * 50, 640)
 		btn.size = Vector2(46, 46)
 		var key_l = Label.new()
 		key_l.text = slot
@@ -178,17 +179,29 @@ func _press_skill(slot: String) -> void:
 
 func _process_skill_buttons() -> void:
 	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
-	for i in range(2):
-		var slot = String.chr(81 + i)
+	var slots = ["Q", "E", "R", "G"]
+	for i in range(slots.size()):
+		var slot: String = slots[i]
 		var btn = skill_btns[slot]
 		var name_l = btn.get_node("SkillName")
-		if i < list.size():
-			name_l.text = list[i]["nome"].split(" ")[0]
+		var sk: Dictionary = {}
+		for s2 in list:
+			if s2["tecla"] == slot:
+				sk = s2
+				break
+		if not sk.is_empty():
+			if SKILLS.skill_unlocked(sk):
+				name_l.text = sk["nome"].split(" ")[0]
+			else:
+				name_l.text = "???"
 		var stn = StyleBoxFlat.new()
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
 		stn.set_border_width_all(2)
-		stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
+		if not sk.is_empty() and not SKILLS.skill_unlocked(sk):
+			stn.border_color = Color(0.45, 0.45, 0.5)
+		else:
+			stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
 		btn.add_theme_stylebox_override("normal", stn)
 
 # ---------- MOCHILA (tecla B) ----------
@@ -430,6 +443,11 @@ func _refresh_skills_panel() -> void:
 		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
 		for i in range(list.size()):
 			var sk = list[i]
+			if not SKILLS.skill_unlocked(sk):
+				var lb = _make_label(Vector2(370, y), 14, Color(0.55, 0.55, 0.6))
+				lb.text = "[%s] ??? — desbloqueia ao chegar na VILA (city2)" % sk["tecla"]
+				y += 24
+				continue
 			var ready := player_ref.skill_ready[sk["tecla"]]
 			var l = _make_label(Vector2(370, y), 14, Color(0.4, 0.8, 0.4) if ready else Color(0.7, 0.3, 0.3))
 			l.text = "[%s] %s  (mana %d, recarga %.0fs) — %s" % [sk["tecla"], sk["nome"], sk["mana"], sk["cd"], sk["desc"]]
