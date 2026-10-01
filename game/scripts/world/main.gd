@@ -5,6 +5,7 @@ extends Node2D
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
+const DECOR = preload("res://scripts/world/decor.gd")
 const REMOTE_PLAYER = preload("res://scripts/entities/remote_player.gd")
 
 const MAPS = {
@@ -361,6 +362,7 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		if MAPS[name].get("safe_zone", false):
 			node.safe_zone = true
 	COLLIDERS.build_colliders(name, map_layer)
+	DECOR.build_decor(name, map_layer)
 	for ex in MAPS[current].get("exits", []):
 		var marker = Label.new()
 		marker.text = ex["label"]
