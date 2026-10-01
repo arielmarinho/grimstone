@@ -1,84 +1,9 @@
+## v0.4.7 (ciclo 8 — Area 7 Balanceamento)
+- game_manager.gd: hp_max/mana_max DERIVADOS do level (100+10/level, 50+5/level) — save antigo nunca mais desincroniza
+- Level up estilo Tibia: NAO enche HP/mana em combate (+30/+15 parcial); fora de combate enche tudo
+- player.gd: cura fora de combate acelerada (~5% do max a cada 2s, estilo Rucoy)
+- mob.gd: XP dos mobs iniciais +75% (rat 35, slime 50, bat 40) — early game menos grind
+- shop.gd: pocoes P mais baratas (vida 20->15, mana 25->18) — primeiro minuto de jogo mais suave
+- Validado Godot headless: 0 erros de script
+
 # GRIMSTONE — Changelog
-
-Formato: [data] versão — o que mudou (commit)
-
-## 2026-10-01 — v0.4.6 (ciclo 7: Area 6 UI/UX)
-
-- hud.gd: FIX grave — labels de titulo/hint dos paineis (mochila/roupas/skills) ficavam SEMPRE visiveis sobre o jogo e ACUMULAVAM a cada refresh da tela K (eram adicionados ao root do HUD); agora pertencem ao painel
-- hud.gd: mochila reconstruia os 20 botoes A CADA FRAME aberta — agora rebuild so quando o conteudo muda (assinatura id:qty)
-- hud.gd: dim da tela de morte tinha tamanho ZERO (vermelho nunca aparecia); preview do painel de roupas NUNCA era renderizado — ambos corrigidos
-- hud.gd: cooldown NUMERICO nos botoes Q/E/R/G (segundos restantes, estilo MMO)
-- hud.gd + player.gd: barra de feedback central — mana insuficiente, skill bloqueada (VILA), sem flechas aparecem NA TELA (antes so print no console)
-- shop.gd: titulo correto por cidade (era fixado antes do city ser setado) + feedback colorido de compra (verde ok / vermelho erro)
-- title_screen.gd: versao v0.4.5 (estava v0.3) + ESC sai
-- Validado Godot headless: 0 erros de script
-- Proximo: Area 7 Balanceamento (gs-combat-balance)
-
-## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
-
-- Simulacao de balanceamento antes de mexer (scripts/area5_sim.py, regra 5: nunca balancear no escuro)
-- `ad12a3e`/`4d59f15` equips.gd: arco 10->14 dano / 0.9->0.8s CD, cajado 18->19 — TTK das 4 armas equalizado (regra 1: 5-10s no mapa atual; DPS 16.9-18.8, dentro de 2% entre si)
-- `4d59f15` mob.gd: dano de mobs endgame cortado (spider 12, goblin 12, wolf 13, skeleton 14, orc 16) — player aguenta 8+ hits (regra 2)
-- `4d59f15` mob.gd: dano de mob com VARIANCIA ±10% (estilo Tibia — hits nao sao mais todos identicos)
-- `ad12a3e` loot_table.gd: moedas +30% em goblin/skeleton/wolf/orc/spider — economia fecha (regra 3: loot/min >= 2 pocoes do mapa)
-- `cce7084` loot_table.gd: orc dropa pocao_vida_g (10%), skeleton dropa pocao_mana_g (10%) — antes as pocoes G so existiam na loja; goblin dropa pocao_vida_m (12%)
-- `4d59f15` game_manager.gd: curva de skill XP QUADRATICA estilo Tibia (lvl^2*5) — skill up ~1.7min no inicio, ~15min no lvl 30 (regra 4)
-- Validado Godot headless: 0 erros de script
-- Proximo: Area 6 UI/UX (gs-ui-ux)
-
-## 2026-10-01 — v0.4.4 (ciclo 5: Area 4 Mapas & Mundo)
-
-- `c80be47`/`5cdc34f` colliders.gd: portoes das muralhas casam com a arte (abertura 224px y 932-1156), predios/casas/arvores do anel denso com colisores (player nao atravessa mais), bordas da floresta com abertura norte correta
-- `8316011`/`2bdc21e` player.gd: REGEN estilo Tibia — mana regenera sempre (lenta, escala com level), HP regenera so FORA de combate
-- Validado Godot headless: 0 erros de script
-- Proximo: Area 5 Itens & Economia (auditoria gs-combat-balance)
-
-## 2026-10-01 — v0.4.3 (ciclo 4b: Area 3 Monstros & IA — fixes de combate)
-
-- `cd21605` mob.gd: ataque agendado nao acerta mais player MORTO (checava so no agendamento, nao no hit)
-- `cd21605` mob.gd: hit so acerta se o alvo ainda estiver no alcance (110px) — sem dano fantasma ao fugir
-- `cd21605` mob.gd: leash de perseguição (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
-- `cd21605` mob.gd: dummy de treino simplificado (early return no take_damage, sem ramo morto)
-- Validado Godot headless: 0 erros de script
-
-## 2026-10-01 — v0.4.2 (ciclo 4: sincronização GitHub↔local completa)
-
-- `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediário reescreveu o arquivo por engano e foi revertido)
-- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das árvores correta (tree_positions coletadas antes de desenhar)
-- player.gd remoto JÁ contém os handlers R/G (diff restante é cosmético); equips.gd e icons_embedded.gd idênticos local/remoto
-- Validação: Godot headless `--import` + `--quit` = 0 erros de script
-- LIÇÃO registrada: pushar sempre o conteúdo lido do arquivo local, nunca reconstruir de diff
-
-## 2026-10-01 — v0.4.1 (ciclo 3: skills R/G v2 completas + fix de unlock)
-
-- `2f380d0` Skills avancadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
-- `2f380d0` FIX: unlock usava flag errada (city2_unlocked vs city2_visited) — R/G nunca desbloqueava; agora _unlock_city2() seta as duas e salva no savegame
-- `2f380d0` FIX: ids do skills_db nao tinham handler no player.gd (R/G gastava mana sem efeito) — todos os 8 ids tem match agora
-- `2f380d0` FIX: shop.gd usava CATALOG constante inexistente na versao de lojas separadas — agora _catalog() por cidade
-
-## 2026-10-01 — v0.4 (ciclo 2: City2 libera mais ataques)
-
-- Skills avancadas R/G por classe (8 novas): sword Investida+Terremoto (stun em area), axe Golpe Duplo+Bersek, bow Precisao (3 criticos)+Tiro Multiplo (explosao em area), staff Escudo Arcano (-50% dano)+Nevasca (stun+dano)
-- Desbloqueio ao PISAR na city2 (flag city2_unlocked salva no savegame) + aviso na tela
-- HUD: 4 botoes de skill (Q/E/R/G), skills bloqueadas aparecem como "???" (cinza) na tela K e nos botoes
-- Player: buffs bersek (x2.5 dano), escudo arcano (metade do dano recebido), precisao, golpe duplo (2 hits)
-
-## 2026-10-01 — v0.3 → v0.4 (madrugada de trabalho autonomo)
-
-- `26db787` Sistemas: skills_db (2 skills/classe + critico), flechas como municao, calca colorida, loot de goblin/orc/esqueleto
-- `0c92da3` Mobs: 8 tipos (goblin/orc/esqueleto novos com sprites), stun pra skill, projetil com critico/bola de fogo
-- `dcd3c6f` Player: skills Q/E estilo Rucoy, flechas como municao, critico com feedback, calca colorida (U)
-- `c276d62` Mundo: 4 mapas (city1, city2 vila ana, floresta, caverna), spawners por mapa, lojas com flechas
-- `e4f7a95` TexHelper: calca colorida, roteamento CURRENT_MOB, mapas city2 e floresta novos
-- `eb945d8` HUD: botoes de skill Q/E estilo Rucoy, tela de skills (K), contador de flechas, calca no painel de roupas
-- `cf7ff5c` Tela de titulo (continuar/novo jogo/sair) + icone do jogo (lapide com espada)
-- `e47966d` Fundacao multiplayer: NetworkManager (ENet 7777, sync posicao, chat) + DESIGN_ONLINE.md
-- `9e89392` Area 1 (Combate & Feedback): flash de dano, numeros flutuantes, morte com fade, level up com anel dourado
-
-## Fila (proximos ciclos)
-- [x] Auditoria Area 5 (Itens & Economia) — OK ciclo 6
-- [x] Auditoria Area 6 (UI/UX) — implementada ciclo 7
-- [ ] Auditoria Area 7 (Balanceamento geral) — PROXIMO CICLO
-- [ ] Auditoria Area 8 (Audio — do zero)
-- [ ] Multiplayer: mobs autoritativos, raridade, fusao, trade/party, contas
-- [ ] Build Android
