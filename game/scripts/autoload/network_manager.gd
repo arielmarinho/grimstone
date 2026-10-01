@@ -20,10 +20,6 @@ signal player_left(id: int)
 signal player_state(id: int, pos: Vector2, map: String, anim: String)
 signal chat_message(sender: String, text: String, kind: String)  # kind: "msg"|"join"|"leave"|"system"
 signal server_lost  # conexão com o servidor caiu (clientes limpam estado remoto)
-# ---------- MOBS AUTORITATIVOS (fase 2) ----------
-signal mob_snapshot(mobs: Array)  # clientes: estado dos mobs a 10Hz
-signal mob_died(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2)
-signal player_hit(dmg: int)  # cliente: o servidor mandou este player tomar dano
 
 func _ready() -> void:
 	# servidor dedicado: godot --headless -- --server
@@ -73,6 +69,7 @@ func _on_connected() -> void:
 	print("[CLIENT] Conectado! meu id: ", my_id)
 	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
 	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
+
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
@@ -171,73 +168,6 @@ func _rpc_chat(text: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _relay_chat(sender: String, text: String) -> void:
 	chat_message.emit(sender, text, "msg")
-
-# ---------- MOBS AUTORITATIVOS (fase 2) ----------
-# Server: IA roda nele, replica snapshot 10Hz. Clientes: só renderizam/interpola.
-# "Último golpe leva" (Rucoy): server registra quem deu o último hit.
-
-const MOB_SNAP_HZ := 10.0
-
-# server chama a 10Hz com o estado de TODOS os mobs de TODOS os mapas
-func broadcast_mobs(mobs: Array) -> void:
-	if not is_online() or not is_server:
-		return
-	_rpc_mob_snapshot.rpc(mobs)
-
-@rpc("authority", "call_remote", "unreliable_ordered")
-func _rpc_mob_snapshot(mobs: Array) -> void:
-	mob_snapshot.emit(mobs)
-
-# cliente pede pra atacar um mob (intenção); server valida alcance e aplica
-func request_hit(net_id: int, dmg: int, my_pos: Vector2, my_map: String) -> void:
-	if not is_online() or is_server:
-		return
-	_rpc_hit_mob.rpc_id(1, net_id, dmg, my_pos, my_map)
-
-@rpc("any_peer", "call_remote", "reliable")
-func _rpc_hit_mob(net_id: int, dmg: int, my_pos: Vector2, my_map: String) -> void:
-	if not multiplayer.is_server():
-		return
-	var sender = multiplayer.get_remote_sender_id()
-	var m = MobAuthority.get_by_id(net_id)
-	if m == null or m.dead or m.dying:
-		return
-	# valida: cliente precisa estar no mesmo mapa e a < 220px do mob
-	if m.map_name != my_map or m.global_position.distance_to(my_pos) > 220.0:
-		return
-	m.take_damage_net(dmg, sender)
-
-# server avisa todos: mob morreu, quem matou, xp e loot
-func broadcast_mob_death(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2, map: String) -> void:
-	if not is_online() or not is_server:
-		return
-	_rpc_mob_death.rpc(net_id, killer_peer, xp, mob_type, pos, map)
-
-@rpc("authority", "call_remote", "reliable")
-func _rpc_mob_death(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2, map: String) -> void:
-	mob_died.emit(net_id, killer_peer, xp, mob_type, pos, map)
-
-# server aplica dano num player (mob acertou) — roteado pro peer certo
-func send_player_hit(target_peer: int, dmg: int) -> void:
-	if not is_online() or not is_server:
-		return
-	if target_peer == 1:
-		# server é também o "player 1" no modo hospedado (não no dedicado)
-		player_hit.emit(dmg)
-	else:
-		_rpc_player_hit.rpc_id(target_peer, dmg)
-
-@rpc("authority", "call_remote", "reliable")
-func _rpc_player_hit(dmg: int) -> void:
-	player_hit.emit(dmg)
-
-# ---------- HELPERS ----------
-func is_online() -> bool:
-	return active and multiplayer.multiplayer_peer != null \
-		and multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
-
-func online_count() -> int:
-	return players.size() if is_online() else 1
 
 # ---------- MOBS AUTORITATIVOS (fase 2) ----------
 # O servidor roda a IA dos mobs (wander/chase/attack) e transmite o estado;

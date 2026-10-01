@@ -84,10 +84,10 @@ func _ready() -> void:
 	NetworkManager.player_left.connect(_on_net_player_left)
 	NetworkManager.player_state.connect(_on_net_player_state)
 	NetworkManager.server_lost.connect(_clear_remote_players)
+	NetworkManager.server_lost.connect(_on_net_offline_mobs)
 	# mobs autoritativos: espelhos no cliente + mapa do servidor nos snapshots
 	NetworkManager.mob_state.connect(_on_net_mob_state)
 	NetworkManager.mob_removed.connect(_on_net_mob_removed)
-	NetworkManager.server_lost.connect(_on_net_offline_mobs)
 	NetworkManager.damage_local_player.connect(_on_net_damage_local)
 	NetworkManager.mob_reward.connect(_on_net_mob_reward)
 	# servidor DEDICADO (--server): roda mundo+mobs, sem player local
@@ -137,6 +137,25 @@ func _clear_remote_players() -> void:
 		if is_instance_valid(rp):
 			rp.queue_free()
 	remote_players.clear()
+
+func _on_net_offline_mobs() -> void:
+	# caiu a conexão: espelhos de mob somem e o spawner local volta a valer
+	_on_net_offline_mobs_clear()
+	# re-spawna mobs locais do mapa atual
+	var spawner_name = MAPS[current].get("spawner", "")
+	if spawner_name != "" and player != null:
+		var spawner = load("res://scripts/world/spawners.gd")
+		var node = spawner.new()
+		node.spawner_name = spawner_name
+		node.map_name = current
+		entities.add_child(node)
+
+func _on_net_offline_mobs_clear() -> void:
+	for id in net_mobs.keys():
+		var m = net_mobs[id]
+		if is_instance_valid(m):
+			m.queue_free()
+	net_mobs.clear()
 
 func _net_chat_local(sender: String, text: String, kind: String) -> void:
 	NetworkManager.chat_message.emit(sender, text, kind)
