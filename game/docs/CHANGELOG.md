@@ -1,3 +1,10 @@
+## v0.6.30 — Auditoria Area 8 Audio (ciclo 58, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- AUDITORIA da Area 8 (gs-audio): wiring de play_sfx/play_music conferido em TODOS os pontos (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door; musicas title/city/cave com crossfade no switch_map) — sem gaps
+- MEDICAO de boot: sintese total = 1195ms (SFX 91ms + MUSICAS 1100ms); run real completo = 2.9s — no Android a sintese pode custar 3-5s de tela travada
+- FIX: sintese das MUSICAS agora roda em THREAD (boot instantaneo); play_music durante a sintese guarda pedido PENDENTE e toca quando pronta (teste funcional: toca no frame 506); stop_music espera o thread; _exit_tree espera o thread (segfault na saida corrigido)
+- Validacao: gdparse OK, import 0 erros, run real 0 erros, 7/7 testes unitarios OK
+
 ## v0.6.29 — Auditoria Area 5 Itens & Economia re-auditada (ciclo 57, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - SIMULACAO ANTES DE MEXER (regra 5 gs-combat-balance, scripts/81724fd159dae26a/area5_resim.py): TTK alvo 5-10s OK (orc 8.2s skill 10, 5.9s skill 30); player aguenta 12+ hits do mob do mapa; economia fecha (loot/min >= 2 pocoes do mapa em todos os maps: 104-467 moedas/min vs custo de pocao 30-120/min)
