@@ -1,5 +1,8 @@
 extends CanvasLayer
-## HUD — barras hp/mana/XP, nível/mapa, classe atual (arma), skills, moedas e painel de roupas (C)
+## HUD — barras hp/mana/XP, nível/mapa, classe atual (arma) e painel de roupas (tecla C)
+
+const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+const EQUIPS = preload("res://scripts/autoload/equips.gd")
 
 var hp_bar: ProgressBar
 var mana_bar: ProgressBar
@@ -10,9 +13,6 @@ var skills_label: Label
 var cloth_panel: Control
 var preview: TextureRect
 var player_ref: Node = null
-
-const EQUIPS = preload("res://scripts/autoload/equips.gd")
-const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
 func _ready() -> void:
 	hp_bar = _make_bar(Color(0.85, 0.2, 0.2), Vector2(20, 16))
@@ -85,7 +85,7 @@ func _build_cloth_panel() -> void:
 	title.text = "CUSTOMIZAR ROUPAS"
 	cloth_panel.add_child(title)
 	preview = TextureRect.new()
-	preview.position = Vector2(640, 210)
+	preview.position = Vector2(620, 200)
 	preview.custom_minimum_size = Vector2(192, 192)
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -122,6 +122,10 @@ func _build_cloth_panel() -> void:
 	cloth_panel.add_child(hint)
 
 func _make_preview(weapon: String, hair: String, tunic: String) -> Texture2D:
+	# usa o sprite real (override/PNG/b64) — mesmo pipeline do player
+	var texs = TEXHELPER.load_sheet_custom(TEXHELPER.KNIGHT_IDLE, weapon, hair, tunic)
+	if texs.size() > 0:
+		return texs[0]
 	var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	TEXHELPER._draw_knight(img, 0, false, false, false, weapon, hair, tunic)
