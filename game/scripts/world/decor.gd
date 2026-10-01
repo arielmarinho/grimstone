@@ -19,8 +19,8 @@ const CITY1_DECOR := [
 	[LAMP, Vector2(950, 1250), false], [LAMP, Vector2(1100, 1250), false],
 	[FLOWERS, Vector2(860, 1024), false], [FLOWERS, Vector2(1188, 1024), false],
 	[FLOWERS, Vector2(1024, 860), false], [FLOWERS, Vector2(1024, 1188), false],
-	[BARREL, Vector2(480, 1300), true], [BARREL, Vector2(500, 1420), true],
-	[CRATE, Vector2(680, 1500), true],
+	[BARREL, Vector2(440, 1560), true], [BARREL, Vector2(460, 1620), true],
+	[CRATE, Vector2(700, 1560), true],
 	[FLAG, Vector2(1770, 900), false], [FLAG, Vector2(1770, 1150), false],
 	[STALL, Vector2(1600, 1250), true],
 ]

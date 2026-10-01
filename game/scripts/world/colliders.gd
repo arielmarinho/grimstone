@@ -33,34 +33,42 @@ static func _add_rect(parent: Node, pos: Vector2, size: Vector2) -> void:
 static func _city1(parent: Node) -> void:
 	# muralha (arte y 143-895 -> mundo 286-1790): topo, esquerda, direita e baixo
 	# portao LESTE: abertura y 932-1156 (casando com a arte, largura 224)
-	# portao SUL (bueiro): abertura x 932-1156 (casando com a arte)
+	# portao SUL (bueiro): abertura x 932-1156 (o caminho do bueiro desce ate a borda)
 	_add_rect(parent, Vector2(1024, 260), Vector2(2048, 80))
 	_add_rect(parent, Vector2(260, 1011), Vector2(80, 1422))
 	_add_rect(parent, Vector2(1788, 616), Vector2(80, 632))
 	_add_rect(parent, Vector2(1788, 1439), Vector2(80, 566))
-	# muralha SUL fiel ao cenário: o caminho de terra do bueiro desce ATÉ a borda
-	# (arte desenha o caminho até y1024) — sem parede cortando o caminho
+	# muralha SUL fiel ao cenario: o caminho de terra do bueiro desce ATE a borda
 	_add_rect(parent, Vector2(350, 1762), Vector2(300, 80))
 	_add_rect(parent, Vector2(1700, 1762), Vector2(300, 80))
-	# fonte central
+	# fonte central (multinivel na arte)
 	var f = StaticBody2D.new()
 	f.position = Vector2(1024, 1024)
 	var cs = CollisionShape2D.new()
 	var c = CircleShape2D.new()
-	c.radius = 92.0
+	c.radius = 104.0
 	cs.shape = c
 	f.add_child(cs)
 	parent.add_child(f)
-	# lago
-	_add_rect(parent, Vector2(1490, 1430), Vector2(300, 260))
-	# predios (3 construcoes — player nao atravessa mais)
-	_add_rect(parent, Vector2(580, 555), Vector2(320, 230))
+	# LAGO a esquerda (arte ~120-340 x 330-630 -> mundo 240-680 x 660-1260)
+	# em 2 rects com VAO da ponte (caminho leste-oeste cruza em y 922-1076)
+	_add_rect(parent, Vector2(460, 790), Vector2(440, 264))
+	_add_rect(parent, Vector2(460, 1168), Vector2(440, 184))
+	# predios: loja de armas (640,220), loja de pocoes (210,640), casa marrom (800,760)
 	_add_rect(parent, Vector2(1440, 555), Vector2(320, 230))
 	_add_rect(parent, Vector2(580, 1395), Vector2(320, 230))
+	_add_rect(parent, Vector2(1740, 1620), Vector2(280, 200))
+	# area de treino: cerca solida (arte 168-410 x 176-342 -> mundo 336-820 x 352-684)
+	_add_rect(parent, Vector2(336, 512), Vector2(40, 332))
+	_add_rect(parent, Vector2(820, 512), Vector2(40, 332))
+	_add_rect(parent, Vector2(578, 352), Vector2(484, 40))
+	# cerca sul com PORTAO (abertura x 530-630) — player entra pra treinar
+	_add_rect(parent, Vector2(433, 684), Vector2(194, 40))
+	_add_rect(parent, Vector2(725, 684), Vector2(194, 40))
 	# decoracao solida (barris/caixotes/barraca — casando com decor.gd)
-	_add_rect(parent, Vector2(480, 1300), Vector2(52, 52))
-	_add_rect(parent, Vector2(500, 1420), Vector2(52, 52))
-	_add_rect(parent, Vector2(680, 1500), Vector2(52, 52))
+	_add_rect(parent, Vector2(440, 1560), Vector2(52, 52))
+	_add_rect(parent, Vector2(460, 1620), Vector2(52, 52))
+	_add_rect(parent, Vector2(700, 1560), Vector2(52, 52))
 	_add_rect(parent, Vector2(1600, 1250), Vector2(140, 100))
 
 static func _city2(parent: Node) -> void:

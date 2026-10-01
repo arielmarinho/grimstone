@@ -12,7 +12,7 @@ var map_name: String = ""  # mapa deste spawner (servidor precisa saber pra IA o
 const SETS = {
 	# CITY1 (hub): ratos perto do portao sul/bueiro, slimes no lago — 2 de cada
 	"city1_mobs": [
-		{"type": "rat", "pos": Vector2(700, 1500)},
+		{"type": "rat", "pos": Vector2(700, 1580)},
 		{"type": "rat", "pos": Vector2(900, 1500)},
 		{"type": "slime", "pos": Vector2(1400, 1400)},
 		{"type": "slime", "pos": Vector2(1600, 1400)},
