@@ -1,5 +1,5 @@
 extends Node
-## GameManager — autoload: estado global do jogo (serializável, pronto pra online futuro)
+## GameManager — estado global do jogo (serializável, pronto pra online futuro)
 
 const SAVE_PATH = "user://savegame.json"
 const BAG_MAX = 20
@@ -51,6 +51,13 @@ signal quest_done(id: String)
 
 ## sinal de quest concluida (progresso cheio, falta ENTREGAR no NPC) — HUD mostra aviso
 signal quest_ready(id: String)
+
+# v0.6.15: sinais de recompensa — FX (autoload) mostra numero flutuante ao ganhar algo
+signal xp_gained(amount: int)
+signal coins_gained(amount: int)
+signal healed(amount: int)
+signal mana_gained(amount: int)
+signal skill_up_event(skill: String, level: int)
 
 ## quests de caca (estilo Tibia/Rucoy): NPC das cidades entrega moedas+xp por matar mobs
 ## cadeia: cada quest exige a anterior entregue (req)
@@ -130,11 +137,11 @@ func quest_claim(id: String) -> bool:
 	st["claimed"] = true
 	quests[id] = st
 	coins += int(q.get("coins", 0))
+	coins_gained.emit(int(q.get("coins", 0)))
 	add_xp(int(q.get("xp", 0)))
 	return true
 
 const RARITY = preload("res://scripts/autoload/rarity.gd")
-const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
 const FUSION_COST := 50
 
@@ -215,6 +222,7 @@ func max_mana_for_level(lv: int) -> int:
 
 func add_xp(amount: int) -> void:
 	xp += amount
+	xp_gained.emit(amount)
 	while level < 999 and xp >= xp_for_level(level + 1):
 		level += 1
 		hp_max = max_hp_for_level(level)
@@ -243,6 +251,7 @@ func add_skill_xp(skill: String, amount: int) -> void:
 	while skills[skill]["xp"] >= need:
 		skills[skill]["xp"] -= need
 		skills[skill]["level"] += 1
+		skill_up_event.emit(skill, skills[skill]["level"])
 		need = skills[skill]["level"] * skills[skill]["level"] * 5
 		print("SKILL UP: ", skill, " nivel ", skills[skill]["level"])
 
@@ -271,8 +280,10 @@ func use_item(id: String) -> bool:
 	if it.get("tipo", "") == "uso":
 		if it.has("hp"):
 			hp = min(hp_max, hp + it["hp"])
+			healed.emit(int(it["hp"]))
 		if it.has("mana"):
 			mana = min(mana_max, mana + it["mana"])
+			mana_gained.emit(int(it["mana"]))
 		if it.has("comida"):
 			# comida/energia estilo Tibia: empilha até o cap, regen acelerado
 			well_fed_time = min(WELL_FED_MAX, well_fed_time + float(it["comida"]))
