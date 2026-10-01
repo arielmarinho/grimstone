@@ -142,7 +142,7 @@ Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
 ## 2026-10-01 — v0.6.10 (ciclo 29: CHECKLIST DE TESTE NO MAC)
 
 - NOVO: docs/TESTE_MAC.md — checklist consolidado de teste no Mac cobrindo TUDO que acumulou desde a ultima validacao do usuario (13 secoes: combate, skills R/G, raridade/fusao, quests, comida, banco, bestiario, runas, estimativas, decor, sprites direcionais, multiplayer, save) com tempo estimado (~20-25 min)
-- Regressao: TODOS os 7 testes unitarios PASSARAM (fusion/estates/quests/food/bank/bestiary/runes) + headless 0 erros
+- Regressao: TODOS os 7 testes unitarios PASSARAM (fusion/estimates/quests/food/bank/bestiary/runes) + headless 0 erros
 - GitHub sincronizado (commit 97adf65, blob SHA verificado byte-exato)
 - Fila: usuario testa no Mac (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
 
@@ -158,7 +158,7 @@ Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
 - NOVO: mobs agora desenham direcoes REAIS (down/up/side) em vez da mesma cara de frente pra tudo — up = costas sem rosto, side = perfil (flip_h cobre a esquerda)
 - FIX GRAVE: o RATO estava INVISIVEL nas direcoes up/side — so existiam PNGs "down" e o fallback procedural nao tinha case "rat". Agora rato procedural completo (3 direcoes + death: orelhas rosa, olhos vermelhos, dentes, cauda)
 - Aplicado a: slime/bat/spider/wolf/goblin/orc/skeleton (rosto so no down; up = costas); orc/goblin/esqueleto mantem arma no perfil
-- draw_mob.gd ganhou parametro dir (thread via tex_helper._dir_from_path); ANIMS do mob.gd agora cai no procedural pro rat (up/side)
+- draw_mob ganhou parametro dir (thread via tex_helper._dir_from_path); ANIMS do mob.gd agora cai no procedural pro rat (up/side)
 - Teste visual tests/preview_mobs.gd (folha PNG das 8 criaturas x 3 direcoes); 7 testes unitarios OK; headless 0 erros
 - Local f7a60ae
 - Proximo: teste no Mac do usuario (acumulado grande) OU build APK no Mac
@@ -178,7 +178,7 @@ Formato: [data] versão — o que mudou (commit)
 
 - 4 runas estilo Tibia (items_db.gd): Runa de Fogo (bola de fogo no alvo mais proximo), Runa de Gelo (dano + atordoa 2s), Runa da Trovoada (dano em area 220px ao redor), Runa de Cura (+40% HP)
 - Qualquer classe usa, NAO gasta mana, consome a pedra (estilo Tibia); dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02)) — fogo 60, gelo 35, trovoada 45
-- hud.gd: usar runa pela mochila (B); runas de alvo devolvem a pedra if nao ha monstro por perto; trovoada com anel de energia visual; feedback + som
+- hud.gd: usar runa pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro por perto; trovoada com anel de energia visual; feedback + som
 - Icone procedural: pedra runica (losango) com glifo na cor do elemento
 - Lojas: city1 vende Runa de Cura (40); city2 vende as 4 (fogo 55, gelo 45, trovoada 60, cura 35)
 - Loot: skeleton dropa fogo 8% / gelo 6%, goblin trovoada 5%, slime cura 4%
@@ -187,7 +187,7 @@ Formato: [data] versão — o que mudou (commit)
 
 Formato: [data] versão — o que mudou (commit)
 
-## 2026-1-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
+## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
 
 - NOVO: flash VERMELHO no player ao tomar dano (o mob ja tinha flash branco; agora os dois lados tem feedback)
 - NOVO: tremida curta de camera (shake 0.13s) ao tomar dano — impacto visivel
@@ -243,7 +243,7 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.6.1 (ciclo 19: FUSAO DE ITENS — 3 iguais do mesmo tier -> 1 do tier seguinte)
 
 - game_manager.gd: can_fuse(id)/fuse_item(id) — 3 itens IGUAIS do mesmo tier + 50 moedas = 1 do tier SEGUINTE (espada#1 x3 -> espada#2); Lendario (tier 4) nao funde
-- hud.gd: secao "FUSAO DE ITENS" dentro do painel da mochila (B) — grid com slots borda na cor da raridade, tooltip "X -> Y (50 moedas)", clique funde with feedback "FUSAO!" + som
+- hud.gd: secao "FUSAO DE ITENS" dentro do painel da mochila (B) — grid com slots borda na cor da raridade, tooltip "X -> Y (50 moedas)", clique funde com feedback "FUSAO!" + som
 - Se a arma EQUIPADA era uma das fundidas e sumiu da mochila, re-equipa automaticamente a base (nunca fica sem arma)
 - Teste unitario tests/test_fusion.gd (SceneTree headless): cadeia espada#1->#2->#3, bloqueio de lendario, falta de moedas/quantidade — FUSION_TEST_OK
 - Validado Godot headless --import + --quit: 0 erros de script
@@ -274,8 +274,8 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.5.5 (ciclo 15: netcode — interpolacao por buffer + lag artificial + NetTest c/ lag PASSOU)
 
 - Interpolacao de mobs no cliente agora e por BUFFER de snapshots (estilo Quake): mira o estado de ~120ms atras, cobre jitter/lag sem rubber-banding; fallback = lerp pro ultimo snapshot
-- LAG ARTIFICIAL (regra gs-netcode): `--netlag=<ms>` atrasa a entrega de snapshots (mobs E players) no NetworkManager — fila ordenada by tempo de entrega; 0 = sem lag (jogo normal)
-- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avanca com mob VIVO
+- LAG ARTIFICIAL (regra gs-netcode): `--netlag=<ms>` atrasa a entrega de snapshots (mobs E players) no NetworkManager — fila ordenada por tempo de entrega; 0 = sem lag (jogo normal)
+- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avança com mob VIVO
 - FIX no harness: chat enviado UMA vez so (re-registro duplicava o envio); server espera ~20s pra fase de mobs completar
 - NetTest PASSOU COM LAG 150ms: server OK + cliente A OK + cliente B OK — registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado no servidor (hp caiu no snapshot), saida limpa
 - Validado Godot headless: 0 erros de script
@@ -305,7 +305,7 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
 - FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
-- FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline vazio nao tenta mais RPC (fim do spam "RPC on yourself")
+- FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
 - NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
 - TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
 - Validado: Godot headless --import 0 erros de script
