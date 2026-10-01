@@ -4,6 +4,7 @@ extends Node2D
 var value: int = 5
 
 func _ready() -> void:
+	# desenha a moeda
 	var sprite = Sprite2D.new()
 	var img = Image.create(12, 12, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
@@ -16,18 +17,15 @@ func _ready() -> void:
 				img.set_pixel(x, y, Color(0.95, 0.85, 0.4))
 	sprite.texture = ImageTexture.create_from_image(img)
 	add_child(sprite)
+	# animacao de pulinho ao cair
 	var tw = create_tween()
 	tw.tween_property(sprite, "position:y", -14.0, 0.25).as_relative()
 	tw.tween_property(sprite, "position:y", 14.0, 0.25).as_relative()
 
 func _physics_process(_delta: float) -> void:
 	var players = get_tree().get_nodes_in_group("player")
-	if players.is_empty():
-		return
-	var p = players[0]
-	if not is_instance_valid(p):
-		return
-	if p.global_position.distance_to(global_position) < 30.0:
+	var p = players[0] if players.size() > 0 else null
+	if p != null and is_instance_valid(p) and p.global_position.distance_to(global_position) < 30.0:
 		GameManager.coins += value
-		print("moeda! total: ", GameManager.coins)
+		AudioManager.play_sfx("coin")
 		queue_free()
