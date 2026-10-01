@@ -1,6 +1,5 @@
 extends Node2D
 ## Colisores dos 4 mapas — mundo 2X (2048x2048)
-## REGRA: colisores casam com a ARTE (muralha da arte y 143-895 -> mundo 286-1790)
 
 static func build_colliders(map_name: String, parent: Node) -> void:
 	for c in parent.get_children():
@@ -51,6 +50,11 @@ static func _city1(parent: Node) -> void:
 	_add_rect(parent, Vector2(580, 555), Vector2(320, 230))
 	_add_rect(parent, Vector2(1440, 555), Vector2(320, 230))
 	_add_rect(parent, Vector2(580, 1395), Vector2(320, 230))
+	# decoracao solida (barris/caixotes/barraca — casando com decor.gd)
+	_add_rect(parent, Vector2(480, 1300), Vector2(52, 52))
+	_add_rect(parent, Vector2(500, 1420), Vector2(52, 52))
+	_add_rect(parent, Vector2(680, 1500), Vector2(52, 52))
+	_add_rect(parent, Vector2(1600, 1250), Vector2(140, 100))
 
 static func _city2(parent: Node) -> void:
 	# muralha (arte y 140-906 -> mundo 280-1812): topo, direita, baixo, esquerda
@@ -78,6 +82,11 @@ static func _city2(parent: Node) -> void:
 	_add_rect(parent, Vector2(1360, 560), Vector2(300, 220))
 	_add_rect(parent, Vector2(590, 1380), Vector2(300, 220))
 	_add_rect(parent, Vector2(1360, 1380), Vector2(300, 220))
+	# decoracao solida (barris/caixotes/barraca — casando com decor.gd)
+	_add_rect(parent, Vector2(1470, 1620), Vector2(52, 52))
+	_add_rect(parent, Vector2(1650, 1500), Vector2(52, 52))
+	_add_rect(parent, Vector2(1660, 720), Vector2(52, 52))
+	_add_rect(parent, Vector2(1320, 420), Vector2(140, 100))
 
 static func _forest(parent: Node) -> void:
 	# bordas densas de arvore — ABERTURA NORTE (x 932-1156) pra city2
