@@ -21,7 +21,7 @@
 | 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) — aguarda usuario |
 | 13 | **Banco/Depósito** | gs-game-design | NPC banco, depositar/sacar itens | implementado ciclo 23 (v0.6.5) — aguarda usuario |
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
-| 15 | **Runas & Polish** | gs-game-design | runas estilo Tibia, feedback de dano | implementado ciclo 25 (v0.6.7) — aguarda usuario |
+| 15 | **Decoracao** | gs-level-design | postes, flores, barris, bandeiras, barraca | implementado ciclo 26 (v0.6.8) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -29,13 +29,10 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
-### Area 15 — Runas & Polish (ciclo 25, v0.6.7) implementado
-- RUNAS estilo Tibia: 4 runas (fogo/gelo/trovoada/cura) — qualquer classe usa, NAO gasta mana, consome a pedra; dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02))
-- hud.gd: uso pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro; trovoada com anel de energia visual
-- Lojas: city1 vende cura (40); city2 vende as 4; loot: skeleton fogo 8%/gelo 6%, goblin trovoada 5%, slime cura 4%
-- Polish de combate: flash vermelho + shake de camera no player ao tomar dano; camera com position_smoothing
-- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
-- Push verificado por blob SHA: items_db/loot_table/shop/player.tscn/test_runes/CHANGELOG byte-exatos; game_manager e hud divergiam so em encoding de acentos (cosmetico) — hud alinhado byte-exato
+### Area 15 — Decoracao (ciclo 26, v0.6.8) implementado
+- scripts/world/decor.gd NOVO: postes de luz (braco+lampada+glow aditivo), canteiros de flores (seed fixa), barris (aros de metal), caixotes (diagonal), bandeiras onduladas nos portoes, barraca de feira (toldo listrado + mercadorias)
+- Solidos com colisor (StaticBody2D r=26 no decor + rects casando no colliders.gd); integrado ao switch_map apos build_colliders
+- Headless 0 erros; blob SHA verificado 3/3 byte-exato (decor/main/colliders)
 - Pendente: teste no Mac do usuario
 ### Area 14 — Bestiario (ciclo 24, v0.6.6) implementado
 - GameManager.BESTIARY_INFO: ficha dos 8 mobs (nome, onde vive, lore curta)
@@ -44,7 +41,6 @@
 - hud.gd: painel BESTIARIO tecla N (mesmo estilo da tela K), nao vistos = "???"
 - Teste test_bestiary.gd BESTIARY_TEST_OK; headless 0 erros
 - Push verificado por blob SHA: game_manager/mob/teste byte-exatos; hud +1 byte (newline); network_manager reconstruido (cosmetico, funcional); title_screen reparado byte-exato
-- Sync do ciclo 24: local alinhado ao remoto em request_mob_damage (gate is_online — versao remota melhor), network_manager agora byte-exato
 ### Area 1 — Combate & Feedback (02:51-03:01) OK
 - Mapeado: dano era so numero na barra, SEM flash, SEM numeros flutuantes, morte instantanea
 - Implementado: flash branco no sprite ao levar hit (0.15s), numero de dano flutuante (sobe e some), morte com fade (corpo desvanece 0.8s+1.2s), level up com anel dourado expandindo + texto
@@ -122,7 +118,7 @@
 ### Area 9 — fase 2: Mobs autoritativos (ciclo 14, 04:42+) implementado
 - Servidor roda a IA dos mobs e replica snapshot 10Hz; clientes so renderizam espelhos (NetMob) — regra gs-netcode #1/#3
 - Dano do cliente via RPC validado NO SERVIDOR (vivo + range 400px); XP/loot autoritativos via roll_loot_list -> RPC pro ultimo atacante (Rucoy)
-- Servidor dedicado (--server): NetTarget — alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
+- Servidor dedicado (--server): NetTarget = alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
 - NetTest fase MOBS PASSOU (server+A+B localhost): espelhos chegaram, cliente pediu dano, servidor validou e aplicou, HP caiu no snapshot — RESULT OK nos 3 roles
 - Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
 - Validado headless 0 erros; pendente: teste no Mac do usuario
@@ -176,4 +172,19 @@
 - NPC banco nas 2 cidades (tecla T): depositar/sacar itens (libera os 20 slots da mochila), tier de raridade preservado
 - GameManager.bank persistido no save; NOVO JOGO zera; save antigo compativel
 - Teste unitario BANK_TEST_OK; headless 0 erros
+- Pendente: teste no Mac do usuario
+
+## Ciclo 25 (06:39, 01/10) — v0.6.7: RUNAS + polish de combate
+- RUNAS estilo Tibia (escopo expandido): 4 runas (fogo/gelo/trovoada/cura) — qualquer classe usa, NAO gasta mana, consome a pedra; dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02))
+- hud.gd: uso pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro; trovoada com anel de energia visual
+- Lojas: city1 vende cura (40); city2 vende as 4; loot: skeleton fogo 8%/gelo 6%, goblin trovoada 5%, slime cura 4%
+- Polish de combate: flash vermelho + shake de camera no player ao tomar dano; camera com position_smoothing
+- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
+- Push GitHub verificado por blob SHA: items_db/loot_table/shop/player.tscn/test_runes/CHANGELOG byte-exatos; game_manager e hud divergem so em encoding de acentos (cosmetico, conteudo funcional verificado)
+- Pendente: teste no Mac do usuario
+
+## Ciclo 26 (06:51, 01/10) — v0.6.8: DECOR (decoracao das cidades)
+- scripts/world/decor.gd NOVO: postes de luz (braco+lampada+glow aditivo), canteiros de flores (seed fixa), barris (aros de metal), caixotes (diagonal), bandeiras onduladas nos portoes, barraca de feira (toldo listrado + mercadorias)
+- Solidos com colisor (StaticBody2D r=26 no decor + rects casando no colliders.gd); integrado ao switch_map apos build_colliders
+- Headless 0 erros; blob SHA verificado 3/3 byte-exato (decor/main/colliders)
 - Pendente: teste no Mac do usuario
