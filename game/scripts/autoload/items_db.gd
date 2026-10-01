@@ -4,7 +4,9 @@ extends Object
 
 const ITEMS = {
 	"moeda": {"nome": "Moedas", "tipo": "moeda", "cor": Color(0.9, 0.75, 0.2)},
-	"carne": {"nome": "Carne", "tipo": "uso", "cor": Color(0.72, 0.3, 0.24), "hp": 30, "desc": "Recupera 30 HP"},
+	"carne": {"nome": "Carne", "tipo": "uso", "cor": Color(0.72, 0.3, 0.24), "hp": 30, "comida": 180, "desc": "Recupera 30 HP. Bem alimentado por 3min"},
+	"queijo": {"nome": "Queijo", "tipo": "uso", "cor": Color(0.95, 0.8, 0.3), "hp": 15, "comida": 300, "desc": "Recupera 15 HP. Bem alimentado por 5min"},
+	"peixe": {"nome": "Peixe", "tipo": "uso", "cor": Color(0.5, 0.65, 0.85), "hp": 20, "comida": 240, "desc": "Recupera 20 HP. Bem alimentado por 4min"},
 	"pocao_vida_p": {"nome": "Pocao Pequena", "tipo": "uso", "cor": Color(0.85, 0.2, 0.25), "hp": 50, "desc": "Recupera 50 HP"},
 	"pocao_vida_m": {"nome": "Pocao Media", "tipo": "uso", "cor": Color(0.9, 0.15, 0.2), "hp": 150, "desc": "Recupera 150 HP"},
 	"pocao_vida_g": {"nome": "Pocao Grande", "tipo": "uso", "cor": Color(0.95, 0.1, 0.15), "hp": 300, "desc": "Recupera 300 HP"},
@@ -19,6 +21,7 @@ const ITEMS = {
 }
 
 static func draw_icon(id: String, size: int = 24) -> Texture2D:
+	# 1) PNG real (assets_override > assets/icons) — com strip de magenta
 	for base in ["res://assets_override/icons/", "res://assets/icons/"]:
 		var path = base + id + ".png"
 		if ResourceLoader.exists(path):
@@ -28,6 +31,7 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 				if img != null:
 					return ImageTexture.create_from_image(_strip_magenta(img))
 				return tex
+	# 2) PNG embutido (base64 da arte pixel real) — pocoes de nivel reusam a arte base
 	var base_id: String = id.trim_suffix("_p").trim_suffix("_m").trim_suffix("_g")
 	var embedded = preload("res://scripts/autoload/icons_embedded.gd")
 	var png_bytes = embedded.get_png_bytes(base_id)
@@ -35,6 +39,7 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 		var img = Image.new()
 		if img.load_png_from_buffer(png_bytes) == OK:
 			return ImageTexture.create_from_image(_strip_magenta(img))
+	# 3) fallback: desenha por codigo
 	var img2 = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img2.fill(Color(0, 0, 0, 0))
 	var it = ITEMS.get(id, {"cor": Color(0.5, 0.5, 0.5), "tipo": ""})
@@ -51,6 +56,22 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 				_ellipse(img2, cx, cy + 2, size * 0.3, size * 0.2, Color(0.45, 0.18, 0.12))
 				_ellipse(img2, cx, cy + 2, size * 0.24, size * 0.14, c)
 				_ellipse(img2, cx - size * 0.28, cy + 2, size * 0.1, size * 0.06, Color(0.95, 0.93, 0.85))
+			elif id == "queijo":
+				# cunha de queijo amarela com furinhos
+				for j in range(int(size * 0.4)):
+					for i in range(j + 2):
+						var px = int(cx - size * 0.22) + i
+						var py = int(cy + size * 0.16) - j
+						if px >= 0 and py >= 0 and px < size and py < size:
+							img2.set_pixel(px, py, c)
+				for h in [[-0.1, 0.05], [0.05, -0.02], [0.0, 0.1]]:
+					_ellipse(img2, cx + size * h[0], cy + size * h[1], 1.5, 1.5, Color(0.8, 0.6, 0.2))
+			elif id == "peixe":
+				# corpo de peixe + cauda
+				_ellipse(img2, cx - 2, cy, size * 0.26, size * 0.11, c)
+				for t in range(4):
+					_rect(img2, int(cx + size * 0.22) + t, int(cy - t), 2, t * 2 + 1, c)
+				_ellipse(img2, cx - size * 0.18, cy - 2, 1.5, 1.5, Color(0.1, 0.1, 0.1))
 			else:
 				_rect(img2, int(cx - 3), int(cy - size * 0.32), 6, 4, Color(0.75, 0.78, 0.8))
 				_ellipse(img2, cx, cy + 2, size * 0.22, size * 0.26, Color(0.2, 0.2, 0.25))
@@ -72,6 +93,7 @@ static func _strip_magenta(img: Image) -> Image:
 	for y in range(img.get_height()):
 		for x in range(img.get_width()):
 			var c = img.get_pixel(x, y)
+			# magenta/rosa: r E b altos, g baixo, r~b (preserva vermelho da carne/pocao)
 			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
 				img.set_pixel(x, y, Color(0, 0, 0, 0))
 	return img

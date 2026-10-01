@@ -26,8 +26,14 @@ var arrows: int = 50
 var city2_visited: bool = false  # R/G skills desbloqueiam ao chegar na VILA
 var city2_unlocked: bool = false
 var quests := {}  # id -> {"progress": int, "done": bool, "claimed": bool}
+# comida/energia estilo Tibia: segundos restantes de "bem alimentado"
+var well_fed_time: float = 0.0
+const WELL_FED_MAX: float = 600.0  # cap de 10min empilhando comidas
 
 signal quest_done(id: String)
+
+## sinal de quest concluida (progresso cheio, falta ENTREGAR no NPC) — HUD mostra aviso
+signal quest_ready(id: String)
 
 ## quests de caca (estilo Tibia/Rucoy): NPC das cidades entrega moedas+xp por matar mobs
 ## cadeia: cada quest exige a anterior entregue (req)
@@ -70,6 +76,7 @@ func quest_on_kill(mob_type: String) -> void:
 		if st["progress"] >= int(q["qtd"]):
 			st["done"] = true
 			quest_done.emit(id)
+			quest_ready.emit(id)
 		quests[id] = st
 
 func quest_claim(id: String) -> bool:
@@ -224,6 +231,9 @@ func use_item(id: String) -> bool:
 			hp = min(hp_max, hp + it["hp"])
 		if it.has("mana"):
 			mana = min(mana_max, mana + it["mana"])
+		if it.has("comida"):
+			# comida/energia estilo Tibia: empilha até o cap, regen acelerado
+			well_fed_time = min(WELL_FED_MAX, well_fed_time + float(it["comida"]))
 	return true
 
 func save_game() -> void:
@@ -234,7 +244,7 @@ func save_game() -> void:
 		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color,
 		"pants_color": pants_color, "arrows": arrows, "city2_visited": city2_visited,
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
-		"quests": quests,
+		"quests": quests, "well_fed": int(well_fed_time),
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -275,4 +285,6 @@ func load_game() -> bool:
 				"claimed": bool(quests[id].get("claimed", false))}
 	else:
 		quests = {}
+	# comida: save antigo sem "well_fed" = 0 (não persiste entre sessões longas)
+	well_fed_time = float(int(parsed.get("well_fed", 0)))
 	return true

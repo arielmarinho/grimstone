@@ -7,6 +7,8 @@ const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 const CATALOG_CITY1 = {
 	"pocao_vida_p": 15,
 	"pocao_mana_p": 18,
+	"carne": 8,
+	"queijo": 5,
 	"flecha": 2,
 	"espada": 50,
 	"machado": 120,
@@ -18,6 +20,9 @@ const CATALOG_CITY2 = {
 	"pocao_vida_g": 110,
 	"pocao_mana_m": 70,
 	"pocao_mana_g": 130,
+	"carne": 6,
+	"queijo": 4,
+	"peixe": 8,
 	"flecha": 1,
 	"machado": 100,
 	"arco": 130,

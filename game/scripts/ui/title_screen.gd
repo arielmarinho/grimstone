@@ -23,7 +23,7 @@ func _ready() -> void:
 		star.position = Vector2(sx, sy)
 		star.size = Vector2(2, 2)
 		var br = 0.4 + randf() * 0.6
-		star.color = Color(br, br * 1.05, 0.9)
+		star.color = Color(br, br, br * 1.05, 0.9)
 		add_child(star)
 	# lua
 	var moon = ColorRect.new()
@@ -153,6 +153,7 @@ func _new_game() -> void:
 	GameManager.city2_visited = false
 	GameManager.city2_unlocked = false
 	GameManager.quests = {}
+	GameManager.well_fed_time = 0.0
 	GameManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 

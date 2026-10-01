@@ -7,6 +7,7 @@ const TABLES = {
 	"rat": [
 		{"id": "moeda", "chance": 1.0, "min": 3, "max": 8},
 		{"id": "carne", "chance": 0.5, "min": 1, "max": 1},
+		{"id": "queijo", "chance": 0.3, "min": 1, "max": 1},
 		{"id": "pocao_vida_p", "chance": 0.15, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.2, "min": 1, "max": 3},
 	],
@@ -18,6 +19,7 @@ const TABLES = {
 	],
 	"bat": [
 		{"id": "moeda", "chance": 1.0, "min": 6, "max": 14},
+		{"id": "peixe", "chance": 0.25, "min": 1, "max": 1},
 		{"id": "pocao_mana_p", "chance": 0.3, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.3, "min": 2, "max": 4},
 	],
@@ -31,6 +33,7 @@ const TABLES = {
 		{"id": "moeda", "chance": 1.0, "min": 28, "max": 55},
 		{"id": "pocao_vida_m", "chance": 0.5, "min": 1, "max": 2},
 		{"id": "carne", "chance": 0.7, "min": 1, "max": 2},
+		{"id": "peixe", "chance": 0.2, "min": 1, "max": 1},
 		{"id": "machado", "chance": 0.08, "min": 1, "max": 1},
 	],
 	"goblin": [
@@ -55,13 +58,6 @@ const TABLES = {
 	],
 }
 
-# bonus de raridade por mob (mobs fortes = tiers mais altos nas armas dropadas)
-const RARITY_BONUS = {
-	"rat": 0, "slime": 0, "bat": 0,
-	"spider": 1, "goblin": 1, "wolf": 2,
-	"orc": 3, "skeleton": 3,
-}
-
 static func roll_drop(mob_type: String, pos: Vector2, parent: Node) -> void:
 	var table: Array = TABLES.get(mob_type, TABLES["rat"])
 	var drop_scene = load("res://scripts/entities/drop.gd")
@@ -79,6 +75,13 @@ static func roll_drop(mob_type: String, pos: Vector2, parent: Node) -> void:
 			parent.add_child(d)
 
 # ---------- MULTIPLAYER: loot serializável ----------
+# bonus de raridade por mob (mobs fortes = tiers mais altos nas armas dropadas)
+const RARITY_BONUS = {
+	"rat": 0, "slime": 0, "bat": 0,
+	"spider": 1, "goblin": 1, "wolf": 2,
+	"orc": 3, "skeleton": 3,
+}
+
 static func roll_loot_list(mob_type: String) -> Array:
 	# sorteia e devolve [{id, qty}] — vai por RPC pro cliente que matou
 	var table: Array = TABLES.get(mob_type, TABLES["rat"])
