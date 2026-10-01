@@ -5,9 +5,14 @@ extends Node
 ## (F12 é volume no Mac — tecla trocada pra P)
 ## Screenshot vai em CHUNKS pequenos (parte/total) + evento fim com diagnóstico
 ## — o canal do Grimstone filtra payloads base64 grandes, então dividimos.
+## v2: downscale p/ 480px + JPEG q60 ANTES do base64 (~15-25KB em vez de ~240KB)
+## e chunks de 360 chars (limite seguro do filtro) — ~60 partes em vez de 952.
 
 const WEBHOOK := "https://maestro.adapta.one/webhooks/generic/17b615cef93bd3dacaa1b07ca67dfa9aaa5111c5906f2c836ff10f9499676b14"
 const SECRET := "2219110b7a55954b7673eace1d7f2b37c4836adb3ae5f1bf1fdb3a070ae6da85"
+const CHUNK := 360
+const MAX_W := 480
+const JPEG_Q := 0.6
 
 var http: HTTPRequest
 var auto_interval := 0.0
@@ -71,26 +76,29 @@ func _enviar(origem: String) -> void:
 	if busy:
 		return
 	busy = true
-	# captura o frame ATUAL da viewport (sem gravar em disco, em memória)
-	var img := get_viewport().get_texture().get_image()
+	# captura o frame ATUAL da viewport, reduz e comprime (sem gravar em disco)
 	var b64 := ""
-	if img != null:
-		var png := img.save_png_to_buffer()
-		b64 = Marshalls.raw_to_base64(png)
-	# envia em chunks de 250 chars (passa pelo filtro do Grimstone)
-	var total := maxi(1, ceili(b64.length() / 250.0))
+	if get_viewport() != null and get_viewport().get_texture() != null:
+		var img: Image = get_viewport().get_texture().get_image()
+		if img != null:
+			if img.get_width() > MAX_W:
+				var h := int(img.get_height() * float(MAX_W) / float(img.get_width()))
+				img.resize(MAX_W, h, Image.INTERPOLATE_BILINEAR)
+			b64 = Marshalls.raw_to_base64(img.save_jpg_to_buffer(JPEG_Q))
+	# envia em chunks de 360 chars (passa pelo filtro do Grimstone)
+	var total := maxi(1, ceili(b64.length() / float(CHUNK)))
 	var i := 0
 	while i < b64.length():
-		var part := b64.substr(i, 250)
+		var part := b64.substr(i, CHUNK)
 		_post({
 			"comando": "telemetria_chunk",
 			"origem": origem,
-			"part": (i / 250) + 1,
+			"part": (i / CHUNK) + 1,
 			"total": total,
 			"data": part,
 		})
 		await http.request_completed
-		i += 250
+		i += CHUNK
 	# evento fim com o diagnóstico
 	_post({
 		"comando": "telemetria_fim",
