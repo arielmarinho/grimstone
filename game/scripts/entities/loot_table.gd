@@ -1,6 +1,8 @@
 extends Node
 ## Loot tables por tipo de monstro (Tibia-style: raridade por valor)
 
+const RARITY = preload("res://scripts/autoload/rarity.gd")
+
 const TABLES = {
 	"rat": [
 		{"id": "moeda", "chance": 1.0, "min": 3, "max": 8},
@@ -53,13 +55,26 @@ const TABLES = {
 	],
 }
 
+# bonus de raridade por mob (mobs fortes = tiers mais altos nas armas dropadas)
+const RARITY_BONUS = {
+	"rat": 0, "slime": 0, "bat": 0,
+	"spider": 1, "goblin": 1, "wolf": 2,
+	"orc": 3, "skeleton": 3,
+}
+
 static func roll_drop(mob_type: String, pos: Vector2, parent: Node) -> void:
 	var table: Array = TABLES.get(mob_type, TABLES["rat"])
 	var drop_scene = load("res://scripts/entities/drop.gd")
+	# bonus de raridade por mob: mobs fortes dropam tiers mais altos
+	var rb: int = RARITY_BONUS.get(mob_type, 0)
 	for entry in table:
 		if randf() <= entry["chance"]:
 			var d = drop_scene.new()
-			d.setup(entry["id"], randi_range(entry["min"], entry["max"]))
+			var id: String = entry["id"]
+			# armas dropadas ganham tier de raridade sorteado
+			if ITEMS_DB.ITEMS.get(id, {}).get("tipo", "") == "arma":
+				id = RARITY.key_with_tier(id, RARITY.roll_tier(rb))
+			d.setup(id, randi_range(entry["min"], entry["max"]))
 			d.position = pos + Vector2(randf() * 72 - 36, randf() * 72 - 36)
 			parent.add_child(d)
 
@@ -67,10 +82,14 @@ static func roll_drop(mob_type: String, pos: Vector2, parent: Node) -> void:
 static func roll_loot_list(mob_type: String) -> Array:
 	# sorteia e devolve [{id, qty}] — vai por RPC pro cliente que matou
 	var table: Array = TABLES.get(mob_type, TABLES["rat"])
+	var rb: int = RARITY_BONUS.get(mob_type, 0)
 	var out: Array = []
 	for entry in table:
 		if randf() <= entry["chance"]:
-			out.append({"id": entry["id"], "qty": randi_range(entry["min"], entry["max"])})
+			var id: String = entry["id"]
+			if ITEMS_DB.ITEMS.get(id, {}).get("tipo", "") == "arma":
+				id = RARITY.key_with_tier(id, RARITY.roll_tier(rb))
+			out.append({"id": id, "qty": randi_range(entry["min"], entry["max"])})
 	return out
 
 static func spawn_loot_list(loot: Array, pos: Vector2, parent: Node) -> void:

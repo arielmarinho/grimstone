@@ -26,6 +26,23 @@ var arrows: int = 50
 var city2_visited: bool = false  # R/G skills desbloqueiam ao chegar na VILA
 var city2_unlocked: bool = false
 
+const RARITY = preload("res://scripts/autoload/rarity.gd")
+
+## arma equipada pode ser "espada#2" (tier de raridade) — dano multiplicado pelo tier
+func weapon_base() -> String:
+	return weapon.split("#")[0]
+
+func weapon_tier() -> int:
+	return RARITY.tier_of(weapon)
+
+func weapon_dano_mult() -> float:
+	return RARITY.dano_mult(weapon_tier())
+
+func EQUIPS_OK(w: String) -> bool:
+	var base: String = w.split("#")[0]
+	var eq = preload("res://scripts/autoload/equips.gd")
+	return eq.WEAPONS.has(base)
+
 func xp_for_level(lv: int) -> int:
 	return int(50.0 / 3.0 * (pow(lv, 3) - 6 * pow(lv, 2) + 17 * lv - 12))
 
@@ -127,6 +144,9 @@ func load_game() -> bool:
 	skills = parsed.get("skills", skills)
 	current_map = parsed.get("current_map", "city1")
 	weapon = parsed.get("weapon", "sword")
+	# save antigo: arma sem tier continua valida (tier 0 = comum)
+	if not EQUIPS_OK(weapon):
+		weapon = "sword"
 	coins = int(parsed.get("coins", 0))
 	bag = parsed.get("bag", {})
 	hair_color = parsed.get("hair_color", "castanho")
