@@ -9,6 +9,7 @@ const PORT := 7777
 const MAX_PLAYERS := 64
 
 var is_server: bool = false
+var active: bool = false  # true só depois de start_server/start_client OK (offline = false)
 var peer: ENetMultiplayerPeer = null
 var players := {}  # peer_id -> {name, level, map, app{weapon,hair,tunic,pants}}
 var my_id: int = 1
@@ -17,6 +18,7 @@ signal player_joined(id: int, info: Dictionary)
 signal player_left(id: int)
 signal player_state(id: int, pos: Vector2, map: String, anim: String)
 signal chat_message(sender: String, text: String, kind: String)  # kind: "msg"|"join"|"leave"|"system"
+signal server_lost  # conexão com o servidor caiu (clientes limpam estado remoto)
 
 func _ready() -> void:
 	# servidor dedicado: godot --headless -- --server
@@ -35,6 +37,7 @@ func start_server() -> void:
 	my_id = 1
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	active = true
 	print("[SERVER] Grimstone online na porta ", PORT)
 
 func start_client(host: String) -> void:
@@ -48,6 +51,7 @@ func start_client(host: String) -> void:
 	multiplayer.connected_to_server.connect(_on_connected)
 	multiplayer.connection_failed.connect(_on_failed)
 	multiplayer.server_disconnected.connect(_on_server_lost)
+	active = true
 	print("[CLIENT] Conectando em ", host, "...")
 
 func _my_appearance() -> Dictionary:
@@ -73,6 +77,7 @@ func _on_server_lost() -> void:
 	print("[SERVER] Conexao perdida — jogando offline")
 	multiplayer.multiplayer_peer = null
 	players.clear()
+	server_lost.emit()
 	chat_message.emit("", "Conexao perdida — voltando ao modo OFFLINE.", "system")
 
 # ---------- REGISTRO DE PLAYERS ----------
@@ -116,7 +121,7 @@ func _broadcast_player_left(id: int) -> void:
 
 # ---------- POSIÇÃO (15 Hz, unreliable) ----------
 func send_position(pos: Vector2, map: String, anim: String) -> void:
-	if multiplayer.multiplayer_peer == null or is_server:
+	if not active or multiplayer.multiplayer_peer == null or is_server:
 		return
 	_rpc_position.rpc_id(1, pos, map, anim)
 
@@ -139,7 +144,7 @@ func _relay_position(id: int, pos: Vector2, map: String, anim: String) -> void:
 
 # ---------- CHAT ----------
 func send_chat(text: String) -> void:
-	if multiplayer.multiplayer_peer == null:
+	if not active or multiplayer.multiplayer_peer == null:
 		# offline: eco local
 		chat_message.emit(GameManager.player_name, text, "msg")
 		return
@@ -164,7 +169,8 @@ func _relay_chat(sender: String, text: String) -> void:
 
 # ---------- HELPERS ----------
 func is_online() -> bool:
-	return multiplayer.multiplayer_peer != null
+	return active and multiplayer.multiplayer_peer != null \
+		and multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
 
 func online_count() -> int:
 	return players.size() if is_online() else 1

@@ -1,0 +1,131 @@
+extends Node
+## NetTest — teste de rede automatizado (regra gs-netcode: 2 clientes + 1 server no localhost)
+## Uso:
+##   godot --headless --path . scenes/main.tscn -- --nettest=server
+##   godot --headless --path . scenes/main.tscn -- --nettest=clientA
+##   godot --headless --path . scenes/main.tscn -- --nettest=clientB
+## Sequência: server abre ENet 7777; clientes conectam, registram, enviam chat,
+## movem o player; validamos: registro (players online), relay de posição entre
+## clientes, chat A->B, e saída limpa sem crash.
+
+var role := ""
+var _log: Array = []
+var _main = null
+var _t := 0.0
+var _phase := 0
+var _fail := false
+
+func _ready() -> void:
+	var args = OS.get_cmdline_user_args()
+	for a in args:
+		if a.begins_with("--nettest="):
+			role = a.get_slice("=", 1)
+	if role == "":
+		return  # não é teste — jogo normal
+	# este nó é injetado DENTRO da main (main.gd faz add_child) — main já é meu pai
+	_main = get_parent()
+	print("[NETTEST] role=", role, " acoplado à main")
+
+func _phase_server() -> void:
+	match _phase:
+		0:
+			NetworkManager.start_server()
+			print("[NETTEST][SERVER] aguardando 2 clientes...")
+			_phase = 1
+		1:
+			if NetworkManager.players.size() >= 2:
+				print("[NETTEST][SERVER] 2 clientes registrados: ", NetworkManager.players.keys())
+				_phase = 2
+				_t = 0.0
+		2:
+			# deixa os clientes trocarem chat/posição por ~8s
+			_t += get_physics_process_delta_time()
+			if _t > 8.0:
+				print("[NETTEST][SERVER] DONE — encerrando")
+				print("[NETTEST][RESULT] server OK")
+				get_tree().quit(0)
+
+func _phase_client(name_tag: String, chat_text: String) -> void:
+	match _phase:
+		0:
+			# conecta no localhost
+			NetworkManager.start_client("127.0.0.1")
+			_phase = 1
+			_t = 0.0
+		1:
+			_t += get_physics_process_delta_time()
+			if NetworkManager.is_online() and NetworkManager.my_id != 1 and not NetworkManager.players.is_empty():
+				print("[NETTEST][", name_tag, "] registrado! id=", NetworkManager.my_id, " players=", NetworkManager.players.keys())
+				_phase = 2
+				_t = 0.0
+			elif _t > 10.0:
+				_fail = true
+				print("[NETTEST][", name_tag, "] FALHOU: não registrou em 10s")
+				get_tree().quit(1)
+		2:
+			# envia chat e anda
+			NetworkManager.send_chat(chat_text)
+			print("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
+			if _main and _main.player:
+				_main.player.moving = true
+			_phase = 3
+			_t = 0.0
+		3:
+			# escuta por 4s: chat do outro + estados de posição
+			_t += get_physics_process_delta_time()
+			if _t > 4.0:
+				var got_chat := false
+				var got_pos := false
+				for entry in _log:
+					if entry.begins_with("CHAT:"):
+						got_chat = true
+					if entry.begins_with("POS:"):
+						got_pos = true
+				if got_chat and got_pos:
+					print("[NETTEST][", name_tag, "] OK — recebeu chat E posição do outro player")
+					print("[NETTEST][RESULT] ", name_tag, " OK")
+				else:
+					_fail = true
+					print("[NETTEST][", name_tag, "] FALHOU: chat=", got_chat, " pos=", got_pos, " log=", _log)
+					get_tree().quit(1)
+				_phase = 4
+		4:
+			# server encerrou → sair limpo
+			if not NetworkManager.is_online():
+				print("[NETTEST][", name_tag, "] server caiu — saindo limpo")
+				get_tree().quit(0)
+
+func _physics_process(delta: float) -> void:
+	if role == "":
+		return
+	_t += delta
+	match role:
+		"server":
+			_phase_server()
+		"clientA":
+			_phase_client("A", "ola do cliente A!")
+		"clientB":
+			_phase_client("B", "ola do cliente B!")
+
+# ---------- hooks nos sinais do NetworkManager (conectados no _ready tardio) ----------
+func _connect_signals() -> void:
+	if not NetworkManager.chat_message.is_connected(_on_chat):
+		NetworkManager.chat_message.connect(_on_chat)
+	if not NetworkManager.player_state.is_connected(_on_state):
+		NetworkManager.player_state.connect(_on_state)
+	if not NetworkManager.player_joined.is_connected(_on_join):
+		NetworkManager.player_joined.connect(_on_join)
+
+func _on_chat(sender: String, text: String, kind: String) -> void:
+	if kind == "msg":
+		_log.append("CHAT:" + sender + ":" + text)
+
+func _on_state(id: int, pos: Vector2, map: String, anim: String) -> void:
+	_log.append("POS:" + str(id) + ":" + str(pos) + ":" + map + ":" + anim)
+
+func _on_join(id: int, info: Dictionary) -> void:
+	_log.append("JOIN:" + str(id) + ":" + str(info.get("name", "?")))
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY:
+		call_deferred("_connect_signals")

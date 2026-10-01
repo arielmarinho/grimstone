@@ -62,6 +62,13 @@ var _net_accum: float = 0.0
 const NET_SEND_HZ := 15.0
 
 func _ready() -> void:
+	# teste de rede (gs-netcode): --nettest=server|clientA|clientB injeta o harness
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--nettest="):
+			var nt = load("res://scripts/tests/net_test.gd").new()
+			nt.name = "NetTest"
+			add_child(nt)
+			break
 	GameManager.load_game()
 	_create_player()
 	switch_map(GameManager.current_map if GameManager.current_map in MAPS else "city1")
@@ -76,7 +83,7 @@ func _ready() -> void:
 	NetworkManager.player_joined.connect(_on_net_player_joined)
 	NetworkManager.player_left.connect(_on_net_player_left)
 	NetworkManager.player_state.connect(_on_net_player_state)
-	NetworkManager._on_server_lost.connect(_clear_remote_players)
+	NetworkManager.server_lost.connect(_clear_remote_players)
 
 func _on_net_player_joined(id: int, info: Dictionary) -> void:
 	if id == NetworkManager.my_id or remote_players.has(id):
