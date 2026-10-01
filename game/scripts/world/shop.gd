@@ -123,7 +123,6 @@ func _buy(id: String) -> void:
 	if GameManager.coins < price:
 		msg_label.text = "Moedas insuficientes!"
 		return
-	# flechas vao direto pro contador de municao
 	if id == "flecha":
 		GameManager.coins -= price
 		GameManager.arrows += 10

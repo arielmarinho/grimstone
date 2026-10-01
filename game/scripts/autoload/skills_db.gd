@@ -19,7 +19,7 @@ const SKILLS = {
 	"axe": [
 		{"id": "furia", "nome": "Furia", "tecla": "Q", "mana": 25, "cd": 15.0,
 			"desc": "+80% de dano por 8 segundos"},
-		{"id": "atordoar", "nome": "Atordoar", "tecla": "E", "mana": 30, "cd": 14.0,
+		{"id": "atordoar", "nome": "Atordooar", "tecla": "E", "mana": 30, "cd": 14.0,
 			"desc": "Atordoa o monstro por 3s e causa dano"},
 		{"id": "bersek", "nome": "Berserk", "tecla": "R", "mana": 50, "cd": 20.0,
 			"desc": "+150% de dano por 10 segundos"},

@@ -5,8 +5,12 @@ extends Object
 const ITEMS = {
 	"moeda": {"nome": "Moedas", "tipo": "moeda", "cor": Color(0.9, 0.75, 0.2)},
 	"carne": {"nome": "Carne", "tipo": "uso", "cor": Color(0.72, 0.3, 0.24), "hp": 30, "desc": "Recupera 30 HP"},
-	"pocao_vida": {"nome": "Pocao de Vida", "tipo": "uso", "cor": Color(0.85, 0.2, 0.25), "hp": 50, "desc": "Recupera 50 HP"},
-	"pocao_mana": {"nome": "Pocao de Mana", "tipo": "uso", "cor": Color(0.3, 0.45, 0.9), "mana": 40, "desc": "Recupera 40 Mana"},
+	"pocao_vida_p": {"nome": "Pocao Pequena", "tipo": "uso", "cor": Color(0.85, 0.2, 0.25), "hp": 50, "desc": "Recupera 50 HP"},
+	"pocao_vida_m": {"nome": "Pocao Media", "tipo": "uso", "cor": Color(0.9, 0.15, 0.2), "hp": 150, "desc": "Recupera 150 HP"},
+	"pocao_vida_g": {"nome": "Pocao Grande", "tipo": "uso", "cor": Color(0.95, 0.1, 0.15), "hp": 300, "desc": "Recupera 300 HP"},
+	"pocao_mana_p": {"nome": "Frasco de Mana P", "tipo": "uso", "cor": Color(0.3, 0.45, 0.9), "mana": 40, "desc": "Recupera 40 Mana"},
+	"pocao_mana_m": {"nome": "Frasco de Mana M", "tipo": "uso", "cor": Color(0.25, 0.4, 0.95), "mana": 120, "desc": "Recupera 120 Mana"},
+	"pocao_mana_g": {"nome": "Frasco de Mana G", "tipo": "uso", "cor": Color(0.2, 0.35, 1.0), "mana": 250, "desc": "Recupera 250 Mana"},
 	"flecha": {"nome": "Flechas", "tipo": "municao", "cor": Color(0.72, 0.58, 0.36), "desc": "Municao do arco"},
 	"espada": {"nome": "Espada", "tipo": "arma", "arma": "sword", "cor": Color(0.8, 0.82, 0.86)},
 	"machado": {"nome": "Machado", "tipo": "arma", "arma": "axe", "cor": Color(0.75, 0.77, 0.8)},
@@ -15,7 +19,6 @@ const ITEMS = {
 }
 
 static func draw_icon(id: String, size: int = 24) -> Texture2D:
-	# 1) PNG real (assets_override > assets/icons) — com strip de magenta
 	for base in ["res://assets_override/icons/", "res://assets/icons/"]:
 		var path = base + id + ".png"
 		if ResourceLoader.exists(path):
@@ -25,14 +28,13 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 				if img != null:
 					return ImageTexture.create_from_image(_strip_magenta(img))
 				return tex
-	# 2) PNG embutido (base64 da arte pixel real)
+	var base_id: String = id.trim_suffix("_p").trim_suffix("_m").trim_suffix("_g")
 	var embedded = preload("res://scripts/autoload/icons_embedded.gd")
-	var png_bytes = embedded.get_png_bytes(id)
+	var png_bytes = embedded.get_png_bytes(base_id)
 	if png_bytes.size() > 0:
 		var img = Image.new()
 		if img.load_png_from_buffer(png_bytes) == OK:
 			return ImageTexture.create_from_image(_strip_magenta(img))
-	# 3) fallback: desenha por codigo
 	var img2 = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img2.fill(Color(0, 0, 0, 0))
 	var it = ITEMS.get(id, {"cor": Color(0.5, 0.5, 0.5), "tipo": ""})
@@ -70,7 +72,6 @@ static func _strip_magenta(img: Image) -> Image:
 	for y in range(img.get_height()):
 		for x in range(img.get_width()):
 			var c = img.get_pixel(x, y)
-			# magenta/rosa: r E b altos, g baixo, r~b (preserva vermelho da carne/pocao)
 			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
 				img.set_pixel(x, y, Color(0, 0, 0, 0))
 	return img
