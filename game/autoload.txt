@@ -1,0 +1,3 @@
+[autoload]
+GameManager="*res://scripts/autoload/game_manager.gd"
+TexHelper="*res://scripts/autoload/tex_helper.gd"

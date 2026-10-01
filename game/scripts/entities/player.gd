@@ -1,5 +1,5 @@
 extends CharacterBody2D
-## Player — clique/tap para mover, ataque automático por proximidade
+## Player — clique/tap para mover, 4 direções, animações
 
 const SPEED = 140.0
 
@@ -27,29 +27,31 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var tex: Texture2D = _load_tex(ANIMS[anim])
-		if tex == null:
+		var texs = TexHelper.load_sheet(ANIMS[anim])
+		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
 		sf.set_animation_speed(anim, 8.0)
 		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
-		sf.add_frame(anim, tex)
+		for t in texs:
+			sf.add_frame(anim, t)
 	sprite.sprite_frames = sf
 	sprite.play("idle")
-
-func _load_tex(path: String) -> Texture2D:
-	var img = Image.load_from_file(ProjectSettings.globalize_path(path))
-	if img == null:
-		push_error("nao achei textura: " + path)
-		return null
-	return ImageTexture.create_from_image(img)
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _unhandled_input(event: InputEvent) -> void:
 	if dead:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		target = get_global_mouse_position()
+		var world_pos = get_global_mouse_position()
+		target = world_pos
 		moving = true
+		var mobs = get_tree().get_nodes_in_group("mobs")
+		for mob in mobs:
+			if not mob.dead and mob.global_position.distance_to(world_pos) < 40.0:
+				target = mob.global_position
+				moving = true
+				break
 
 func _physics_process(delta: float) -> void:
 	if dead:
@@ -101,6 +103,7 @@ func _play(anim: String) -> void:
 		sprite.play(anim)
 
 func _attack(mob) -> void:
+	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = 0.8
 	_play("attack")
