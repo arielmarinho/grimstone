@@ -420,7 +420,6 @@ func _build_bag() -> void:
 	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
 	fhint.text = "Clique para fundir"
 	bag_panel.add_child(fhint)
-
 func _refresh_bag() -> void:
 	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
 	var ids = GameManager.bag.keys()
@@ -664,8 +663,10 @@ func _refresh_skills_panel() -> void:
 	var combat = {"espada": "Espada", "machado": "Machado", "distancia": "Distancia", "magia": "Magia", "defesa": "Defesa"}
 	for sk in combat:
 		if GameManager.skills.has(sk):
+			var lv: int = GameManager.skills[sk]["level"]
+			var need: int = GameManager.skill_xp_need(sk)
 			var l = _make_label(Vector2(370, y), 15, Color(0.9, 0.9, 0.95))
-			l.text = "%s: nivel %d  (%d/%d xp)" % [combat[sk], GameManager.skills[sk]["level"], GameManager.skills[sk]["xp"], GameManager.skills[sk]["level"] * 100]
+			l.text = "%s: nivel %d  (%d/%d xp) — up em ~%s" % [combat[sk], lv, GameManager.skills[sk]["xp"], need, GameManager.skill_time_left(sk)]
 			skills_panel.add_child(l)
 			y += 26
 	y += 10
@@ -696,6 +697,11 @@ func _refresh_skills_panel() -> void:
 	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "K para fechar"
 	skills_panel.add_child(hint)
+	# estimativas de progresso (estilo Tibia: o player sabe quanto falta)
+	if player_ref != null:
+		var est = _make_label(Vector2(370, 545), 13, Color(0.95, 0.75, 0.4))
+		est.text = "Proximo LEVEL %d em ~%s (mata ~1 mob a cada 8s)" % [GameManager.level + 1, GameManager.level_time_left()]
+		skills_panel.add_child(est)
 
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
