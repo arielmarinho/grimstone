@@ -1,7 +1,5 @@
 extends Node2D
-## Main — controla qual mapa está ativo e o spawn do player
-## MUNDO 2X (2048x2048): predios proporcionais ao player, estilo Tibia
-## Player criado por codigo; marcador pulsante na saida
+## Main — controla mapas, player, loja e transicoes
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
@@ -11,6 +9,7 @@ const MAPS = {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(1024, 1240),
 		"exit": {"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓"},
+		"shop": Vector2(290, 670),
 	},
 	"rat_cave": {
 		"texture": "res://assets/maps/rat_cave.png",
@@ -26,6 +25,7 @@ var player: CharacterBody2D = null
 var current: String = ""
 var switching: bool = false
 var _respawning: bool = false
+var shop: Node2D = null
 
 func _ready() -> void:
 	GameManager.load_game()
@@ -70,6 +70,18 @@ func _physics_process(_delta: float) -> void:
 		switch_map(ex["to"])
 		switching = false
 		print("transicao: ", from, " -> ", ex["to"])
+	# loja: aproxima e abre com E
+	if shop != null and current == "city1":
+		var near = player.global_position.distance_to(MAPS["city1"]["shop"]) < 120.0
+		if near and not shop.is_open() and Input.is_key_pressed(KEY_E):
+			shop.open()
+		elif not near and shop.is_open():
+			shop.close()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE and shop != null and shop.is_open():
+			shop.close()
 
 func switch_map(name: String) -> void:
 	if name == current or not MAPS.has(name):
@@ -105,6 +117,22 @@ func switch_map(name: String) -> void:
 		tw.set_loops()
 		tw.tween_property(marker, "position:y", marker.position.y - 8.0, 0.6)
 		tw.tween_property(marker, "position:y", marker.position.y, 0.6)
+	# loja so na cidade
+	if shop != null:
+		shop.queue_free()
+		shop = null
+	if name == "city1":
+		shop = load("res://scripts/world/shop.gd").new()
+		add_child(shop)
+		# placa da loja no mapa
+		var sign_l = Label.new()
+		sign_l.text = "LOJA [E]"
+		sign_l.position = MAPS["city1"]["shop"] + Vector2(-40, -70)
+		sign_l.add_theme_font_size_override("font_size", 15)
+		sign_l.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
+		sign_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		sign_l.add_theme_constant_override("outline_size", 4)
+		map_layer.add_child(sign_l)
 	if player != null:
 		GameManager.weapon = player.weapon
 		GameManager.hair_color = player.hair_color
