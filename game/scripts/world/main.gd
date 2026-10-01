@@ -84,6 +84,18 @@ func _ready() -> void:
 	NetworkManager.player_left.connect(_on_net_player_left)
 	NetworkManager.player_state.connect(_on_net_player_state)
 	NetworkManager.server_lost.connect(_clear_remote_players)
+	# mobs autoritativos: espelhos no cliente + mapa do servidor nos snapshots
+	NetworkManager.mob_state.connect(_on_net_mob_state)
+	NetworkManager.mob_removed.connect(_on_net_mob_removed)
+	NetworkManager.server_lost.connect(_on_net_offline_mobs)
+	NetworkManager.damage_local_player.connect(_on_net_damage_local)
+	NetworkManager.mob_reward.connect(_on_net_mob_reward)
+	# servidor DEDICADO (--server): roda mundo+mobs, sem player local
+	if NetworkManager.dedicated:
+		if player != null:
+			player.queue_free()
+			player = null
+		$HUD.visible = false
 
 func _on_net_player_joined(id: int, info: Dictionary) -> void:
 	if id == NetworkManager.my_id or remote_players.has(id):
@@ -139,6 +151,50 @@ func _net_send_position() -> void:
 		anim = "attack:" + player.facing
 	NetworkManager.send_position(player.global_position, current, anim)
 
+# ---------- MOBS AUTORITATIVOS (fase 2) ----------
+var net_mobs := {}  # mob_id -> espelho Mob no cliente
+
+func _on_net_mob_state(id: int, data: Dictionary) -> void:
+	if NetworkManager.is_server:
+		return
+	# cliente: cria/atualiza espelho do mob; so mostra no MEU mapa
+	if data.get("m", "") != current:
+		if net_mobs.has(id):
+			var old = net_mobs[id]
+			net_mobs.erase(id)
+			if is_instance_valid(old):
+				old.queue_free()
+		return
+	if not net_mobs.has(id):
+		var mob_scene: PackedScene = load("res://scenes/entities/mobs/rat.tscn")
+		var m = mob_scene.instantiate()
+		m.mob_type = str(data.get("t", "rat"))
+		m.net_id = id
+		m.net_authority = false
+		m.position = data["p"]
+		entities.add_child(m)
+		net_mobs[id] = m
+	var mob = net_mobs[id]
+	if is_instance_valid(mob):
+		mob.apply_net_state(data)
+
+func _on_net_mob_removed(id: int) -> void:
+	if net_mobs.has(id):
+		var m = net_mobs[id]
+		net_mobs.erase(id)
+		if is_instance_valid(m):
+			m.queue_free()
+
+func _on_net_damage_local(dmg: int) -> void:
+	# servidor dedicado mandou dano de mob pro meu player
+	if player != null and not player.dead:
+		player.take_damage(dmg)
+
+func _on_net_mob_reward(xp: int, loot: Array, pos: Vector2) -> void:
+	# servidor dedicado: XP + loot do mob que EU matei
+	GameManager.add_xp(xp)
+	preload("res://scripts/entities/loot_table.gd").spawn_loot_list(loot, pos, entities)
+
 func _create_player() -> void:
 	var pscene: PackedScene = load("res://scenes/entities/player/player.tscn")
 	if pscene == null:
@@ -155,6 +211,9 @@ func _physics_process(_delta: float) -> void:
 	if _net_accum >= 1.0 / NET_SEND_HZ:
 		_net_accum = 0.0
 		_net_send_position()
+	# servidor dedicado: mundo+mobs rodam, sem player/loja/saidas
+	if NetworkManager.dedicated:
+		return
 	if switching or player == null:
 		return
 	if player.dead:
@@ -230,11 +289,18 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		player.global_position = arrive_pos if arrive_pos != null else MAPS[name]["player_spawn"]
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		mob.queue_free()
+	# espelhos de mob do multiplayer tambem saem ao trocar de mapa
+	for id in net_mobs.keys():
+		var m = net_mobs[id]
+		if is_instance_valid(m):
+			m.queue_free()
+	net_mobs.clear()
 	var spawner_name = MAPS[name].get("spawner", "")
 	if spawner_name != "":
 		var spawner = load("res://scripts/world/spawners.gd")
 		var node = spawner.new()
 		node.spawner_name = spawner_name
+		node.map_name = name
 		entities.add_child(node)
 		# zona segura (city2): mobs agressivos nao atacam dentro dela
 		if MAPS[name].get("safe_zone", false):
