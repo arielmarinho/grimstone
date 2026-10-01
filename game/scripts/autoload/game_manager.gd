@@ -1,5 +1,5 @@
 extends Node
-## GameManager — estado global (serializável, pronto pra online futuro)
+## GameManager — autoload: estado global do jogo (serializável, pronto pra online futuro)
 
 const SAVE_PATH = "user://savegame.json"
 const BAG_MAX = 20
@@ -23,6 +23,7 @@ var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
 var arrows: int = 50
+var city2_unlocked: bool = false
 
 func xp_for_level(lv: int) -> int:
 	return int(50.0 / 3.0 * (pow(lv, 3) - 6 * pow(lv, 2) + 17 * lv - 12))
@@ -84,7 +85,7 @@ func save_game() -> void:
 		"skills": skills, "current_map": current_map,
 		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color,
 		"pants_color": pants_color, "arrows": arrows,
-		"coins": coins, "bag": bag,
+		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -112,4 +113,5 @@ func load_game() -> bool:
 	tunic_color = parsed.get("tunic_color", "castanho")
 	pants_color = parsed.get("pants_color", "marrom")
 	arrows = int(parsed.get("arrows", 50))
+	city2_unlocked = bool(parsed.get("city2_unlocked", false))
 	return true
