@@ -5,6 +5,7 @@ extends Node2D
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
+const REMOTE_PLAYER = preload("res://scripts/entities/remote_player.gd")
 
 const MAPS = {
 	"city1": {
@@ -55,6 +56,11 @@ var switching: bool = false
 var _respawning: bool = false
 var shop: Node2D = null
 
+# ---------- MULTIPLAYER (Area 9) ----------
+var remote_players := {}  # peer_id -> RemotePlayer
+var _net_accum: float = 0.0
+const NET_SEND_HZ := 15.0
+
 func _ready() -> void:
 	GameManager.load_game()
 	_create_player()
@@ -66,6 +72,61 @@ func _ready() -> void:
 		player.pants_color = GameManager.pants_color
 		player._build_frames()
 	$HUD.set_player(player)
+	# multiplayer: conecta os sinais do NetworkManager
+	NetworkManager.player_joined.connect(_on_net_player_joined)
+	NetworkManager.player_left.connect(_on_net_player_left)
+	NetworkManager.player_state.connect(_on_net_player_state)
+
+func _on_net_player_joined(id: int, info: Dictionary) -> void:
+	if id == NetworkManager.my_id or remote_players.has(id):
+		return
+	var rp = REMOTE_PLAYER.new()
+	rp.name = "Remote_%d" % id
+	entities.add_child(rp)
+	rp.setup(id, info)
+	remote_players[id] = rp
+	# so mostra se estiver no MESMO mapa que eu
+	rp.visible = rp.map_name == current
+	if rp.map_name == current:
+		NetworkManager.chat_message.emit(str(info.get("name", "???")), "entrou no jogo.", "join")
+
+func _on_net_player_left(id: int) -> void:
+	if remote_players.has(id):
+		var rp = remote_players[id]
+		remote_players.erase(id)
+		if is_instance_valid(rp):
+			rp.queue_free()
+
+func _on_net_player_state(id: int, pos: Vector2, map: String, anim: String) -> void:
+	if not remote_players.has(id):
+		# player desconhecido (chegou estado antes do sync) — cria com dados basicos
+		var info = NetworkManager.players.get(id, {"name": "???", "map": map})
+		_on_net_player_joined(id, info)
+		if not remote_players.has(id):
+			return
+	var rp = remote_players[id]
+	if not is_instance_valid(rp):
+		return
+	rp.apply_state(pos, map, anim)
+	# troca de mapa: esconde/mostra conforme o MEU mapa atual
+	rp.visible = map == current
+
+func _clear_remote_players() -> void:
+	for id in remote_players.keys():
+		var rp = remote_players[id]
+		if is_instance_valid(rp):
+			rp.queue_free()
+	remote_players.clear()
+
+func _net_send_position() -> void:
+	if player == null or player.dead or not NetworkManager.is_online():
+		return
+	var anim = "idle:" + player.facing
+	if player.moving:
+		anim = "walk:" + player.facing
+	elif player.attacking:
+		anim = "attack:" + player.facing
+	NetworkManager.send_position(player.global_position, current, anim)
 
 func _create_player() -> void:
 	var pscene: PackedScene = load("res://scenes/entities/player/player.tscn")
@@ -78,6 +139,11 @@ func _create_player() -> void:
 	player.position = Vector2(1024, 1240)
 
 func _physics_process(_delta: float) -> void:
+	# multiplayer: envia minha posição a 15Hz
+	_net_accum += _delta
+	if _net_accum >= 1.0 / NET_SEND_HZ:
+		_net_accum = 0.0
+		_net_send_position()
 	if switching or player == null:
 		return
 	if player.dead:
