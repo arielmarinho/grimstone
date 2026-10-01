@@ -113,6 +113,7 @@ func _unlock_city2() -> void:
 	if GameManager.city2_unlocked:
 		return
 	GameManager.city2_unlocked = true
+	GameManager.city2_visited = true
 	GameManager.save_game()
 	if player != null:
 		var l = Label.new()
@@ -173,6 +174,7 @@ func switch_map(name: String) -> void:
 		shop = null
 	if MAPS[current].has("shop"):
 		shop = load("res://scripts/world/shop.gd").new()
+		shop.city = current
 		add_child(shop)
 		var sign_l = Label.new()
 		sign_l.text = "LOJA [E]"
