@@ -1,6 +1,6 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E, flechas,
-## critico, customizacao T/Y/U (tunica/cabelo/calca)
+## critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
@@ -29,6 +29,8 @@ var buff_golpe: int = 0
 var buff_furia_time: float = 0.0
 var buff_certeiro: bool = false
 
+var _last_level: int = 1
+
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
 	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
@@ -44,7 +46,41 @@ const ANIMS = {
 
 func _ready() -> void:
 	target = global_position
+	_last_level = GameManager.level
 	_build_frames()
+
+func _notify_level_up() -> void:
+	# efeito visual: anel dourado expandindo + texto LEVEL UP!
+	var l = Label.new()
+	l.text = "LEVEL UP!"
+	l.position = global_position + Vector2(-35, -80)
+	l.add_theme_font_size_override("font_size", 18)
+	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 5)
+	l.z_index = 50
+	get_parent().add_child(l)
+	var tw = l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 30.0, 1.0)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 1.0)
+	tw.tween_callback(l.queue_free)
+	# anel: sprite circular dourado que expande e some
+	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for a in range(64):
+		var ang = a * TAU / 64.0
+		var px = 32 + cos(ang) * 28.0
+		var py = 32 + sin(ang) * 28.0
+		img.set_pixel(int(px), int(py), Color(1.0, 0.85, 0.25))
+	var ring = Sprite2D.new()
+	ring.texture = ImageTexture.create_from_image(img)
+	ring.position = global_position
+	ring.z_index = 40
+	get_parent().add_child(ring)
+	var tw2 = ring.create_tween()
+	tw2.tween_property(ring, "scale", Vector2(2.2, 2.2), 0.6)
+	tw2.parallel().tween_property(ring, "modulate:a", 0.0, 0.6)
+	tw2.tween_callback(ring.queue_free)
 
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
@@ -193,6 +229,9 @@ func _spawn_crit_text(pos: Vector2) -> void:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
+	if GameManager.level > _last_level:
+		_last_level = GameManager.level
+		_notify_level_up()
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	for slot in skill_cd:
 		if not skill_ready[slot]:

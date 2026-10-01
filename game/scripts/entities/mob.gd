@@ -1,6 +1,7 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, 4 direcoes, timers filhos, strip magenta
 ## 8 tipos: rat, slime, bat, spider, wolf, goblin, orc, skeleton
+## FEEDBACK: flash de dano + numero flutuante + morte com fade
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
@@ -192,8 +193,31 @@ func take_damage(amount: int) -> void:
 		return
 	hp -= amount
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
+	_flash_damage()
+	_spawn_damage_number(amount)
 	if hp <= 0:
 		die()
+
+# ---------- FEEDBACK VISUAL DE DANO ----------
+func _flash_damage() -> void:
+	sprite.modulate = Color(3.0, 3.0, 3.0)
+	var tw = create_tween()
+	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.15)
+
+func _spawn_damage_number(amount: int) -> void:
+	var l = Label.new()
+	l.text = str(amount)
+	l.position = global_position + Vector2(-12, -60 + randf() * 10 - 5)
+	l.add_theme_font_size_override("font_size", 15)
+	l.add_theme_color_override("font_color", Color(1.0, 0.95, 0.75))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 4)
+	l.z_index = 50
+	get_parent().add_child(l)
+	var tw = l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 28.0, 0.55)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.55)
+	tw.tween_callback(l.queue_free)
 
 func die() -> void:
 	dying = true
@@ -204,6 +228,10 @@ func die() -> void:
 	_play_dir("death")
 	GameManager.add_xp(xp_reward)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
+	# corpo desvanece (respawn timer continua)
+	var tw = create_tween()
+	tw.tween_interval(0.8)
+	tw.tween_property(sprite, "modulate:a", 0.0, 1.2)
 	$RespawnTimer.start(respawn_time)
 
 func _do_respawn() -> void:
@@ -213,3 +241,4 @@ func _do_respawn() -> void:
 	global_position = home
 	_play_dir("idle")
 	hp_bar.value = 100
+	sprite.modulate = Color(1, 1, 1, 1)
