@@ -26,6 +26,7 @@
 | 17 | **Integridade GitHub↔local** | gs-qa-testing | auditoria blob SHA de todos os arquivos | OK ciclo 28 (v0.6.10) — 32/36 byte-exatos, 4 = encoding MCP, nenhum corrompido |
 | 18 | **Checklist teste Mac** | gs-qa-testing | TESTE_MAC.md consolidado + regressao 7/7 testes | OK ciclo 29 (v0.6.10) — aguarda usuario testar |
 | 19 | **Cinto de runas + regressoes** | gs-qa-testing | v0.6.11: CINTO Z/X; REGRESSOES: ITEMS_DB sem preload quebrava main.gd (loot_table/game_manager), _show_feedback inexistente (hud) | OK ciclo 33 — NetTest 3/3 + 7/7 testes + headless 0 erros |
+| 22 | **Portao sul + integridade pos-fix** | gs-level-design + gs-qa-testing | muralha SUL fiel ao cenario (caminho ate a borda), trigger do bueiro, auditoria blob SHA pos-fix | OK ciclo 37b (v0.6.14) — colliders/main byte-exatos, NetTest 3/3, 7/7 testes |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -33,10 +34,11 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
-### Area 21 — Polish visual de mapas + reparo pos-polish (ciclo 36) OK
-- bordas do mundo em todos os mapas, rato procedural redesenhado (64x44), caverna refeita, casas retangulares, feedback de dano restaurado
-- REPARO: mob.gd/spawners.gd remotos regredidos pra base antiga — re-push byte-exato do local canônico; testes novos (map_check/preview_maps/preview_rat) pushados
-- Validacao: headless 0 erros, 7/7 testes unitarios OK
+### Area 22 — Portao sul + integridade pos-fix (ciclo 37b) VALIDADA
+- fix do portao sul (colliders + trigger do bueiro) conferido: muralha SUL agora tem 2 segmentos (x 200-500 e x 1550-1850), caminho do bueiro/estrada desce ate a borda em AMBAS as cidades; trigger do bueiro movido pra y1750 r110 (alcancavel sem bloqueio)
+- Integridade GitHub↔local: colliders.gd/main.gd/preview_rat2 byte-exatos (blob SHA); CHANGELOG/PLANO divergem 1 byte (newline final, conteudo identico — encoding MCP)
+- preview_rat2.gd valida o rato procedural (4 frames) — arte confirmada em artifacts/rat_now.png
+- Validacao: headless --import 0 erros + execucao real --quit-after 0 erros + 7/7 testes unitarios OK + NetTest server+A+B PASSOU (registro, chat, posicao, dano autoritativo)
 ### Area 20 — Sincronizacao GitHub↔local pos-v0.6.11 (ciclo 34) CONCLUIDA
 - blob SHA de 9 arquivos-chave: 4/9 byte-exatos de primeira (loot_table, network_manager, items_db, rarity)
 - 5 divergentes investigados: game_manager e title_screen = encoding MCP (semanticamente completos, NAO mexer); hud.gd remoto SEM a v0.6.11 (cinto Z/X) — local pushado byte-exato (fd7cbf0a); mob.gd e player.gd remotos = fix visual 08:17 aplicado sobre base ANTIGA (perderam from_peer/quests/touch/raridade) — FUNSAO: logica local + ANIMS all-down (arte down real em todas as direcoes), pushados byte-exatos (abfed491 / 4ec07f32)
@@ -99,3 +101,8 @@
 - skills R/G por classe (8 skills), desbloqueio na city2 (flag persistida), HUD 4 slots Q/E/R/G, dummy de treino
 ### Area 1 — Combate & Feedback (ciclo 1) OK
 - flash de dano no mob, numeros flutuantes, morte com fade, level up com anel dourado
+
+### Area 21 — Polish visual de mapas + reparo pos-polish (ciclo 36) OK
+- bordas do mundo em todos os mapas, rato procedural redesenhado (64x44), caverna refeita, casas retangulares, feedback de dano restaurado
+- REPARO: mob.gd/spawners.gd remotos regredidos pra base antiga — re-push byte-exato do local canônico; testes novos (map_check/preview_maps/preview_rat) pushados
+- Validacao: headless 0 erros, 7/7 testes unitarios OK
