@@ -1,6 +1,7 @@
 class_name TexHelper
 extends Object
 ## TexHelper — carrega sprite real do disco (PNG ou .b64); se nao existir, gera arte procedural
+## Suporta weapon/hair/tunic para o sistema de classes estilo Rucoy
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)
@@ -12,6 +13,17 @@ static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 			out.append(ImageTexture.create_from_image(fr))
 		return out
 	return _procedural(path)
+
+static func load_sheet_custom(path: String, weapon: String, hair: String, tunic: String) -> Array[Texture2D]:
+	var img := _load_image(path)
+	if img != null:
+		var out: Array[Texture2D] = []
+		var fw = img.get_width() / 4
+		for i in range(4):
+			var fr = img.get_region(Rect2i(i * fw, 0, fw, img.get_height()))
+			out.append(ImageTexture.create_from_image(fr))
+		return out
+	return _procedural(path, weapon, hair, tunic)
 
 static func _load_image(path: String) -> Image:
 	var img = Image.load_from_file(ProjectSettings.globalize_path(path))
@@ -30,7 +42,7 @@ static func _load_image(path: String) -> Image:
 		return null
 	return dec
 
-static func _procedural(path: String) -> Array[Texture2D]:
+static func _procedural(path: String, weapon: String = "sword", hair: String = "castanho", tunic: String = "castanho") -> Array[Texture2D]:
 	var frames: Array[Texture2D] = []
 	var is_rat := "rat" in path
 	var is_attack := "attack" in path
@@ -42,12 +54,12 @@ static func _procedural(path: String) -> Array[Texture2D]:
 		if is_rat:
 			_draw_rat(img, f, is_attack, is_death, is_walk)
 		else:
-			_draw_knight(img, f, is_attack, is_death, is_walk)
+			_draw_knight(img, f, is_attack, is_death, is_walk, weapon, hair, tunic)
 		frames.append(ImageTexture.create_from_image(img))
 	return frames
 
-# ---------- KNIGHT (cabelo castanho, tunica marrom, espada) ----------
-static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
+# ---------- KNIGHT (cabelo castanho, tunica marrom, espada — cores customizaveis) ----------
+static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, weapon: String = "sword", hair_color: String = "castanho", tunic_color: String = "castanho") -> void:
 	var cx := 48
 	var bob := 0
 	var leg_l := 0
@@ -59,8 +71,12 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 	elif not is_attack and not is_death:
 		bob = [0, 1, 1, 0][f]
 	var hair := Color(0.42, 0.28, 0.14)
+	if hair_color != "castanho" and Equips.CLOTHES_COLORS.has(hair_color):
+		hair = Equips.CLOTHES_COLORS[hair_color]
 	var skin := Color(0.87, 0.7, 0.55)
 	var tunic := Color(0.55, 0.38, 0.2)
+	if tunic_color != "castanho" and Equips.CLOTHES_COLORS.has(tunic_color):
+		tunic = Equips.CLOTHES_COLORS[tunic_color]
 	var belt := Color(0.3, 0.2, 0.1)
 	var pants := Color(0.25, 0.2, 0.16)
 	var boots := Color(0.35, 0.24, 0.14)
@@ -84,15 +100,11 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 	_draw_rect(img, cx - 5, 32 + bob, 3, 3, Color(0.1, 0.1, 0.15))
 	_draw_rect(img, cx + 2, 32 + bob, 3, 3, Color(0.1, 0.1, 0.15))
 	var sy := 34 + bob
-	if is_attack:
-		if f <= 1:
-			_draw_rect(img, cx + 12, sy - 8, 4, 16, steel)
-		else:
-			_draw_rect(img, cx + 10, sy + 4, 14, 4, steel)
-			_draw_rect(img, cx + 6, sy + 2, 6, 8, Color(0.9, 0.92, 0.95, 0.6))
+	if Equips.WEAPONS.has(weapon):
+		Equips.draw_weapon(img, weapon, cx, sy, f, is_attack)
 	else:
 		_draw_rect(img, cx + 14, sy, 4, 22, steel)
-	_draw_rect(img, cx + 13, sy + 20, 6, 3, belt)
+		_draw_rect(img, cx + 13, sy + 20, 6, 3, belt)
 
 # ---------- RATO (marrom, olhos vermelhos, orelhas rosas) ----------
 static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
@@ -101,7 +113,7 @@ static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_wa
 	var fur2 := Color(0.55, 0.42, 0.25)
 	var ear := Color(0.85, 0.62, 0.65)
 	var eye := Color(0.9, 0.12, 0.12)
-	var bob := [0, 1, 0, 1][f]
+	var bob: int = [0, 1, 0, 1][f]
 	if is_death:
 		_draw_rect(img, cx - 18, 82, 36, 6, fur)
 		_draw_rect(img, cx + 16, 80, 10, 4, ear)

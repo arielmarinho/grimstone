@@ -1,5 +1,6 @@
 extends CharacterBody2D
-## Player — clique/tap para mover, 4 direções, animações
+## Player — clique para andar, classes estilo Rucoy (arma define classe),
+## troca de arma com teclas 1-4, customização cabelo (Y) e túnica (T)
 
 const SPEED = 140.0
 
@@ -12,9 +13,9 @@ var dead: bool = false
 var facing: String = "down"
 var attack_cooldown: float = 0.0
 
-func _ready() -> void:
-	target = global_position
-	_build_frames()
+var weapon: String = "sword"
+var hair_color: String = "castanho"
+var tunic_color: String = "castanho"
 
 const ANIMS = {
 	"idle": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
@@ -23,11 +24,15 @@ const ANIMS = {
 	"death": "res://assets/sprites/animation/player/knight/death/down/knight_death_down_base.png",
 }
 
+func _ready() -> void:
+	target = global_position
+	_build_frames()
+
 func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TexHelper.load_sheet(ANIMS[anim])
+		var texs = TexHelper.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -41,6 +46,27 @@ func _build_frames() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if dead:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var weapons = ["sword", "axe", "bow", "staff"]
+		if event.keycode >= KEY_1 and event.keycode <= KEY_4:
+			var idx = event.keycode - KEY_1
+			if idx < weapons.size() and weapons[idx] != weapon:
+				weapon = weapons[idx]
+				_build_frames()
+				print("arma: ", Equips.WEAPONS[weapon]["nome"], " (", Equips.WEAPONS[weapon]["classe"], ")")
+		if event.keycode == KEY_T:
+			var cores = Equips.CLOTHES_COLORS.keys()
+			var i = cores.find(tunic_color)
+			tunic_color = cores[(i + 1) % cores.size()]
+			_build_frames()
+			print("tunica: ", tunic_color)
+		if event.keycode == KEY_Y:
+			var cores = Equips.CLOTHES_COLORS.keys()
+			var i = cores.find(hair_color)
+			hair_color = cores[(i + 1) % cores.size()]
+			_build_frames()
+			print("cabelo: ", hair_color)
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var world_pos = get_global_mouse_position()
@@ -62,6 +88,7 @@ func _physics_process(delta: float) -> void:
 			attacking = false
 		return
 
+	var w = Equips.WEAPONS[weapon]
 	var dist = global_position.distance_to(target)
 	if moving and dist > 6.0:
 		var dir = (target - global_position).normalized()
@@ -69,20 +96,20 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		_update_facing(dir)
 		_play("walk")
-		var mob = _mob_in_range()
+		var mob = _mob_in_range(w["alcance"])
 		if mob and attack_cooldown <= 0.0:
 			_attack(mob)
 	else:
 		moving = false
 		velocity = Vector2.ZERO
 		_play("idle")
-		var mob = _mob_in_range()
+		var mob = _mob_in_range(w["alcance"])
 		if mob and attack_cooldown <= 0.0:
 			_attack(mob)
 
-func _mob_in_range():
+func _mob_in_range(max_d: float):
 	var best = null
-	var best_d = 60.0
+	var best_d = max_d
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if mob.dead:
 			continue
@@ -103,22 +130,44 @@ func _play(anim: String) -> void:
 		sprite.play(anim)
 
 func _attack(mob) -> void:
+	var w = Equips.WEAPONS[weapon]
 	_update_facing(mob.global_position - global_position)
 	attacking = true
-	attack_cooldown = 0.8
+	attack_cooldown = w["cooldown"]
 	_play("attack")
-	await get_tree().create_timer(0.3).timeout
-	if not dead and is_instance_valid(mob) and not mob.dead:
-		mob.take_damage(15)
-		GameManager.add_skill_xp("espada", 4)
-		print("dano no rato")
+	var dano: int = w["dano"] + randi() % 5 - 2
+	if w["tipo"] == "melee":
+		await get_tree().create_timer(0.3).timeout
+		if not dead and is_instance_valid(mob) and not mob.dead:
+			GameManager.add_skill_xp(w["skill"], 4)
+			mob.take_damage(dano)
+			_spawn_damage_number(mob.global_position, dano)
+	else:
+		await get_tree().create_timer(0.25).timeout
+		if dead:
+			return
+		var proj = preload("res://scripts/entities/projectile.gd").new()
+		proj.setup(global_position, mob.global_position, dano, "bow" if weapon == "bow" else "staff")
+		get_parent().add_child(proj)
+		GameManager.add_skill_xp(w["skill"], 4)
+
+func _spawn_damage_number(pos: Vector2, amount: int) -> void:
+	var lbl = Label.new()
+	lbl.text = str(amount)
+	lbl.position = pos + Vector2(-8, -50)
+	lbl.add_theme_font_size_override("font_size", 18)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	get_parent().add_child(lbl)
+	var tw = lbl.create_tween()
+	tw.tween_property(lbl, "position:y", lbl.position.y - 30, 0.6)
+	tw.parallel().tween_property(lbl, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(lbl.queue_free)
 
 func take_damage(amount: int) -> void:
 	if dead:
 		return
 	GameManager.hp = max(0, GameManager.hp - amount)
 	GameManager.add_skill_xp("defesa", 2)
-	print("player tomou dano: ", amount, " hp=", GameManager.hp)
 	if GameManager.hp <= 0:
 		die()
 
