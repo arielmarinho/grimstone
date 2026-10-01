@@ -9,6 +9,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 GameManager="*res://scripts/autoload/game_manager.gd"
+FX="*res://scripts/autoload/fx.gd"
 NetworkManager="*res://scripts/autoload/network_manager.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 MobAuthority="*res://scripts/autoload/mob_authority.gd"
@@ -18,8 +19,8 @@ TouchControls="*res://scripts/ui/touch_controls.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 window/handheld/orientation=4
+window/stretch/aspect="keep"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

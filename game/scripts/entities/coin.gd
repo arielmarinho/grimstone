@@ -27,5 +27,6 @@ func _physics_process(_delta: float) -> void:
 	var p = players[0] if players.size() > 0 else null
 	if p != null and is_instance_valid(p) and p.global_position.distance_to(global_position) < 30.0:
 		GameManager.coins += value
+		FX.coin_gain(global_position, value)
 		AudioManager.play_sfx("coin")
 		queue_free()

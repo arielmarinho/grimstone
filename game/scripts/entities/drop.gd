@@ -57,6 +57,7 @@ func _pickup() -> void:
 		return
 	if it["tipo"] == "moeda":
 		GameManager.coins += qty
+		FX.coin_gain(global_position, qty)
 		AudioManager.play_sfx("coin")
 	else:
 		if not GameManager.add_item(item_id, qty):
