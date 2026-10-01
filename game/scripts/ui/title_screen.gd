@@ -152,6 +152,7 @@ func _new_game() -> void:
 	GameManager.skills = {"espada": {"level": 10, "xp": 0}, "defesa": {"level": 10, "xp": 0}}
 	GameManager.city2_visited = false
 	GameManager.city2_unlocked = false
+	GameManager.quests = {}
 	GameManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 

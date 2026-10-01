@@ -47,6 +47,12 @@ const MAPS = {
 	},
 }
 
+# posicao do NPC de quests nas cidades (longe da loja, perto do spawn)
+const QUEST_NPC_POS = {
+	"city1": Vector2(1450, 1350),
+	"city2": Vector2(1200, 500),
+}
+
 @onready var map_layer: Node2D = $MapLayer
 @onready var entities: Node2D = $Entities
 
@@ -55,6 +61,7 @@ var current: String = ""
 var switching: bool = false
 var _respawning: bool = false
 var shop: Node2D = null
+var quest_npc: Node2D = null
 
 # ---------- MULTIPLAYER (Area 9) ----------
 var remote_players := {}  # peer_id -> RemotePlayer
@@ -213,9 +220,11 @@ func _on_net_damage_local(dmg: int) -> void:
 	if player != null and not player.dead:
 		player.take_damage(dmg)
 
-func _on_net_mob_reward(xp: int, loot: Array, pos: Vector2) -> void:
+func _on_net_mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String = "") -> void:
 	# servidor dedicado: XP + loot do mob que EU matei
 	GameManager.add_xp(xp)
+	if mob_type != "":
+		GameManager.quest_on_kill(mob_type)
 	preload("res://scripts/entities/loot_table.gd").spawn_loot_list(loot, pos, entities)
 
 func _create_player() -> void:
@@ -263,11 +272,19 @@ func _physics_process(_delta: float) -> void:
 			shop.open()
 		elif not near and shop.is_open():
 			shop.close()
+	if quest_npc != null:
+		var near_q = player.global_position.distance_to(QUEST_NPC_POS[current]) < 120.0
+		if near_q and not quest_npc.is_open() and Input.is_key_pressed(KEY_J):
+			quest_npc.open()
+		elif not near_q and quest_npc.is_open():
+			quest_npc.close()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE and shop != null and shop.is_open():
 			shop.close()
+		if event.keycode == KEY_ESCAPE and quest_npc != null and quest_npc.is_open():
+			quest_npc.close()
 
 func _unlock_city2() -> void:
 	if GameManager.city2_unlocked:
@@ -345,6 +362,9 @@ func switch_map(name: String, arrive_pos = null) -> void:
 	if shop != null:
 		shop.queue_free()
 		shop = null
+	if quest_npc != null:
+		quest_npc.queue_free()
+		quest_npc = null
 	if MAPS[current].has("shop"):
 		shop = load("res://scripts/world/shop.gd").new()
 		shop.city = current
@@ -357,6 +377,11 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		sign_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 		sign_l.add_theme_constant_override("outline_size", 4)
 		map_layer.add_child(sign_l)
+	if QUEST_NPC_POS.has(current):
+		quest_npc = load("res://scripts/world/quest_npc.gd").new()
+		quest_npc.city = current
+		quest_npc.position = QUEST_NPC_POS[current]
+		add_child(quest_npc)
 	if player != null:
 		GameManager.weapon = player.weapon
 		GameManager.hair_color = player.hair_color
