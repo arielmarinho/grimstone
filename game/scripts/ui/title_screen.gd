@@ -1,6 +1,9 @@
 extends Control
 ## Tela de título — GRIMSTONE, estilo Rucoy/Tibia
 ## JOGAR continua o save (ou comeca novo), NOVO JOGO zera o save
+## ONLINE: HOSPEDAR (listen server) / CONECTAR por IP
+
+var ip_input: LineEdit
 
 func _ready() -> void:
 	AudioManager.play_music("title")
@@ -18,7 +21,7 @@ func _ready() -> void:
 		var br = 0.4 + randf() * 0.6
 		star.color = Color(br, br, br * 1.05, 0.9)
 		add_child(star)
-	# lua
+	# lua redonda via estilo
 	var moon_st = StyleBoxFlat.new()
 	moon_st.bg_color = Color(0.92, 0.9, 0.8, 0.95)
 	moon_st.set_corner_radius_all(45)
@@ -66,9 +69,31 @@ func _ready() -> void:
 	var btn_quit = _make_button("SAIR", Vector2(540, y))
 	btn_quit.pressed.connect(_quit)
 	add_child(btn_quit)
+	y += 70
+	# ---------- ONLINE (Area 9) ----------
+	var btn_host = _make_button("HOSPEDAR JOGO", Vector2(540, y))
+	btn_host.pressed.connect(_host_game)
+	add_child(btn_host)
+	y += 70
+	var btn_join = _make_button("CONECTAR (IP)", Vector2(540, y))
+	btn_join.pressed.connect(_join_game)
+	add_child(btn_join)
+	y += 70
+	var ip_label = Label.new()
+	ip_label.text = "IP do servidor:"
+	ip_label.position = Vector2(490, y + 4)
+	ip_label.add_theme_font_size_override("font_size", 14)
+	ip_label.add_theme_color_override("font_color", Color(0.7, 0.65, 0.55))
+	add_child(ip_label)
+	ip_input = LineEdit.new()
+	ip_input.position = Vector2(620, y)
+	ip_input.size = Vector2(170, 34)
+	ip_input.text = "127.0.0.1"
+	ip_input.add_theme_font_size_override("font_size", 14)
+	add_child(ip_input)
 	# versao
 	var ver = Label.new()
-	ver.text = "v0.4.5"
+	ver.text = "v0.5.0"
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
@@ -120,3 +145,18 @@ func _new_game() -> void:
 
 func _quit() -> void:
 	get_tree().quit()
+
+# ---------- ONLINE (Area 9) ----------
+func _host_game() -> void:
+	AudioManager.play_sfx("ui_click")
+	NetworkManager.start_server()
+	# listen server: o host TAMBEM joga (servidor dedicado roda com --server)
+	_start_game()
+
+func _join_game() -> void:
+	AudioManager.play_sfx("ui_click")
+	var host = ip_input.text.strip_edges()
+	if host == "":
+		host = "127.0.0.1"
+	NetworkManager.start_client(host)
+	_start_game()
