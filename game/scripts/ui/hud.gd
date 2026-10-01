@@ -519,6 +519,90 @@ func _use_bag_item(id: String) -> void:
 				_show_feedback("Nham! Bem alimentado — regen 2x por %s" % GameManager.fmt_time_min(float(it["comida"]) / 60.0))
 			elif it.has("hp") or it.has("mana"):
 				_show_feedback("Usou %s" % it["nome"])
+	elif it["tipo"] == "runa":
+		_use_runa_item(id)
+
+# ---------- RUNAS (v0.6.7) ----------
+## usa a runa da mochila: consome a pedra e aplica o efeito no mundo.
+## Se a runa precisa de alvo e nao ha monstro, devolve a pedra pra mochila.
+func _use_runa_item(id: String) -> void:
+	if player_ref == null or player_ref.dead:
+		return
+	var r = GameManager.RUNAS.get(id, null)
+	if r == null:
+		return
+	var dmg: int = GameManager.runa_dano(id)
+	match r["efeito"]:
+		"fogo":
+			var mob = player_ref._mob_in_range(400.0)
+			if mob == null:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			var proj = preload("res://scripts/entities/projectile.gd").new()
+			proj.setup(player_ref.global_position, mob.global_position, dmg, "staff", false, true)
+			get_parent().add_child(proj)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa de Fogo! %d de dano" % dmg)
+		"gelo":
+			var mob2 = player_ref._mob_in_range(400.0)
+			if mob2 == null:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			mob2.stunned = 2.0
+			mob2.take_damage(dmg)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa de Gelo! Congelou por 2s (%d de dano)" % dmg)
+		"trovoada":
+			var hits := _runa_aoe(dmg, Color(0.95, 0.9, 0.3))
+			if hits == 0:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa da Trovoada! %d atingidos (%d de dano)" % [hits, dmg])
+		"cura":
+			GameManager.remove_item(id, 1)
+			var cura := int(GameManager.hp_max * 0.4)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
+			AudioManager.play_sfx("potion")
+			_show_feedback("Runa de Cura! +%d HP" % cura)
+
+## dano em area ao redor do player (runa da trovoada); retorna quantos foram atingidos
+func _runa_aoe(dmg: int, cor: Color) -> int:
+	var hits := 0
+	for mob in get_tree().get_nodes_in_group("mobs"):
+		if mob.dead:
+			continue
+		if player_ref.global_position.distance_to(mob.global_position) < 220.0:
+			mob.take_damage(dmg)
+			hits += 1
+	# anel de energia no chao
+	var ring = Sprite2D.new()
+	ring.texture = _make_runa_ring(cor)
+	ring.global_position = player_ref.global_position
+	ring.z_index = 5
+	get_parent().add_child(ring)
+	var tw = ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(2.2, 2.2), 0.4)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(ring.queue_free)
+	return hits
+
+func _make_runa_ring(c: Color) -> ImageTexture:
+	var img = Image.create(220, 220, false, Image.FORMAT_RGBA8)
+	for y in range(220):
+		for x in range(220):
+			var d = Vector2(x - 110.0, y - 110.0).length()
+			if d > 96.0 and d < 108.0:
+				img.set_pixel(x, y, Color(c.r, c.g, c.b, 0.7))
+	return ImageTexture.create_from_image(img)
+
+func it_name_of(id: String) -> String:
+	var base: String = id.split("#")[0]
+	var it2 = ITEMS_DB.ITEMS.get(base, null)
+	return it2["nome"] if it2 != null else id
 
 # ---------- TELA DE MORTE ----------
 func _build_death_screen() -> void:
@@ -782,7 +866,7 @@ func _refresh_bestiary_panel() -> void:
 			bestiary_panel.add_child(d)
 			y += 24
 		else:
-			# nunca derrotado: fica oculto (estilo Tibia — descobre caçando)
+			# nunca derrotado: fica oculto (estilo Tibia — descobre cacando)
 			var l = _make_label(Vector2(370, y), 14, Color(0.45, 0.45, 0.5))
 			l.text = "??? — monstro ainda nao enfrentado"
 			bestiary_panel.add_child(l)
