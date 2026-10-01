@@ -2,7 +2,8 @@
 Formato: codigo no GitHub (push MCP)
 - title_screen.gd: versao do titulo v0.6.15 -> v0.6.17 (estava 2 versoes atras — housekeeping so pegava export_presets)
 - export_presets.cfg: version/name 0.6.10 -> 0.6.17 (version/code continua 1, sobe no build de release)
-- Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK
+- FIX tex_helper.gd: _make_up_from_real agora usa REGIAO do rosto (y 24-50, x 38-72) — pele clara, sombreada, olhos e contorno viram cabelo = costas de verdade (antes so pele clara era substituida e sobrava rosto no up)
+- Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK; preview_final OK
 
 ## v0.6.17 — Player 100% ARTE REAL (hibrido: down real + up real editada + side real flip) (ciclo 41, 01/10)
 Formato: codigo no GitHub (3881b00 local, push MCP 99658a8/225fbf9/ece7d2a)
