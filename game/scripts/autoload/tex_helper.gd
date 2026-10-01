@@ -1,6 +1,5 @@
 extends Object
 ## TexHelper — carrega sprite real do disco; se nao existir, gera grafico procedural
-## (assim o jogo roda 100% so com o clone, e sprites reais entram depois)
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)
@@ -24,8 +23,9 @@ static func _load_image(path: String) -> Image:
 	if b64.is_empty():
 		return null
 	var buf = Marshalls.base64_to_raw(b64)
-	var dec = Image.load_png_from_buffer(buf)
-	if dec == null:
+	var dec = Image.new()
+	var err = dec.load_png_from_buffer(buf)
+	if err != OK:
 		push_error("falha ao decodificar: " + path)
 		return null
 	return dec
