@@ -1,5 +1,16 @@
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.7 (ciclo 25: RUNAS — escopo expandido)
+
+- 4 runas estilo Tibia (items_db.gd): Runa de Fogo (bola de fogo no alvo mais proximo), Runa de Gelo (dano + atordoa 2s), Runa da Trovoada (dano em area 220px ao redor), Runa de Cura (+40% HP)
+- Qualquer classe usa, NAO gasta mana, consome a pedra (estilo Tibia); dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02)) — fogo 60, gelo 35, trovoada 45
+- hud.gd: usar runa pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro por perto; trovoada com anel de energia visual; feedback + som
+- Icone procedural: pedra runica (losango) com glifo na cor do elemento
+- Lojas: city1 vende Runa de Cura (40); city2 vende as 4 (fogo 55, gelo 45, trovoada 60, cura 35)
+- Loot: skeleton dropa fogo 8% / gelo 6%, goblin trovoada 5%, slime cura 4%
+- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
+- Proximo: teste no Mac do usuario (acumulado grande) OU house/decoracao OU build APK
+
 Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
