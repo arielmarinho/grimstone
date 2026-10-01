@@ -5,6 +5,11 @@ static func build_colliders(map_name: String, parent: Node) -> void:
 	for c in parent.get_children():
 		if c is StaticBody2D:
 			c.queue_free()
+	# BORDAS DO MUNDO (todos os mapas): player NUNCA sai do sprite do mapa (2048x2048)
+	_add_rect(parent, Vector2(1024, 40), Vector2(2048, 80))
+	_add_rect(parent, Vector2(1024, 2008), Vector2(2048, 80))
+	_add_rect(parent, Vector2(40, 1024), Vector2(80, 2048))
+	_add_rect(parent, Vector2(2008, 1024), Vector2(80, 2048))
 	match map_name:
 		"city1":
 			_city1(parent)
