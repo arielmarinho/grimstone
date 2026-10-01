@@ -14,6 +14,14 @@ const ITEMS = {
 }
 
 static func draw_icon(id: String, size: int = 24) -> ImageTexture:
+	# 1) PNG real (assets_override > assets/icons)
+	for base in ["res://assets_override/icons/", "res://assets/icons/"]:
+		var path = base + id + ".png"
+		if ResourceLoader.exists(path):
+			var tex = load(path)
+			if tex != null:
+				return tex
+	# 2) fallback: desenha por codigo
 	var img = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var it = ITEMS.get(id, {"cor": Color(0.5, 0.5, 0.5), "tipo": ""})
