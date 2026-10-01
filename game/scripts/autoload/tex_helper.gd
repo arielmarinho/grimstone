@@ -60,7 +60,7 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	CURRENT_PANTS = pants
 	return _procedural(path, weapon, hair, tunic)
 
-# recolore a arte REAL do knight: troca os pixels da túnica/cabelo pela cor escolhida
+# recolore a arte REAL do knight: troca os pixels da tunica/cabelo pela cor escolhida
 static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 	var base_tunic := [Color(0.6, 0.36, 0.2), Color(0.47, 0.26, 0.14), Color(0.53, 0.31, 0.18)]
 	var base_hair := Color(0.29, 0.17, 0.14)
@@ -75,7 +75,7 @@ static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 			var c = img.get_pixel(x, y)
 			if c.a < 0.1:
 				continue
-			# túnica: tons de marrom médio/escuro na faixa do tronco
+			# tunica: tons de marrom medio/escuro na faixa do tronco
 			for bt in base_tunic:
 				if absf(c.r - bt.r) < 0.09 and absf(c.g - bt.g) < 0.09 and absf(c.b - bt.b) < 0.09:
 					var shade: float = c.r / maxf(bt.r, 0.01)
@@ -87,11 +87,10 @@ static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 				img.set_pixel(x, y, Color(new_hair.r * shade2, new_hair.g * shade2, new_hair.b * shade2, c.a))
 	return img
 
-# UP a partir da ARTE REAL: substitui o rosto (pele) por cabelo — costas de verdade,
+# UP a partir da ARTE REAL: cobre o ROSTO INTEIRO com cabelo — costas de verdade,
 # mantendo 100% a identidade visual do knight aprovado
 static func _make_up_from_real(img: Image) -> Image:
 	var hair := Color(0.29, 0.17, 0.14)
-	var hair_d := Color(0.22, 0.13, 0.11)
 	var out := img.duplicate()
 	out.convert(Image.FORMAT_RGBA8)
 	for y in range(out.get_height()):
@@ -99,7 +98,6 @@ static func _make_up_from_real(img: Image) -> Image:
 			var c = out.get_pixel(x, y)
 			if c.a < 0.1:
 				continue
-			# pele da arte real (rosto): (0.98, 0.73, 0.53) e sombra (0.85, 0.6, 0.42)
 			# REGIAO DO ROSTO (y 24-50, x 38-72): tudo vira cabelo — pele clara,
 			# pele sombreada, olhos e contorno. Costas = cabeca coberta de cabelo.
 			var in_face: bool = y >= 24 and y <= 50 and x >= 38 and x <= 72
@@ -162,7 +160,7 @@ static func _procedural(path: String, weapon: String = "sword", hair: String = "
 		frames.append(ImageTexture.create_from_image(img))
 	return frames
 
-# ---------- KNIGHT 4 DIRECOES (com calca colorida) ----------
+# ---------- KNIGHT 4 DIRECOES (cores extraidas da arte real — identidade visual) ----------
 static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, weapon: String = "sword", hair_color: String = "castanho", tunic_color: String = "castanho", dir: String = "down") -> void:
 	var cx := 48
 	var bob := 0
@@ -174,47 +172,69 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		bob = [0, 1, 0, 1][f]
 	elif not is_attack and not is_death:
 		bob = [0, 1, 1, 0][f]
-	# CORES DA ARTE REAL (extraidas do knight_idle_down_base.png — identidade visual)
-	var hair := Color(0.29, 0.17, 0.14)  # castanho escuro do cabelo real
+	# CORES DA ARTE REAL (extraidas do knight_idle_down_base.png)
+	var hair := Color(0.529, 0.282, 0.145)  # castanho do cabelo real (135,72,37)
 	if hair_color != "castanho" and Equips.CLOTHES_COLORS.has(hair_color):
 		hair = Equips.CLOTHES_COLORS[hair_color]
-	var skin := Color(0.98, 0.73, 0.53)  # pele da arte real
-	var skin_sh := Color(0.85, 0.6, 0.42)
-	var tunic := Color(0.6, 0.36, 0.2)   # túnica marrom da arte real
-	var tunic_d := Color(0.47, 0.26, 0.14)
+	var skin := Color(0.984, 0.725, 0.529)  # pele da arte real (251,185,135)
+	var skin_sh := Color(0.871, 0.596, 0.412)
+	var tunic := Color(0.6, 0.357, 0.196)   # tunica da arte real (153,91,50)
+	var tunic_d := Color(0.475, 0.275, 0.153)
 	if tunic_color != "castanho" and Equips.CLOTHES_COLORS.has(tunic_color):
 		tunic = Equips.CLOTHES_COLORS[tunic_color]
 		tunic_d = tunic.darkened(0.2)
-	var pants := Color(0.28, 0.23, 0.19)
+	var pants := Color(0.278, 0.231, 0.192)
 	if Equips.PANTS_COLORS.has(CURRENT_PANTS):
 		pants = Equips.PANTS_COLORS[CURRENT_PANTS]
-	var boots := Color(0.38, 0.26, 0.15)
+	var boots := Color(0.357, 0.216, 0.122)
+	var belt := Color(0.231, 0.149, 0.078)
+	var gold := Color(0.8, 0.651, 0.302)
+	var steel := Color(0.784, 0.804, 0.831)
+	var wood := Color(0.42, 0.22, 0.114)
+	var dark := Color(0.129, 0.071, 0.043)
 	if is_death:
 		_draw_ellipse(img, cx + 2, 84, 16, 5, tunic)
 		_draw_circle(img, cx - 18, 84, 6, skin)
 		_draw_ellipse(img, cx - 20, 82, 6, 3, hair)
 		_draw_ellipse(img, cx + 18, 86, 8, 3, pants)
-		_draw_rect(img, cx + 14, 90, 14, 2, Color(0.8, 0.82, 0.86))
+		_draw_rect(img, cx + 14, 90, 14, 2, steel)
 		return
 	_draw_ellipse(img, cx, 88, 11, 3.5, Color(0, 0, 0, 0.25))
 	if dir == "up":
-		_draw_ellipse(img, cx - 5, 70 + leg_l, 3.5, 8, pants)
-		_draw_ellipse(img, cx + 5, 70 + leg_r, 3.5, 8, pants)
+		# COSTAS (arte real refeita): cabelo espinhado cobrindo a cabeca, sem rosto,
+		# cinto com fivela, cabo da espada aparecendo atras do ombro
+		_draw_ellipse(img, cx - 5, 70 + leg_l, 4, 8, pants)
+		_draw_ellipse(img, cx + 5, 70 + leg_r, 4, 8, pants)
 		_draw_ellipse(img, cx - 5, 80 + leg_l, 4, 3, boots)
 		_draw_ellipse(img, cx + 5, 80 + leg_r, 4, 3, boots)
-		_draw_ellipse(img, cx, 52 + bob, 12, 13, tunic)
+		# cabo da espada atras do ombro direito
+		_draw_rect(img, cx + 10, 40 + bob, 3, 14, wood)
+		_draw_rect(img, cx + 8, 38 + bob, 7, 3, gold)
+		# tronco de tras (tunica com cinto)
+		_draw_ellipse(img, cx, 52 + bob, 12, 14, tunic)
 		_draw_ellipse(img, cx - 4, 56 + bob, 7, 9, tunic_d)
-		_draw_rect(img, cx - 10, 62 + bob, 20, 3, Color(0.25, 0.17, 0.1))
-		_draw_circle(img, cx, 63.5 + bob, 1.5, Color(0.8, 0.65, 0.3))
+		_draw_rect(img, cx - 10, 62 + bob, 20, 3, belt)
+		_draw_rect(img, cx - 2, 62 + bob, 4, 3, gold)
+		# ombros e bracos
+		_draw_ellipse(img, cx - 11, 50 + bob, 3, 7, tunic)
 		_draw_ellipse(img, cx + 11, 50 + bob, 3, 7, tunic)
-		_draw_circle(img, cx + 11, 58 + bob, 2.5, skin)
-		if Equips.WEAPONS.has(weapon):
-			Equips.draw_weapon(img, weapon, cx - 11, 52 + bob, f, is_attack)
+		_draw_ellipse(img, cx - 12, 56 + bob, 3, 7, tunic_d)
+		_draw_ellipse(img, cx + 12, 56 + bob, 3, 7, tunic_d)
+		_draw_circle(img, cx - 12, 63 + bob, 2.5, skin)
+		_draw_circle(img, cx + 12, 63 + bob, 2.5, skin)
+		# CABECA: cabelo inteiro (costas), tufos espinhados no topo
 		_draw_circle(img, cx, 32 + bob, 8.5, skin)
-		_draw_ellipse(img, cx, 30 + bob, 8.5, 7, hair)
-		_draw_ellipse(img, cx - 7, 34 + bob, 3, 5, hair)
-		_draw_ellipse(img, cx + 7, 34 + bob, 3, 5, hair)
+		_draw_ellipse(img, cx, 27 + bob, 9, 8, hair)
+		_draw_ellipse(img, cx - 7, 31 + bob, 3, 5, hair)
+		_draw_ellipse(img, cx + 7, 31 + bob, 3, 5, hair)
+		for i in range(5):
+			var dx: int = -6 + i * 3
+			_draw_ellipse(img, cx + dx, 18 + bob + abs(dx) / 2, 2, 3, hair if i % 2 == 0 else tunic_d)
+		# nuca
+		_draw_ellipse(img, cx, 34 + bob, 8, 3, tunic_d)
 	elif dir == "side":
+		# PERFIL (arte real refeita): rosto de lado com orelha/olho/sobrancelha,
+		# tronco estreito, espada na frente apontando pra direita
 		var step := 0
 		if is_walk:
 			step = [4, 0, -4, 0][f]
@@ -222,43 +242,33 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		_draw_ellipse(img, cx + 3 - step, 72, 3.5, 8, pants)
 		_draw_ellipse(img, cx - 3 + step, 81, 4, 3, boots)
 		_draw_ellipse(img, cx + 3 - step, 81, 4, 3, boots)
-		_draw_ellipse(img, cx, 52 + bob, 10, 12, tunic)
-		_draw_ellipse(img, cx + 2, 56 + bob, 6, 8, tunic_d)
-		_draw_rect(img, cx - 8, 62 + bob, 16, 3, Color(0.25, 0.17, 0.1))
-		_draw_ellipse(img, cx - 6, 52 + bob, 3, 6, tunic)
-		_draw_circle(img, cx + 2, 32 + bob, 8, skin)
-		_draw_ellipse(img, cx + 9, 34 + bob, 3, 2.5, skin)
-		_draw_ellipse(img, cx - 2, 28 + bob, 7, 5, hair)
-		_draw_ellipse(img, cx + 4, 26 + bob, 6, 4, hair)
-		_draw_circle(img, cx + 6, 32 + bob, 1.3, Color(0.12, 0.1, 0.14))
-		_draw_ellipse(img, cx + 8, 50 + bob, 6, 3, tunic)
-		_draw_circle(img, cx + 14, 50 + bob, 2.5, skin)
-		var w = Equips.WEAPONS.get(weapon, null)
-		if w != null:
-			var steel: Color = w.get("cor", Color(0.8, 0.82, 0.86))
-			var by := 50 + bob
-			var reach := 10
-			if is_attack and f >= 2:
-				reach = 18
-			if weapon == "bow":
-				for i in range(10):
-					var ang := -1.1 + i * (2.2 / 9.0)
-					_draw_circle(img, cx + 16 + cos(ang) * 3.0, by + sin(ang) * 9.0, 1.4, w["cor"])
-				_draw_rect(img, cx + 19, by - 9, 1, 18, w["cor_cabo"])
-				if is_attack and f >= 2:
-					_draw_rect(img, cx + 24, by - 1, 10, 2, Color(0.9, 0.85, 0.7))
-			elif weapon == "staff":
-				_draw_rect(img, cx + 13, by - 12, 2, 24, w["cor"])
-				var orb: Color = w["cor_orb"]
-				if is_attack and f >= 2:
-					orb = Color(0.75, 0.9, 1.0)
-				_draw_circle(img, cx + 14, by - 13, 3, orb)
-			else:
-				_draw_rect(img, cx + 15, by - 1, reach + 6, 3, steel)
-				_draw_rect(img, cx + 13, by - 3, 3, 7, Color(0.55, 0.42, 0.2))
-				if weapon == "axe":
-					_draw_ellipse(img, cx + 21 + reach, by, 4, 5, steel)
+		# tronco de perfil (estreito)
+		_draw_ellipse(img, cx, 52 + bob, 8, 13, tunic)
+		_draw_ellipse(img, cx + 2, 56 + bob, 5, 9, tunic_d)
+		_draw_rect(img, cx - 7, 62 + bob, 14, 3, belt)
+		_draw_rect(img, cx + 4, 62 + bob, 3, 3, gold)
+		# braco de perfil
+		_draw_ellipse(img, cx + 4, 52 + bob, 3, 7, tunic_d)
+		_draw_circle(img, cx + 5, 60 + bob, 2.5, skin)
+		# ESPADA na frente
+		_draw_rect(img, cx + 8, 50 + bob, 16, 3, steel)
+		_draw_rect(img, cx + 6, 48 + bob, 4, 7, wood)
+		_draw_rect(img, cx + 22, 49 + bob, 3, 5, gold)
+		# CABECA de perfil (olhando pra direita)
+		_draw_circle(img, cx, 32 + bob, 8, skin)
+		_draw_ellipse(img, cx + 8, 34 + bob, 4, 3, skin)
+		_draw_ellipse(img, cx - 1, 27 + bob, 8.5, 6, hair)
+		_draw_ellipse(img, cx - 7, 32 + bob, 3, 6, hair)
+		_draw_ellipse(img, cx - 2, 22 + bob, 2, 3, hair)
+		_draw_ellipse(img, cx + 4, 21 + bob, 2, 3, tunic_d)
+		# orelha
+		_draw_circle(img, cx - 1, 33 + bob, 2, skin_sh)
+		# olho de perfil + sobrancelha + boca
+		_draw_rect(img, cx + 5, 30 + bob, 2, 2, dark)
+		_draw_rect(img, cx + 4, 28 + bob, 4, 1, tunic_d)
+		_draw_rect(img, cx + 9, 37 + bob, 3, 1, Color(0.588, 0.353, 0.275))
 	else:
+		# FRENTE (down): igual ao original — rosto, peitoral, espada na mao direita
 		_draw_ellipse(img, cx - 5, 70 + leg_l, 3.5, 8, pants)
 		_draw_ellipse(img, cx + 5, 70 + leg_r, 3.5, 8, pants)
 		_draw_ellipse(img, cx - 5, 80 + leg_l, 4, 3, boots)
@@ -266,7 +276,7 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		_draw_ellipse(img, cx, 52 + bob, 12, 13, tunic)
 		_draw_ellipse(img, cx + 4, 56 + bob, 7, 9, tunic_d)
 		_draw_rect(img, cx - 10, 62 + bob, 20, 3, Color(0.25, 0.17, 0.1))
-		_draw_circle(img, cx, 63.5 + bob, 1.5, Color(0.8, 0.65, 0.3))
+		_draw_circle(img, cx, 63.5 + bob, 1.5, gold)
 		_draw_ellipse(img, cx - 11, 50 + bob, 3, 7, tunic)
 		_draw_circle(img, cx - 11, 58 + bob, 2.5, skin)
 		_draw_circle(img, cx, 32 + bob, 8.5, skin)
@@ -274,8 +284,8 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		_draw_ellipse(img, cx, 27 + bob, 8.5, 5.5, hair)
 		_draw_ellipse(img, cx - 7, 31 + bob, 2.5, 4, hair)
 		_draw_ellipse(img, cx + 7, 31 + bob, 2.5, 4, hair)
-		_draw_circle(img, cx - 3.5, 33 + bob, 1.3, Color(0.12, 0.1, 0.14))
-		_draw_circle(img, cx + 3.5, 33 + bob, 1.3, Color(0.12, 0.1, 0.14))
+		_draw_circle(img, cx - 3.5, 33 + bob, 1.3, dark)
+		_draw_circle(img, cx + 3.5, 33 + bob, 1.3, dark)
 		_draw_circle(img, cx - 3.5, 33.5 + bob, 0.5, Color(0.9, 0.9, 0.9))
 		_draw_circle(img, cx + 3.5, 33.5 + bob, 0.5, Color(0.9, 0.9, 0.9))
 		if Equips.WEAPONS.has(weapon):
