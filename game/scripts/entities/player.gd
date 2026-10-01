@@ -371,7 +371,9 @@ func _physics_process(delta: float) -> void:
 		if GameManager.mana < GameManager.mana_max:
 			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + GameManager.level / 10)
 		if not in_combat and GameManager.hp < GameManager.hp_max:
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + 1 + GameManager.level / 15)
+			# fora de combate cura rapido (estilo Rucoy): ~5% do max a cada 2s
+			var heal = max(3, int(GameManager.hp_max * 0.05))
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + heal)
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
