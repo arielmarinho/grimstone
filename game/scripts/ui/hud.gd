@@ -188,10 +188,7 @@ func _process_skill_buttons() -> void:
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
 		stn.set_border_width_all(2)
-		if player_ref.skill_ready[slot]:
-			stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
-		else:
-			stn.border_color = Color(0.6, 0.2, 0.2)
+		stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
 		btn.add_theme_stylebox_override("normal", stn)
 
 # ---------- MOCHILA (tecla B) ----------
@@ -245,7 +242,7 @@ func _refresh_bag() -> void:
 			qty.add_theme_font_size_override("font_size", 11)
 			qty.add_theme_color_override("font_color", Color(1, 1, 0.8))
 			qty.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(qty)
+			slot.add_child(qty)
 			slot.tooltip_text = ITEMS_DB.ITEMS[id]["nome"]
 			slot.pressed.connect(_use_bag_item.bind(id))
 		bag_grid.add_child(slot)
