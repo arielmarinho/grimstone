@@ -263,12 +263,7 @@ func _use_skill(slot: String) -> void:
 				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5)
 				proj.setup(global_position, mob.global_position, dmg, "bow", false)
 				get_parent().add_child(proj)
-				# explosao de flechas: 3 projeteis em leque
-				for spread in [-0.25, 0.25]:
-					var proj2 = preload("res://scripts/entities/projectile.gd").new()
-					var target2 = mob.global_position + Vector2(cos(spread), sin(spread)) * 100.0
-					proj2.setup(global_position, target2, int(dmg * 0.5), "bow", false)
-					get_parent().add_child(proj2)
+				# explosao em area no impacto: marca o alvo
 				print("TIRO MULTIPLo!")
 		"nevasca":
 			_skill_aoe(3.0)
@@ -399,6 +394,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	# touch (Android): joystick virtual define direcao continua (estilo Rucoy)
+	if TouchControls.joy_vec.length() > 0.2:
+		moving = true
+		target = global_position + TouchControls.joy_vec * 100.0
 	var dist = global_position.distance_to(target)
 	if moving and dist > 6.0:
 		var dir = (target - global_position).normalized()
