@@ -1,3 +1,13 @@
+## v0.6.23 — City1 fiel à referência do usuário (ciclo 51, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Redesenho do city1 seguindo a referência que o usuário mandou (city1_mapa_area.png): LAGO à esquerda com margem de areia, brilhos, vitorias-regias e CACHOEIRA no topo; PONTE de madeira cruzando o lago no caminho leste-oeste; AREA DE TREINO no alto-esquerda (areia, cerca de madeira com portão, 2 bonecos de palha); FONTE multinível no centro (3 tiers + jorros); loja de ARMAS com teto azul e placa de espadas cruzadas; loja de POÇÕES com teto roxo e placa de frasco (a LOJA [F] fica nela); casa marrom com chaminé no canto sudeste; TORRES com bandeira vermelha nas esquinas dos portões leste/sul
+- Colisores refeitos casando com a nova arte: muralha com portões leste/sul abertos (y/x 932-1156), lago em 2 rects com VÃO da ponte (caminho cruza), prédios nas novas posições, cerca da área de treino com PORTÃO (player entra pra treinar), fonte r=104
+- Barris/caixote do decor movidos pra fora da loja de poções nova; rato do spawner reposicionado (nascia dentro do prédio)
+- VALIDAÇÃO VISUAL OBRIGATÓRIA cumprida: preview renderizado (artifacts/map_city1.png) e analisado — lago, ponte, dummies, fonte multinível, lojas e torres presentes; check programático dos portões (0/21 px de muralha na abertura leste e sul, 15/20 no controle), lago azul e ponte marrom confirmados por amostragem de pixels
+- Validação: headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitários OK
+- Commits: bae91fa (colliders/decor/spawners), af11179 (tex_helper), docs este commit
+- Fila: teste no Mac do usuário (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md) OU city2 seguindo referência
+
 ## v0.6.22 — b64 4-direcoes COMPLETOS no remoto + fix whitespace (ciclo 49, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - Os 6 b64 up/side do knight (idle/walk/attack x up/side) agora estao COMPLETOS no remoto: attack/side pushado (faltava), idle/side reparado (estava truncado em 60 bytes — lixo de push quebrado)
@@ -52,7 +62,7 @@ Formato: codigo no GitHub (3881b00 local, push MCP 99658a8/225fbf9/ece7d2a)
 Formato: codigo no GitHub (509f48a local, push MCP), docs pushados
 - FIX do bug "so anda pra baixo" na CAUSA RAIZ: player.gd ANIMS apontam pra paths up/side REAIS e tex_helper.load_sheet_procedural_custom desenha procedural 4 direcoes (idle/walk/attack em down/up/side; death deitado = padrao Tibia, cadaver nao tem direcao)
 - Validacao VISUAL headless: tests/preview_player.gd — folha 8x4 confirmada (frente/costas/perfil com flip/death) em artifacts/player_dirs_preview.png
-- Sincronizacao: player.gd/tex_helper.gd local alinhados ao remoto (comentarios 4-direcoes da instancia paralela, logica identica, blob SHA conferido); mob.gd remoto = canônico com netcode/quests/dummy (todas as features OK)
+- Sincronizacao: player.gd/tex_helper.gd local alinhados ao remoto (comentarios 4-direcoes da instancia paralela, logica identica, blob SHA conferido); mob.gd remoto = canonico com netcode/quests/dummy (todas as features OK)
 - Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK; preview visual OK
 - Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
 
@@ -79,7 +89,7 @@ Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
 ## 2026-10-01 — v0.6.13 (ciclo 36: polish visual de mapas + reparo de regressao no remoto)
 
 - POLISH VISUAL (instancia paralela, commit 9af7c82/473f064): bordas do mundo em TODOS os mapas (player nunca sai do sprite), rato procedural REDESENHADO maior (64x44, presenca estilo Rucoy), caverna refeita (escura, tochas/cristais/teias), casas retangulares estilo Tibia, restauracao do feedback de dano (flash vermelho + shake + som) e sons de level up/cast que o polish tinha regredido
-- REGRESSAO no remoto corrigida (este ciclo): mob.gd e spawners.gd no GitHub tinham voltado pra base ANTIGA (sem netcode autoritativo/quests/dummy/leash/variancia/_net_map) — re-pushados byte-exato do local canônico (mob 44132464, spawners 4aaf0400)
+- REGRESSAO no remoto corrigida (este ciclo): mob.gd e spawners.gd no GitHub tinham voltado pra base ANTIGA (sem netcode autoritativo/quests/dummy/leash/variancia/_net_map) — re-pushados byte-exato do local canonico (mob 44132464, spawners 4aaf0400)
 - Arquivos de teste novos (test_map_check, preview_maps, preview_rat) pushados no remoto — blob SHA byte-exato
 - Validacao: headless --import + --quit-after 0 erros; 7/7 testes unitarios OK (FUSION/ESTIMATE/QUEST/FED/BANK/BESTIARY/RUNE)
 - Pendente: teste no Mac do usuario OU build APK (docs/TESTE_MAC.md / BUILD_ANDROID.md)
@@ -91,7 +101,7 @@ Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
 - hud.gd remoto estava sem a v0.6.11 (cinto Z/X ausente) — local pushado byte-exato (fd7cbf0a)
 - Regressao: 7/7 testes unitarios OK + headless 0 erros (--import e --quit-after)
 - GitHub: mob.gd abfed491, player.gd 4ec07f32, hud.gd fd7cbf0a (todos byte-exatos verificados lendo de volta)
-- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canônico
+- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canonico
 - Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac
 
 ## 2026-10-01 — v0.6.11 (ciclo 33: CINTO DE RUNAS + REGRESSOES GRAVES corrigidas)
@@ -225,7 +235,7 @@ Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.6.0 (ciclo 18: RARIDADE DE ITENS — 5 tiers + sufixos)
 
-- NOVO `scripts/autoload/rarity.gd`: 5 tiers estilo RPG (Comum 70% / Incrivel 20% +10% / Raro 7% +25% / Epico 2.5% +50% / Lendario 0.5% +100%) conforme docs/DESIGN_ONLINE.md secao 4
+- NOVO `scripts/autoload/rarity.gd`: 5 tiers estilo RPG (Comum 70% / Incrivel 20% +10% / Raro 7% +25% / Epico 2.5% +50% / Lendario 0.5% +100% dano) conforme docs/DESIGN_ONLINE.md secao 4
 - Chave de item com tier: "espada#2" = Espada Rara — tier 0 (comum) continua "espada" (save antigo 100% compativel)
 - loot_table.gd: armas dropadas sorteiam tier; RARITY_BONUS por mob (rat/slime/bat 0, spider/goblin 1, wolf 2, orc/skeleton 3 — mobs fortes = tiers mais altos); vale offline (roll_drop) E online (roll_loot_list via RPC)
 - drop.gd: aura colorida da raridade embaixo do icone no chao + aviso "RARO!" no pickup

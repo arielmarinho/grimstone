@@ -37,6 +37,7 @@
 | 24 | **Player 4 direcoes REAIS** | gs-pixel-art + gs-qa-testing | ANIMS up/side reais no player (bug so-anda-pra-baixo), validacao visual | OK ciclo 39 (v0.6.16) — preview_player 8x4 confirmado, headless 0 erros, 7/7 testes |
 | 25 | **Player 100% ARTE REAL (hibrido up/side)** | gs-pixel-art + gs-qa-testing | UP = arte real editada (rosto vira cabelo), SIDE = arte real com flip_h; preview + check de pixels | OK ciclo 41 (v0.6.17) — preview_hybrid2 validado, headless 0 erros |
 | 28 | **Player ARTE REAL 4 direcoes + fallback** | gs-pixel-art + gs-qa-testing | up/side = b64 real proprio; fallback v0.6.17/19 sem o b64; preview_final3 + check_real4 | OK ciclo 47 (v0.6.21) — pendente push dos 6 b64 |
+| 29 | **City1 fiel a referencia** | gs-level-design + gs-pixel-art | lago+cachoeira+ponte, area de treino com dummies, fonte multinivel, torres nos portoes | OK ciclo 51 (v0.6.23) — preview validado + check de portoes/pixels |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -47,7 +48,7 @@
 ### Area 24 — Player 4 direcoes REAIS (ciclo 39, v0.6.16) VALIDADA
 - bug "so anda pra baixo" corrigido na CAUSA RAIZ: ANIMS do player apontam pra paths up/side REAIS e load_sheet_procedural_custom desenha procedural 4 direcoes (idle/walk/attack; death deitado = padrao Tibia)
 - Validacao VISUAL: tests/preview_player.gd — folha 8x4 (frente/costas/perfil flip/death) em artifacts/player_dirs_preview.png
-- Sincronizacao: player.gd/tex_helper.gd alinhados ao remoto (blob SHA conferido); mob.gd remoto = canônico (netcode/quests/dummy OK)
+- Sincronizacao: player.gd/tex_helper.gd alinhados ao remoto (blob SHA conferido); mob.gd remoto = canonico (netcode/quests/dummy OK)
 - Validacao: headless 0 erros + 7/7 testes unitarios OK
 ### Area 25 — Player 100% ARTE REAL (ciclo 41, v0.6.17) VALIDADA
 - UP = load_sheet_up_real: rosto da arte real substituido por cabelo (costas de verdade) — identidade visual 100% mantida
@@ -64,7 +65,7 @@
 - blob SHA de 9 arquivos-chave: 4/9 byte-exatos de primeira (loot_table, network_manager, items_db, rarity)
 - 5 divergentes investigados: game_manager e title_screen = encoding MCP (semanticamente completos, NAO mexer); hud.gd remoto SEM a v0.6.11 (cinto Z/X) — local pushado byte-exato (fd7cbf0a); mob.gd e player.gd remotos = fix visual 08:17 aplicado sobre base ANTIGA (perderam from_peer/quests/touch/raridade) — FUNSAO: logica local + ANIMS all-down (arte down real em todas as direcoes), pushados byte-exatos (abfed491 / 4ec07f32)
 - Regressao: 7/7 testes unitarios OK + headless --import e --quit-after 0 erros
-- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canônico
+- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canonico
 ### Area 12 — Quests & NPC (ciclos 31-32) AUDITADA — 2 bugs graves corrigidos
 - BUG 1 (grave): quest_available retornava false quando quest estava done mas NAO entregue — missao SUMIA do painel do NPC no exato momento em que completava, jogador NUNCA conseguia entregar; fix: disponivel ate claimed
 - BUG 2 (grave, online): net_mob_take_damage chamava mob.take_damage(dmg) SEM from_id — _last_hit_by ficava 0, recompensa (xp/loot/quest/bestiario) nunca chegava no servidor dedicado; fix: take_damage(dmg, from_id)
@@ -125,7 +126,7 @@
 
 ### Area 21 — Polish visual de mapas + reparo pos-polish (ciclo 36) OK
 - bordas do mundo em todos os mapas, rato procedural redesenhado (64x44), caverna refeita, casas retangulares, feedback de dano restaurado
-- REPARO: mob.gd/spawners.gd remotos regredidos pra base antiga — re-push byte-exato do local canônico; testes novos (map_check/preview_maps/preview_rat) pushados
+- REPARO: mob.gd/spawners.gd remotos regredidos pra base antiga — re-push byte-exato do local canonico; testes novos (map_check/preview_maps/preview_rat) pushados
 - Validacao: headless 0 erros, 7/7 testes unitarios OK
 ### Area 23 — Numeros de recompensa flutuantes (ciclo 38b, v0.6.15) implementado
 
@@ -140,3 +141,8 @@
 - CHANGELOG remoto destruido (26 bytes placeholder) restaurado byte-exato (43de58d)
 - Auditoria blob SHA de 30 arquivos: maioria byte-exata; game_manager/mob/drop/hp_bar = encoding MCP (semantica completa, nao mexer); rat_cave remoto mais novo adotado; test_fusion/preview_todas remotos velhos re-pushados do local
 - Validacao: headless 0 erros + run real 0 erros + 7/7 testes OK
+
+### Area 29 — City1 fiel a referencia do usuario (ciclo 51, v0.6.23) OK
+- Redesenho do city1 seguindo a referencia: lago com cachoeira+ponte a esquerda, area de treino com dummies de palha (cerca com portao), fonte multinivel, loja de armas azul, loja de pocoes roxa (LOJA [F]), casa marrom, torres com bandeira nos portoes
+- Colliders casando com a nova arte (lago em 2 rects com vao da ponte, cerca com portao, predios novos); decor/spawners ajustados
+- Validacao VISUAL obrigatoria: preview renderizado e analisado + check programatico de portoes (0/21 px muralha na abertura) e pixels (lago azul, ponte marrom); headless 0 erros + run real 0 erros + 7/7 testes OK
