@@ -156,6 +156,7 @@ func _new_game() -> void:
 	GameManager.well_fed_time = 0.0
 	GameManager.bank = {}
 	GameManager.bestiary = {}
+	GameManager.belt = {"z": "", "x": ""}
 	GameManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
@@ -176,4 +177,3 @@ func _join_game() -> void:
 		host = "127.0.0.1"
 	NetworkManager.start_client(host)
 	_start_game()
-

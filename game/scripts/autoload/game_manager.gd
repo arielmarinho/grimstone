@@ -32,6 +32,8 @@ const WELL_FED_MAX: float = 600.0  # cap de 10min empilhando comidas
 
 # banco/depósito estilo Tibia: itens guardados fora da mochila (id -> qty)
 var bank := {}
+# cinto de runas (v0.6.11): 2 slots de atalho (teclas Z/X) pra usar runa sem abrir a mochila
+var belt := {"z": "", "x": ""}
 
 # bestiário estilo Tibia: quantos de cada monstro o player já derrotou (mob_type -> kills)
 var bestiary := {}
@@ -297,7 +299,7 @@ func save_game() -> void:
 		"pants_color": pants_color, "arrows": arrows, "city2_visited": city2_visited,
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 		"quests": quests, "well_fed": int(well_fed_time),
-		"bank": bank, "bestiary": bestiary,
+		"bank": bank, "bestiary": bestiary, "belt": belt,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -344,6 +346,10 @@ func load_game() -> bool:
 	bank = parsed.get("bank", {})
 	if not bank is Dictionary:
 		bank = {}
+	# cinto: save antigo sem "belt" = vazio
+	var bl = parsed.get("belt", {})
+	if bl is Dictionary:
+		belt = {"z": str(bl.get("z", "")), "x": str(bl.get("x", ""))}
 	# bestiário: save antigo sem "bestiary" = vazio (contadores começam do zero)
 	bestiary = parsed.get("bestiary", {})
 	if not bestiary is Dictionary:
@@ -390,3 +396,22 @@ func bank_withdraw(id: String, qty: int = 1) -> bool:
 	if bank[id] <= 0:
 		bank.erase(id)
 	return true
+
+## ---------- CINTO DE RUNAS (v0.6.11) ----------
+## atribui a 1a runa da mochila (ou id especifico) a um slot do cinto (Z/X)
+func belt_assign(slot: String, id: String) -> bool:
+	if not belt.has(slot):
+		return false
+	var base: String = id.split("#")[0]
+	var db = preload("res://scripts/autoload/items_db.gd")
+	if not db.ITEMS.get(base, {}).get("tipo", "") == "runa":
+		return false
+	belt[slot] = base
+	return true
+
+## usa a runa do slot (Z/X): devolve false se vazio ou sem runa na mochila
+func belt_use(slot: String) -> bool:
+	var id: String = str(belt.get(slot, ""))
+	if id == "" or not bag.has(id):
+		return false
+	return use_item(id)
