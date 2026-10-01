@@ -211,6 +211,7 @@ func take_damage(amount: int) -> void:
 		_spawn_damage_number(amount)
 		return
 	hp -= amount
+	AudioManager.play_sfx("hit", 0.15)
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
 	_flash_damage()
 	_spawn_damage_number(amount)
@@ -246,6 +247,7 @@ func die() -> void:
 	velocity = Vector2.ZERO
 	hp_bar.value = 0
 	_play_dir("death")
+	AudioManager.play_sfx("mob_death")
 	GameManager.add_xp(xp_reward)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
 	# corpo desvanece (o respawn timer continua rodando)
