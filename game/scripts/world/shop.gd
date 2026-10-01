@@ -30,6 +30,7 @@ var panel: Control
 var grid: GridContainer
 var coins_label: Label
 var msg_label: Label
+var title_label: Label
 
 func _ready() -> void:
 	_build_panel()
@@ -47,11 +48,11 @@ func _build_panel() -> void:
 	bg.offset_bottom = 590
 	panel.add_child(bg)
 	var title = Label.new()
-	title.text = "LOJA — " + ("CIDADE" if city == "city1" else "VILA")
 	title.position = Vector2(430, 145)
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	panel.add_child(title)
+	title_label = title
 	coins_label = Label.new()
 	coins_label.position = Vector2(700, 150)
 	coins_label.add_theme_font_size_override("font_size", 15)
@@ -122,21 +123,27 @@ func _buy(id: String) -> void:
 	var price: int = _catalog()[id]
 	if GameManager.coins < price:
 		msg_label.text = "Moedas insuficientes!"
+		msg_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3))
 		return
+	# flechas vao direto pro contador de municao
 	if id == "flecha":
 		GameManager.coins -= price
 		GameManager.arrows += 10
 		msg_label.text = "+10 flechas!"
+		msg_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
 		refresh()
 		return
 	if not GameManager.add_item(id, 1):
 		msg_label.text = "Mochila cheia!"
+		msg_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3))
 		return
 	GameManager.coins -= price
-	msg_label.text = ""
+	msg_label.text = "%s comprado!" % ITEMS_DB.ITEMS[id]["nome"]
+	msg_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
 	refresh()
 
 func open() -> void:
+	title_label.text = "LOJA — " + ("CIDADE" if city == "city1" else "VILA")
 	panel.visible = true
 	refresh()
 
