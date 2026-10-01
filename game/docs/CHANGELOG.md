@@ -2,6 +2,14 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.4.2 (ciclo 4: sincronização GitHub↔local completa)
+
+- `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediário reescreveu o arquivo por engano e foi revertido)
+- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das árvores correta (tree_positions coletadas antes de desenhar — árvores não sobrepõem cogumelos/pedras)
+- player.gd remoto JÁ contém os handlers R/G (diff restante é cosmético); equips.gd e icons_embedded.gd idênticos local/remoto
+- Validação: Godot headless `--import` + `--quit` = 0 erros de script
+- LIÇÃO registrada: pushar sempre o conteúdo lido do arquivo local, nunca reconstruir de diff
+
 ## 2026-10-01 — v0.4.1 (ciclo 3: skills R/G v2 completas + fix de unlock)
 
 - `2f380d0` Skills avancadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
