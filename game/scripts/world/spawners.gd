@@ -3,6 +3,7 @@ extends Node2D
 
 var spawner_name: String = ""
 
+# posicoes em coordenadas de mundo 2X (mapa 1024 desenhado a escala 2)
 const SETS = {
 	"city1_mobs": [
 		{"type": "rat", "pos": Vector2(400, 500)},
@@ -11,6 +12,7 @@ const SETS = {
 		{"type": "slime", "pos": Vector2(1700, 1700)},
 	],
 	"city2_mobs": [
+		{"type": "dummy", "pos": Vector2(1024, 1300)},  # alvo de treino (perto do centro-sul)
 		{"type": "bat", "pos": Vector2(500, 400)},
 		{"type": "bat", "pos": Vector2(1600, 500)},
 		{"type": "spider", "pos": Vector2(500, 1600)},

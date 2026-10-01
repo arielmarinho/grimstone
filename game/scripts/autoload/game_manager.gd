@@ -23,6 +23,7 @@ var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
 var arrows: int = 50
+var city2_visited: bool = false  # R/G skills desbloqueiam ao chegar na VILA
 var city2_unlocked: bool = false
 
 func xp_for_level(lv: int) -> int:
@@ -84,7 +85,7 @@ func save_game() -> void:
 		"hp": hp, "hp_max": hp_max, "mana": mana, "mana_max": mana_max,
 		"skills": skills, "current_map": current_map,
 		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color,
-		"pants_color": pants_color, "arrows": arrows,
+		"pants_color": pants_color, "arrows": arrows, "city2_visited": city2_visited,
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -113,5 +114,6 @@ func load_game() -> bool:
 	tunic_color = parsed.get("tunic_color", "castanho")
 	pants_color = parsed.get("pants_color", "marrom")
 	arrows = int(parsed.get("arrows", 50))
+	city2_visited = bool(parsed.get("city2_visited", false))
 	city2_unlocked = bool(parsed.get("city2_unlocked", false))
 	return true
