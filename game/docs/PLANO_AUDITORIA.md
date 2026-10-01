@@ -15,7 +15,7 @@
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
-| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | pendente (apos polish) |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | integrado ciclo 10 (aguarda teste 2 clientes) |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | pendente |
 
 ## Regra do usuario
@@ -83,3 +83,8 @@
 - Ligado em: ataque melee/distancia, dano no mob e no player, morte de mob/player, level up, moeda/drop pickup, pocao (mochila), compra na loja, clique de UI, portao/troca de mapa, tela de titulo
 - Validado: Godot headless 0 erros de script; fallback silencioso se stream faltar
 - Auditoria (ciclo 10): 17 pontos OK; 2 gaps corrigidos — skills sem som de cast (player.gd) e teclas C/B/K sem ui_click (hud.gd). Area 8 = OK de verdade
+
+### Area 9 — Multiplayer (ciclo 10, 04:00-04:05) implementado
+- Fundacao (e47966d) estava ISOLADA: nada do jogo chamava o NetworkManager — nenhum player remoto aparecia, chat sem UI, titulo sem entrada online
+- Integrado: RemotePlayer (avatar com aparencia real + nome + interpolacao), main.gd spawna/remove/sincroniza a 15Hz, filtro por mapa, HUD com chat Enter + contador ONLINE, titulo com HOSPEDAR/CONECTAR(IP)
+- Validado headless 0 erros; teste real 2 clientes + 1 server pendente (proximo ciclo, regra da skill gs-netcode)
