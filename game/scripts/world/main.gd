@@ -53,6 +53,12 @@ const QUEST_NPC_POS = {
 	"city2": Vector2(1200, 500),
 }
 
+# posicao do NPC do BANCO nas cidades (perto da fonte, longe da loja/quests)
+const BANK_NPC_POS = {
+	"city1": Vector2(1024, 1420),
+	"city2": Vector2(1024, 620),
+}
+
 @onready var map_layer: Node2D = $MapLayer
 @onready var entities: Node2D = $Entities
 
@@ -62,6 +68,7 @@ var switching: bool = false
 var _respawning: bool = false
 var shop: Node2D = null
 var quest_npc: Node2D = null
+var bank_npc: Node2D = null
 
 # ---------- MULTIPLAYER (Area 9) ----------
 var remote_players := {}  # peer_id -> RemotePlayer
@@ -278,6 +285,12 @@ func _physics_process(_delta: float) -> void:
 			quest_npc.open()
 		elif not near_q and quest_npc.is_open():
 			quest_npc.close()
+	if bank_npc != null:
+		var near_b = player.global_position.distance_to(BANK_NPC_POS[current]) < 120.0
+		if near_b and not bank_npc.is_open() and Input.is_key_pressed(KEY_T):
+			bank_npc.open()
+		elif not near_b and bank_npc.is_open():
+			bank_npc.close()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -285,6 +298,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			shop.close()
 		if event.keycode == KEY_ESCAPE and quest_npc != null and quest_npc.is_open():
 			quest_npc.close()
+		if event.keycode == KEY_ESCAPE and bank_npc != null and bank_npc.is_open():
+			bank_npc.close()
 
 func _unlock_city2() -> void:
 	if GameManager.city2_unlocked:
@@ -366,6 +381,9 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		quest_npc.remove_from_group("quest_npc")
 		quest_npc.queue_free()
 		quest_npc = null
+	if bank_npc != null:
+		bank_npc.queue_free()
+		bank_npc = null
 	if MAPS[current].has("shop"):
 		shop = load("res://scripts/world/shop.gd").new()
 		shop.city = current
@@ -384,6 +402,11 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		quest_npc.city = current
 		quest_npc.position = QUEST_NPC_POS[current]
 		add_child(quest_npc)
+	if BANK_NPC_POS.has(current):
+		bank_npc = load("res://scripts/world/bank.gd").new()
+		bank_npc.city = current
+		bank_npc.position = BANK_NPC_POS[current]
+		add_child(bank_npc)
 	if player != null:
 		GameManager.weapon = player.weapon
 		GameManager.hair_color = player.hair_color
