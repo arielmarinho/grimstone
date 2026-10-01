@@ -27,6 +27,9 @@ var preview: TextureRect
 var player_ref: Node = null
 var hotbar_slots: Array = []
 var skill_btns := {}
+var _bag_sig: String = ""
+var feedback_label: Label
+var _feedback_tween: Tween
 
 const WEAPON_KEYS = ["sword", "axe", "bow", "staff"]
 
@@ -48,6 +51,25 @@ func _ready() -> void:
 	_build_death_screen()
 	_build_cloth_panel()
 	_build_skills_panel()
+	_build_feedback()
+
+func _build_feedback() -> void:
+	feedback_label = _make_label(Vector2(0, 590), 16, Color(1.0, 0.75, 0.3))
+	feedback_label.size = Vector2(1280, 30)
+	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	feedback_label.visible = false
+	add_child(feedback_label)
+
+func show_feedback(msg: String) -> void:
+	feedback_label.text = msg
+	feedback_label.visible = true
+	feedback_label.modulate.a = 1.0
+	if _feedback_tween != null and _feedback_tween.is_valid():
+		_feedback_tween.kill()
+	_feedback_tween = create_tween()
+	_feedback_tween.tween_interval(2.0)
+	_feedback_tween.tween_property(feedback_label, "modulate:a", 0.0, 0.6)
+	_feedback_tween.tween_callback(func(): feedback_label.visible = false)
 
 func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 	var l = Label.new()
@@ -56,11 +78,12 @@ func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	l.add_theme_constant_override("outline_size", 3)
-	add_child(l)
 	return l
 
 func set_player(p: Node) -> void:
 	player_ref = p
+	if p != null and not p.feedback.is_connected(show_feedback):
+		p.feedback.connect(show_feedback)
 
 func _process(_delta: float) -> void:
 	hp_bar.value = float(GameManager.hp) / float(GameManager.hp_max) * 100.0
@@ -170,6 +193,15 @@ func _build_skill_buttons() -> void:
 		name_l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(name_l)
+		var cd_l = Label.new()
+		cd_l.name = "CdLabel"
+		cd_l.position = Vector2(14, 12)
+		cd_l.add_theme_font_size_override("font_size", 14)
+		cd_l.add_theme_color_override("font_color", Color(1, 1, 1))
+		cd_l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		cd_l.add_theme_constant_override("outline_size", 4)
+		cd_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(cd_l)
 		btn.pressed.connect(_press_skill.bind(slot))
 		add_child(btn)
 		skill_btns[slot] = btn
@@ -185,6 +217,7 @@ func _process_skill_buttons() -> void:
 		var slot: String = slots[i]
 		var btn = skill_btns[slot]
 		var name_l = btn.get_node("SkillName")
+		var cd_l = btn.get_node("CdLabel")
 		var sk: Dictionary = {}
 		for s2 in list:
 			if s2["tecla"] == slot:
@@ -195,6 +228,12 @@ func _process_skill_buttons() -> void:
 				name_l.text = sk["nome"].split(" ")[0]
 			else:
 				name_l.text = "???"
+		# cooldown numerico no centro do botao (estilo MMO)
+		if not player_ref.skill_ready[slot]:
+			cd_l.text = str(int(ceil(player_ref.skill_cd[slot])))
+			cd_l.visible = true
+		else:
+			cd_l.visible = false
 		var stn = StyleBoxFlat.new()
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
@@ -229,9 +268,16 @@ func _build_bag() -> void:
 	bag_panel.add_child(hint)
 
 func _refresh_bag() -> void:
+	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
+	var ids = GameManager.bag.keys()
+	var sig := ""
+	for id in ids:
+		sig += "%s:%d," % [id, GameManager.bag[id]]
+	if sig == _bag_sig:
+		return
+	_bag_sig = sig
 	for c in bag_grid.get_children():
 		c.queue_free()
-	var ids = GameManager.bag.keys()
 	for i in range(GameManager.BAG_MAX):
 		var slot = Button.new()
 		slot.custom_minimum_size = Vector2(46, 46)
@@ -281,6 +327,7 @@ func _build_death_screen() -> void:
 	var dim = ColorRect.new()
 	dim.color = Color(0.3, 0.0, 0.0, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.size = Vector2(1280, 720)
 	death_screen.add_child(dim)
 	var title = Label.new()
 	title.text = "VOCE MORREU"
@@ -335,6 +382,7 @@ func _build_cloth_panel() -> void:
 	preview = TextureRect.new()
 	preview.position = Vector2(620, 180)
 	preview.custom_minimum_size = Vector2(192, 192)
+	preview.size = Vector2(192, 192)
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	cloth_panel.add_child(preview)
@@ -388,16 +436,29 @@ func _set_tunic(c: String) -> void:
 	if player_ref != null:
 		player_ref.tunic_color = c
 		player_ref._build_frames()
+	_update_preview()
 
 func _set_hair(c: String) -> void:
 	if player_ref != null:
 		player_ref.hair_color = c
 		player_ref._build_frames()
+	_update_preview()
 
 func _set_pants(c: String) -> void:
 	if player_ref != null:
 		player_ref.pants_color = c
 		player_ref._build_frames()
+	_update_preview()
+
+func _update_preview() -> void:
+	# preview do knight com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado
+	if player_ref == null:
+		return
+	var texs = TEXHELPER.load_sheet_custom(
+		"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
+		player_ref.weapon, player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+	if not texs.is_empty():
+		preview.texture = texs[0]
 
 # ---------- TELA DE SKILLS (tecla K) — estilo Rucoy ----------
 func _build_skills_panel() -> void:
@@ -435,11 +496,13 @@ func _refresh_skills_panel() -> void:
 		if GameManager.skills.has(sk):
 			var l = _make_label(Vector2(370, y), 15, Color(0.9, 0.9, 0.95))
 			l.text = "%s: nivel %d  (%d/%d xp)" % [combat[sk], GameManager.skills[sk]["level"], GameManager.skills[sk]["xp"], GameManager.skills[sk]["level"] * 100]
+			skills_panel.add_child(l)
 			y += 26
 	y += 10
 	if player_ref != null:
 		var st = _make_label(Vector2(370, y), 16, Color(0.6, 0.9, 1.0))
 		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
+		skills_panel.add_child(st)
 		y += 30
 		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
 		for i in range(list.size()):
@@ -447,16 +510,19 @@ func _refresh_skills_panel() -> void:
 			if not SKILLS.skill_unlocked(sk):
 				var lb = _make_label(Vector2(370, y), 14, Color(0.55, 0.55, 0.6))
 				lb.text = "[%s] ??? — desbloqueia ao chegar na VILA (city2)" % sk["tecla"]
+				skills_panel.add_child(lb)
 				y += 24
 				continue
 			var ready: bool = player_ref.skill_ready[sk["tecla"]]
 			var l = _make_label(Vector2(370, y), 14, Color(0.4, 0.8, 0.4) if ready else Color(0.7, 0.3, 0.3))
 			l.text = "[%s] %s  (mana %d, recarga %.0fs) — %s" % [sk["tecla"], sk["nome"], sk["mana"], sk["cd"], sk["desc"]]
+			skills_panel.add_child(l)
 			y += 24
 		y += 10
 		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[player_ref.weapon]["skill"], {"level": 10})["level"]
 		var lc = _make_label(Vector2(370, y), 14, Color(1.0, 0.85, 0.3))
 		lc.text = "Chance de critico: %.1f%% (dano x2)" % (SKILLS.crit_chance(crit_lv) * 100.0)
+		skills_panel.add_child(lc)
 	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "K para fechar"
 	skills_panel.add_child(hint)
@@ -464,6 +530,7 @@ func _refresh_skills_panel() -> void:
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
+		_update_preview()
 		bag_panel.visible = false
 		skills_panel.visible = false
 
