@@ -1,5 +1,6 @@
 extends Node2D
-## Main — controla mapas, player, loja e transicoes
+## Main — 4 mapas: city1 (hub), city2 (leste), forest (sul da city2), rat_cave (bueiro)
+## Lojas nas 2 cidades, mobs por mapa, transicoes por portoes
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
@@ -8,13 +9,38 @@ const MAPS = {
 	"city1": {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(1024, 1240),
-		"exit": {"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓"},
-		"shop": Vector2(290, 670),
+		"exits": [
+			{"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓"},
+			{"pos": Vector2(1990, 1024), "radius": 84, "to": "city2", "label": "VILA →"},
+		],
+		"shop": Vector2(580, 1340),
+		"spawner": "city1_mobs",
+	},
+	"city2": {
+		"texture": "res://assets/maps/city2.png",
+		"player_spawn": Vector2(260, 1024),
+		"exits": [
+			{"pos": Vector2(60, 1024), "radius": 84, "to": "city1", "label": "← CIDADE"},
+			{"pos": Vector2(1024, 1990), "radius": 84, "to": "forest", "label": "FLORESTA ↓"},
+		],
+		"shop": Vector2(1560, 660),
+		"spawner": "city2_mobs",
+	},
+	"forest": {
+		"texture": "res://assets/maps/forest.png",
+		"player_spawn": Vector2(1024, 260),
+		"exits": [
+			{"pos": Vector2(1024, 60), "radius": 84, "to": "city2", "label": "↑ VILA"},
+		],
+		"spawner": "forest_mobs",
 	},
 	"rat_cave": {
 		"texture": "res://assets/maps/rat_cave.png",
 		"player_spawn": Vector2(1024, 800),
-		"exit": {"pos": Vector2(1024, 180), "radius": 84, "to": "city1", "label": "SAÍDA ↑"},
+		"exits": [
+			{"pos": Vector2(1024, 180), "radius": 84, "to": "city1", "label": "SAÍDA ↑"},
+		],
+		"spawner": "cave_mobs",
 	},
 }
 
@@ -35,6 +61,7 @@ func _ready() -> void:
 		player.weapon = GameManager.weapon
 		player.hair_color = GameManager.hair_color
 		player.tunic_color = GameManager.tunic_color
+		player.pants_color = GameManager.pants_color
 		player._build_frames()
 	$HUD.set_player(player)
 
@@ -63,16 +90,14 @@ func _physics_process(_delta: float) -> void:
 				switch_map("city1")
 			_respawning = false
 		return
-	var ex = MAPS[current].get("exit")
-	if ex and player.global_position.distance_to(ex["pos"]) < ex["radius"]:
-		switching = true
-		var from = current
-		switch_map(ex["to"])
-		switching = false
-		print("transicao: ", from, " -> ", ex["to"])
-	# loja: aproxima e abre com E
-	if shop != null and current == "city1":
-		var near = player.global_position.distance_to(MAPS["city1"]["shop"]) < 120.0
+	for ex in MAPS[current].get("exits", []):
+		if player.global_position.distance_to(ex["pos"]) < ex["radius"]:
+			switching = true
+			switch_map(ex["to"])
+			switching = false
+			return
+	if shop != null and MAPS[current].has("shop"):
+		var near = player.global_position.distance_to(MAPS[current]["shop"]) < 120.0
 		if near and not shop.is_open() and Input.is_key_pressed(KEY_E):
 			shop.open()
 		elif not near and shop.is_open():
@@ -99,12 +124,14 @@ func switch_map(name: String) -> void:
 		player.global_position = MAPS[name]["player_spawn"]
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		mob.queue_free()
-	if name == "rat_cave":
-		var spawner = load("res://scripts/world/rat_cave.gd").new()
-		entities.add_child(spawner)
+	var spawner_name = MAPS[name].get("spawner", "")
+	if spawner_name != "":
+		var spawner = load("res://scripts/world/spawners.gd")
+		var node = spawner.new()
+		node.spawner_name = spawner_name
+		entities.add_child(node)
 	COLLIDERS.build_colliders(name, map_layer)
-	var ex = MAPS[current].get("exit")
-	if ex:
+	for ex in MAPS[current].get("exits", []):
 		var marker = Label.new()
 		marker.text = ex["label"]
 		marker.position = ex["pos"] + Vector2(-45, -95)
@@ -117,17 +144,15 @@ func switch_map(name: String) -> void:
 		tw.set_loops()
 		tw.tween_property(marker, "position:y", marker.position.y - 8.0, 0.6)
 		tw.tween_property(marker, "position:y", marker.position.y, 0.6)
-	# loja so na cidade
 	if shop != null:
 		shop.queue_free()
 		shop = null
-	if name == "city1":
+	if MAPS[current].has("shop"):
 		shop = load("res://scripts/world/shop.gd").new()
 		add_child(shop)
-		# placa da loja no mapa
 		var sign_l = Label.new()
 		sign_l.text = "LOJA [E]"
-		sign_l.position = MAPS["city1"]["shop"] + Vector2(-40, -70)
+		sign_l.position = MAPS[current]["shop"] + Vector2(-40, -70)
 		sign_l.add_theme_font_size_override("font_size", 15)
 		sign_l.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
 		sign_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
@@ -137,4 +162,5 @@ func switch_map(name: String) -> void:
 		GameManager.weapon = player.weapon
 		GameManager.hair_color = player.hair_color
 		GameManager.tunic_color = player.tunic_color
+		GameManager.pants_color = player.pants_color
 	GameManager.save_game()

@@ -1,13 +1,12 @@
 extends Node2D
-## Loja — NPC/loja na cidade: compra pocoes e armas com moedas
-## Estilo Rucoy: aproxima e abre painel de loja
+## Loja — NPC/loja nas cidades: pocoes, armas e FLECHAS com moedas
 
 const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
-# catalogo: id -> preco
 const CATALOG = {
 	"pocao_vida": 20,
 	"pocao_mana": 25,
+	"flecha": 2,
 	"espada": 50,
 	"machado": 120,
 	"arco": 150,
@@ -28,10 +27,7 @@ func _build_panel() -> void:
 	panel.z_index = 100
 	add_child(panel)
 	var bg = ColorRect.new()
-	bg.position = Vector2(400, 130)
-	bg.size = Vector2(480, 460)
 	bg.color = Color(0.08, 0.1, 0.09, 0.97)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.offset_left = 400
 	bg.offset_top = 130
 	bg.offset_right = 880
@@ -110,6 +106,12 @@ func _buy(id: String) -> void:
 	var price: int = CATALOG[id]
 	if GameManager.coins < price:
 		msg_label.text = "Moedas insuficientes!"
+		return
+	if id == "flecha":
+		GameManager.coins -= price
+		GameManager.arrows += 10
+		msg_label.text = "+10 flechas!"
+		refresh()
 		return
 	if not GameManager.add_item(id, 1):
 		msg_label.text = "Mochila cheia!"
