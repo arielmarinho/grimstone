@@ -1,5 +1,15 @@
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.12 (ciclo 34: sincronizacao GitHub↔local + fusao do fix visual)
+
+- AUDITORIA de sincronizacao pos-v0.6.11: 4/9 arquivos-chave byte-exatos; game_manager/title_screen = so encoding MCP (nao mexer)
+- REGRESSAO corrigida: mob.gd e player.gd no remoto tinham o fix visual (ANIMS all-down) aplicado sobre uma base ANTIGA — perderam from_peer (recompensa online), quest_on_kill, bestiario, TouchControls, raridade, regen. FUNSAO: logica local completa + ANIMS all-down (arte down real em todas as direcoes, flip_h cobre os lados)
+- hud.gd remoto estava sem a v0.6.11 (cinto Z/X ausente) — local pushado byte-exato (fd7cbf0a)
+- Regressao: 7/7 testes unitarios OK + headless 0 erros (--import e --quit-after)
+- GitHub: mob.gd abfed491, player.gd 4ec07f32, hud.gd fd7cbf0a (todos byte-exatos verificados lendo de volta)
+- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canônico
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac
+
 ## 2026-10-01 — v0.6.11 (ciclo 33: CINTO DE RUNAS + REGRESSOES GRAVES corrigidas)
 
 - CINTO DE RUNAS (v0.6.11, trabalho deixado por instância anterior do cron, agora COMPLETO e commitado): 2 slots de atalho (teclas Z/X) usam a runa direto no combate sem abrir a mochila; atribuicao por clique no slot do cinto + runa da mochila; save persistido ("belt"); NOVO JOGO zera
@@ -155,7 +165,7 @@ Formato: [data] versão — o que mudou (commit)
 
 - Interpolacao de mobs no cliente agora e por BUFFER de snapshots (estilo Quake): mira o estado de ~120ms atras, cobre jitter/lag sem rubber-banding; fallback = lerp pro ultimo snapshot
 - LAG ARTIFICIAL (regra gs-netcode): `--netlag=<ms>` atrasa a entrega de snapshots (mobs E players) no NetworkManager — fila ordenada por tempo de entrega; 0 = sem lag (jogo normal)
-- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avanca com mob VIVO
+- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avança com mob VIVO
 - FIX no harness: chat enviado UMA vez so (re-registro duplicava o envio); server espera ~20s pra fase de mobs completar
 - NetTest PASSOU COM LAG 150ms: server OK + cliente A OK + cliente B OK — registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado no servidor (hp caiu no snapshot), saida limpa
 - Validado Godot headless: 0 erros de script
@@ -257,7 +267,7 @@ Formato: [data] versão — o que mudou (commit)
 
 - `cd21605` mob.gd: ataque agendado nao acerta mais player MORTO (checava so no agendamento, nao no hit)
 - `cd21605` mob.gd: hit so acerta se o alvo ainda estiver no alcance (110px) — sem dano fantasma ao fugir
-- `cd21605` mob.gd: leash de perseguicao (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
+- `cd21605` mob.gd: leash de perseguição (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
 - `cd21605` mob.gd: dummy de treino simplificado (early return no take_damage, sem ramo morto)
 - Validado Godot headless: 0 erros de script
 
