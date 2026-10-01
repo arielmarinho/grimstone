@@ -1,8 +1,7 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
 ## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
-## ANIMACOES: ARTE REAL em TODAS as direcoes — down original, up derivado (costas),
-## side = arte de frente com flip_h (estilo Tibia classico). Identidade 100%.
+## ANIMACOES: 4 direcoes REAIS (up/side/down) via procedural — idle/walk/attack/death
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
@@ -42,7 +41,8 @@ var buff_perfurante: bool = false
 var _last_level: int = 1
 var _regen_timer: float = 0.0
 
-# ANIMS: down aponta pro PNG real; up/side derivam do MESMO PNG real em runtime
+# ANIMS com paths up/side REAIS — o procedural desenha cada direcao
+# (usar o PNG down pra tudo fazia o player andar so pra baixo — bug do usuario)
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
 	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
@@ -99,16 +99,18 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		# ARTE REAL em TODAS as direcoes (identidade visual 100%):
-		# - down/death: o PNG real original (a aprovada — rosto/expressao)
-		# - up: o MESMO PNG real com o rosto substituido por cabelo (costas de verdade)
-		# - side: o MESMO PNG real de frente (flip_h cobre esquerda/direita — Tibia)
+		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
+		# art com rosto/expressao); up/side usam o PROCEDURAL alinhado as cores reais
+		# (os PNGs up/side nao existem). Nunca mais "so anda pra baixo".
 		var texs: Array
 		if "_down" in anim or anim == "death":
+			# down/death: ARTE REAL (a aprovada — pixel art com rosto/expressao)
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		elif "_up" in anim:
+			# up: ARTE REAL editada (rosto vira cabelo = costas de verdade, mesma arte)
 			texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
 		else:
+			# side: ARTE REAL de frente (flip_h cobre esquerda/direita — estilo Tibia)
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim].replace("/side/", "/down/"), GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
