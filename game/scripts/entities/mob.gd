@@ -1,15 +1,26 @@
 extends CharacterBody2D
-## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, loot
-## 4 DIRECOES (down/up/side + flip), timers filhos, strip de magenta
+## Mob base — IA wander/aggro/attack, 4 direcoes, timers filhos, strip magenta
+## Subclasses definem: tipo (sprite), stats, loot
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
-const LOOT = preload("res://scripts/entities/loot_table.gd")
 
 const WANDER_RADIUS = 240.0
 const AGGRO_RANGE = 280.0
 const ATTACK_RANGE = 80.0
 const WANDER_SPEED = 90.0
 const CHASE_SPEED = 140.0
+
+# tipo do monstro — muda sprite/stats/loot
+var mob_type: String = "rat"
+
+# stats por tipo (Tibia-style: progressao de dificuldade)
+const TYPES = {
+	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0, "skill": "espada"},
+	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7, "skill": "espada"},
+	"bat": {"hp": 30, "dano": 6, "xp": 25, "vel": 1.6, "skill": "distancia"},
+	"spider": {"hp": 90, "dano": 14, "xp": 55, "vel": 1.2, "skill": "espada"},
+	"wolf": {"hp": 130, "dano": 20, "xp": 90, "vel": 1.4, "skill": "espada"},
+}
 
 var max_hp: int = 40
 var hp: int = 40
@@ -22,7 +33,7 @@ var home: Vector2
 var wander_target: Vector2
 var state: String = "wander"
 var attack_cooldown: float = 0.0
-var respawn_time: float = 8.0
+var respawn_time: float = 10.0
 var facing: String = "down"
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -30,10 +41,9 @@ var facing: String = "down"
 
 func _ready() -> void:
 	add_to_group("mobs")
+	_apply_type()
 	home = global_position
 	wander_target = global_position
-	max_hp = max_hp + randi() % 5 - 2
-	hp = max_hp
 	var atk := Timer.new()
 	atk.one_shot = true
 	atk.name = "AtkTimer"
@@ -45,6 +55,13 @@ func _ready() -> void:
 	add_child(rsp)
 	rsp.timeout.connect(_do_respawn)
 	_build_frames()
+
+func _apply_type() -> void:
+	var t = TYPES.get(mob_type, TYPES["rat"])
+	max_hp = t["hp"] + randi() % 11 - 5
+	hp = max_hp
+	damage = t["dano"]
+	xp_reward = t["xp"]
 
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
@@ -94,6 +111,10 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 
+	var t = TYPES.get(mob_type, TYPES["rat"])
+	var wspeed = WANDER_SPEED * t["vel"]
+	var cspeed = CHASE_SPEED * t["vel"]
+
 	var d = global_position.distance_to(player.global_position)
 	if d <= ATTACK_RANGE:
 		state = "attack"
@@ -107,12 +128,12 @@ func _physics_process(delta: float) -> void:
 			if global_position.distance_to(wander_target) < 8.0:
 				var ang = randf() * TAU
 				wander_target = home + Vector2(cos(ang), sin(ang)) * (randf() * WANDER_RADIUS)
-			_move(wander_target, WANDER_SPEED)
+			_move(wander_target, wspeed)
 		"chase":
 			if player.dead:
 				state = "wander"
 				return
-			_move(player.global_position, CHASE_SPEED)
+			_move(player.global_position, cspeed)
 		"attack":
 			velocity = Vector2.ZERO
 			attack_cooldown -= delta
@@ -173,7 +194,7 @@ func die() -> void:
 	hp_bar.value = 0
 	_play_dir("death")
 	GameManager.add_xp(xp_reward)
-	LOOT.roll_drop(global_position, get_parent())
+	LootTable.roll_drop(mob_type, global_position, get_parent())
 	$RespawnTimer.start(respawn_time)
 
 func _do_respawn() -> void:
