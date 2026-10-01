@@ -263,7 +263,12 @@ func _use_skill(slot: String) -> void:
 				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5)
 				proj.setup(global_position, mob.global_position, dmg, "bow", false)
 				get_parent().add_child(proj)
-				# explosao em area no impacto: marca o alvo
+				# explosao de flechas: 3 projeteis em leque
+				for spread in [-0.25, 0.25]:
+					var proj2 = preload("res://scripts/entities/projectile.gd").new()
+					var target2 = mob.global_position + Vector2(cos(spread), sin(spread)) * 100.0
+					proj2.setup(global_position, target2, int(dmg * 0.5), "bow", false)
+					get_parent().add_child(proj2)
 				print("TIRO MULTIPLo!")
 		"nevasca":
 			_skill_aoe(3.0)
@@ -358,6 +363,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if GameManager.level > _last_level:
 		_last_level = GameManager.level
+		AudioManager.play_sfx("level_up")
 		_notify_level_up()
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	for slot in skill_cd:
@@ -494,7 +500,7 @@ func _attack(mob) -> void:
 				buff_duplo -= 1
 				mob.take_damage(int(dmg * 0.5))
 	else:
-		AudioManager.play_sfx("shoot")
+		AudioManager.play_sfx("shoot" if GameManager.weapon_base() == "bow" else "cast")
 		await get_tree().create_timer(0.25).timeout
 		if dead:
 			return
@@ -510,9 +516,23 @@ func take_damage(amount: int) -> void:
 	if buff_escudo_time > 0.0:
 		final_dmg = int(amount * 0.5)
 	GameManager.hp = max(0, GameManager.hp - final_dmg)
+	AudioManager.play_sfx("player_hurt")
+	_flash_hurt()
 	GameManager.add_skill_xp("defesa", 2)
 	if GameManager.hp <= 0:
 		die()
+
+func _flash_hurt() -> void:
+	# flash vermelho no player + tremida curta na camera (feedback de dano)
+	sprite.modulate = Color(2.5, 0.6, 0.6)
+	var tw = create_tween()
+	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.18)
+	var cam = get_node_or_null("Camera")
+	if cam:
+		var tw2 = create_tween()
+		tw2.tween_property(cam, "offset", Vector2(4, -3), 0.04)
+		tw2.tween_property(cam, "offset", Vector2(-4, 2), 0.04)
+		tw2.tween_property(cam, "offset", Vector2.ZERO, 0.05)
 
 func die() -> void:
 	dead = true
