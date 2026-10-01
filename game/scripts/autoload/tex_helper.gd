@@ -1,7 +1,7 @@
 class_name TexHelper
 extends Object
 ## TexHelper — carrega sprite real do disco (com strip de magenta); se nao existir,
-## gera grafico procedural com 4 DIRECOES (down/up/side) e arma por classe
+## gera grafico procedural com 4 DIRECOES e arma por classe
 
 const KNIGHT_IDLE := "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png"
 
@@ -28,7 +28,6 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	return _procedural(path, weapon, hair, tunic)
 
 static func _strip_magenta(img: Image) -> Image:
-	# remove fundo magenta/rosa de QUALQUER textura na fonte (Tibia-style chroma)
 	img.convert(Image.FORMAT_RGBA8)
 	for y in range(img.get_height()):
 		for x in range(img.get_width()):
@@ -38,16 +37,13 @@ static func _strip_magenta(img: Image) -> Image:
 	return img
 
 static func _load_image(path: String) -> Image:
-	# 1) override local (assets_override/) — instalado pelo usuario, sem tocar no git
 	var override_path = path.replace("res://assets/", "res://assets_override/")
 	var img = Image.load_from_file(ProjectSettings.globalize_path(override_path))
 	if img != null:
 		return _strip_magenta(img)
-	# 2) PNG normal do projeto
 	img = Image.load_from_file(ProjectSettings.globalize_path(path))
 	if img != null:
 		return _strip_magenta(img)
-	# 3) versao .b64 (sprites vao ao git em base64 e sao decodificados em runtime)
 	var f = FileAccess.open(path + ".b64", FileAccess.READ)
 	if f == null:
 		return null
@@ -61,6 +57,17 @@ static func _load_image(path: String) -> Image:
 		return null
 	return _strip_magenta(dec)
 
+static func _mob_type_from_path(path: String) -> String:
+	if "slime" in path:
+		return "slime"
+	if "bat" in path:
+		return "bat"
+	if "spider" in path:
+		return "spider"
+	if "wolf" in path:
+		return "wolf"
+	return "rat"
+
 static func _dir_from_path(path: String) -> String:
 	if "/up/" in path:
 		return "up"
@@ -70,16 +77,19 @@ static func _dir_from_path(path: String) -> String:
 
 static func _procedural(path: String, weapon: String = "sword", hair: String = "castanho", tunic: String = "castanho") -> Array[Texture2D]:
 	var frames: Array[Texture2D] = []
-	var is_rat := "rat" in path
 	var is_attack := "attack" in path
 	var is_death := "death" in path
 	var is_walk := "walk" in path
 	var dir := _dir_from_path(path)
+	var mob_type := _mob_type_from_path(path)
 	for f in range(4):
 		var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
 		img.fill(Color(0, 0, 0, 0))
-		if is_rat:
-			_draw_rat(img, f, is_attack, is_death, is_walk)
+		if "enemy" in path:
+			if mob_type == "rat":
+				_draw_rat(img, f, is_attack, is_death, is_walk)
+			else:
+				preload("res://scripts/entities/mob_sprites.gd").draw_mob(img, mob_type, f, is_attack, is_death, is_walk)
 		else:
 			_draw_knight(img, f, is_attack, is_death, is_walk, weapon, hair, tunic, dir)
 		frames.append(ImageTexture.create_from_image(img))
@@ -88,7 +98,7 @@ static func _procedural(path: String, weapon: String = "sword", hair: String = "
 static var DEFAULT_HAIR := "castanho"
 static var DEFAULT_TUNIC := "castanho"
 
-# ---------- KNIGHT 4 DIRECOES (down=frente, up=costas, side=perfil) ----------
+# ---------- KNIGHT 4 DIRECOES ----------
 static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool, weapon: String = "sword", hair_color: String = "castanho", tunic_color: String = "castanho", dir: String = "down") -> void:
 	var cx := 48
 	var bob := 0
@@ -283,7 +293,7 @@ static func load_map(path: String) -> Texture2D:
 		return _map_cave()
 	return _map_city()
 
-# ---------- CIDADE 1 (muralha, fonte, lojas, lago, portao sul, BUEIRO COM ESCADA) ----------
+# ---------- CIDADE 1 ----------
 static func _map_city() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -379,7 +389,7 @@ static func _map_city() -> Texture2D:
 		if img.get_pixel(fx, fy).g > 0.5:
 			var fc = [Color(0.9, 0.8, 0.3), Color(0.9, 0.5, 0.6), Color(0.8, 0.8, 0.95)][randi() % 3]
 			_draw_circle(img, fx, fy, 1.5, fc)
-	# ===== BUEIRO COM ESCADA (entrada da caverna) =====
+	# BUEIRO COM ESCADA
 	var bx := W / 2
 	var by := 800
 	_draw_circle(img, bx, by, 30, Color(0.32, 0.32, 0.35))
@@ -423,7 +433,7 @@ static func _draw_tree(img: Image, x: int, y: int) -> void:
 	_draw_circle(img, x - 6, y - 12, 1.5, Color(0.8, 0.4, 0.4))
 	_draw_circle(img, x + 7, y - 18, 1.5, Color(0.8, 0.4, 0.4))
 
-# ---------- CAVERNA (pedra escura, ESCADA de saida, caixas, cristais) ----------
+# ---------- CAVERNA ----------
 static func _map_cave() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -443,7 +453,6 @@ static func _map_cave() -> Texture2D:
 		var edge = min(min(rx, W - rx), min(ry, H - ry))
 		if edge < 90:
 			_draw_circle(img, rx, ry, 4 + randf() * 10, Color(0.2, 0.17, 0.14))
-	# ===== SAIDA COM ESCADA DE MADEIRA (sobe pra cidade) =====
 	var sx := W / 2
 	var sy := 95
 	_draw_circle(img, sx, sy, 30, Color(0.32, 0.32, 0.35))
