@@ -82,3 +82,4 @@
 - Musicas com crossfade: title (fanfarra 112bpm), city (C maior 120bpm nas 2 cidades), cave (Am menor 100bpm na floresta/caverna); loop automatico, SFX -8dB / musica -18dB
 - Ligado em: ataque melee/distancia, dano no mob e no player, morte de mob/player, level up, moeda/drop pickup, pocao (mochila), compra na loja, clique de UI, portao/troca de mapa, tela de titulo
 - Validado: Godot headless 0 erros de script; fallback silencioso se stream faltar
+- Auditoria (ciclo 10): 17 pontos OK; 2 gaps corrigidos — skills sem som de cast (player.gd) e teclas C/B/K sem ui_click (hud.gd). Area 8 = OK de verdade
