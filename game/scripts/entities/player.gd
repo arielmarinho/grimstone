@@ -32,6 +32,8 @@ var buff_duplo: int = 0
 var buff_bersek_time: float = 0.0
 var buff_precisao: int = 0
 var buff_escudo_time: float = 0.0
+var buff_grito_time: float = 0.0
+var buff_perfurante: bool = false
 
 var _last_level: int = 1
 
@@ -252,6 +254,7 @@ func _use_skill(slot: String) -> void:
 				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 2.5)
 				proj.setup(global_position, mob.global_position, dmg, "bow", false)
 				get_parent().add_child(proj)
+				# explosao em area no impacto: marca o alvo
 				_multi_target = mob
 				print("TIRO MULTIPLO!")
 			else:
@@ -261,6 +264,37 @@ func _use_skill(slot: String) -> void:
 			print("ESCUDO ARCANO! -50% dano por 10s")
 		"nevasca":
 			_skill_aoe_stun(2.2, 1.5, 2.0)
+		# ----- skills avancadas v2 (R/G, desbloqueiam na VILA) -----
+		"duplo":
+			buff_duplo = 2
+			print("GOLPE DUPLO armado! proximos 2 golpes acertam 2x")
+		"grito":
+			buff_grito_time = 12.0
+			print("GRITO DE GUERRA! +50%% dano por 12s")
+		"giratorio":
+			_skill_aoe(3.0)
+		"sangue_frio":
+			var cura = int(GameManager.hp_max * 0.3)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
+			print("SANGUE FRIO! +", cura, " HP")
+		"perfurante":
+			buff_perfurante = true
+			print("FLECHA PERFURANTE armada! proxima flecha causa 4x")
+		"chuva_p":
+			if GameManager.arrows < 8:
+				print("sem flechas suficientes (precisa de 8)!")
+				skill_ready[slot] = true
+				skill_cd[slot] = 0.0
+				GameManager.mana += sk["mana"]
+				return
+			GameManager.arrows -= 8
+			_skill_aoe(2.5)
+		"nova":
+			_skill_aoe_stun(2.0, 2.0)
+		"cura_m":
+			var cura2 = int(GameManager.hp_max * 0.7)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura2)
+			print("CURA MAIOR! +", cura2, " HP")
 	GameManager.add_skill_xp(EQUIPS.WEAPONS[weapon]["skill"], 10)
 
 var _multi_target = null
@@ -320,6 +354,8 @@ func _physics_process(delta: float) -> void:
 		buff_bersek_time -= delta
 	if buff_escudo_time > 0.0:
 		buff_escudo_time -= delta
+	if buff_grito_time > 0.0:
+		buff_grito_time -= delta
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
@@ -392,6 +428,11 @@ func _attack(mob) -> void:
 		dmg = int(dmg * 1.8)
 	if buff_bersek_time > 0.0:
 		dmg = int(dmg * 2.5)
+	if buff_grito_time > 0.0:
+		dmg = int(dmg * 1.5)
+	if buff_perfurante and weapon == "bow":
+		dmg *= 4
+		buff_perfurante = false
 	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
 	var crit := false
 	if buff_certeiro and weapon == "bow":
