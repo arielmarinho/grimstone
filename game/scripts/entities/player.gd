@@ -373,11 +373,14 @@ func _physics_process(delta: float) -> void:
 			if not m.dead and not m.dying and m.state == "attack" and global_position.distance_to(m.global_position) < 400.0:
 				in_combat = true
 				break
+		# comida/energia: bem alimentado = regen 2x mais rapido (mana e HP fora de combate)
+		var regen_mult := 2.0 if GameManager.well_fed_time > 0.0 else 1.0
+		GameManager.well_fed_time = max(0.0, GameManager.well_fed_time - 2.0)
 		if GameManager.mana < GameManager.mana_max:
-			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + GameManager.level / 10)
+			GameManager.mana = min(GameManager.mana_max, GameManager.mana + int(ceil((1 + GameManager.level / 10) * regen_mult)))
 		if not in_combat and GameManager.hp < GameManager.hp_max:
 			# fora de combate cura rapido (estilo Rucoy): ~5% do max a cada 2s
-			var heal = max(3, int(GameManager.hp_max * 0.05))
+			var heal = max(3, int(GameManager.hp_max * 0.05 * regen_mult))
 			GameManager.hp = min(GameManager.hp_max, GameManager.hp + heal)
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):

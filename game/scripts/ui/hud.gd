@@ -1,6 +1,5 @@
 extends CanvasLayer
-## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
-## mochila (B), roupas+calça (C), tela de skills (K), morte
+## HUD — barras, hotbar de armas, skills Q/E/R/G, mochila, roupas, chat, missoes
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -447,6 +446,7 @@ func _build_bag() -> void:
 	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
 	fhint.text = "Clique para fundir"
 	bag_panel.add_child(fhint)
+
 func _refresh_bag() -> void:
 	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
 	var ids = GameManager.bag.keys()
