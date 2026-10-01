@@ -2,6 +2,13 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.4 (ciclo 22: polish de quests + comida)
+- HUD: tecla J agora funciona em QUALQUER lugar — perto do NPC abre o painel; longe, mostra "Procure o MESTRE DAS MISSOES" (NPC entrou no grupo quest_npc)
+- HUD: aviso "MISSAO PRONTA: ..." aparece quando uma quest completa (signal quest_ready no GameManager) — lembra de entregar no NPC
+- Dica de teclas no HUD atualizada (J missoes)
+- test_food.gd: expectativa de hp corrigida (hp0 era capturado antes do set) — FED_TEST_OK
+- Validacao: headless 0 erros; testes QUEST/ESTIMATE/FUSION/FED OK
+
 ## 2026-10-01 — v0.6.3 (ciclo 21: QUESTS COM NPC — estilo Tibia/Rucoy)
 
 - NOVO scripts/world/quest_npc.gd: NPC "Mestre das Missões" nas 2 cidades (tecla J perto dele) — sprite procedural (mestre de túnica azul com pergaminho), painel no estilo da loja
@@ -85,7 +92,7 @@ Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
-- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam estado remoto ao cair)
+- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
 - FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
 - NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
 - TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
