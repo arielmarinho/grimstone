@@ -22,7 +22,12 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0 and players[0].global_position.distance_to(global_position) < 30.0:
+	if players.is_empty():
+		return
+	var p = players[0]
+	if not is_instance_valid(p):
+		return
+	if p.global_position.distance_to(global_position) < 30.0:
 		GameManager.coins += value
 		print("moeda! total: ", GameManager.coins)
 		queue_free()

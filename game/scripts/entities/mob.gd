@@ -1,5 +1,7 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, loot
+## Timers como FILHOS do mob: se o mob for liberado (troca de mapa),
+## o timer morre junto — zero erros de instancia liberada
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const LOOT = preload("res://scripts/entities/loot_table.gd")
@@ -20,7 +22,7 @@ var dying: bool = false
 var home: Vector2
 var wander_target: Vector2
 var state: String = "wander"
-var attack_timer: float = 0.0
+var attack_cooldown: float = 0.0
 var respawn_time: float = 8.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -32,6 +34,17 @@ func _ready() -> void:
 	wander_target = global_position
 	max_hp = max_hp + randi() % 5 - 2
 	hp = max_hp
+	# timers filhos (morrem com o mob — sem await solto)
+	var atk := Timer.new()
+	atk.one_shot = true
+	atk.name = "AtkTimer"
+	add_child(atk)
+	atk.timeout.connect(_do_attack_hit)
+	var rsp := Timer.new()
+	rsp.one_shot = true
+	rsp.name = "RespawnTimer"
+	add_child(rsp)
+	rsp.timeout.connect(_do_respawn)
 	_build_frames()
 
 const ANIMS = {
@@ -85,15 +98,20 @@ func _physics_process(delta: float) -> void:
 			_move(player.global_position, CHASE_SPEED)
 		"attack":
 			velocity = Vector2.ZERO
-			attack_timer -= delta
-			if attack_timer <= 0.0 and not player.dead:
-				attack_timer = 1.2
+			attack_cooldown -= delta
+			if attack_cooldown <= 0.0 and not player.dead:
+				attack_cooldown = 1.2
 				sprite.play("attack")
-				await get_tree().create_timer(0.3).timeout
-				if not dying and not dead and is_instance_valid(player) and not player.dead:
-					player.take_damage(damage)
+				$AtkTimer.start(0.3)
 
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
+
+func _do_attack_hit() -> void:
+	if dying or dead:
+		return
+	var player = _get_player()
+	if player != null and not player.dead:
+		player.take_damage(damage)
 
 func _move(dest: Vector2, speed: float) -> void:
 	var dir = (dest - global_position).normalized()
@@ -125,12 +143,9 @@ func die() -> void:
 	GameManager.add_xp(xp_reward)
 	LOOT.roll_drop(global_position, get_parent())
 	print("rato morreu, respawn em ", respawn_time, "s")
-	await get_tree().create_timer(respawn_time).timeout
-	respawn()
+	$RespawnTimer.start(respawn_time)
 
-func respawn() -> void:
-	if not is_inside_tree():
-		return
+func _do_respawn() -> void:
 	dead = false
 	dying = false
 	hp = max_hp

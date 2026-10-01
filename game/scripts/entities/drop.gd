@@ -23,7 +23,7 @@ func _physics_process(_delta: float) -> void:
 	if players.is_empty():
 		return
 	var p = players[0]
-	if p.dead:
+	if not is_instance_valid(p) or p.dead:
 		return
 	if p.global_position.distance_to(global_position) < 26.0:
 		_pickup()
