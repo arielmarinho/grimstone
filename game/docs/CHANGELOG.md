@@ -2,6 +2,17 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.6 (ciclo 24: BESTIARIO — estilo Tibia)
+
+- NOVO: BESTIARIO (tecla N) — registro de caca estilo Tibia: ficha dos 8 mobs (nome, onde vive, lore curta), contador de derrotas por tipo, monstros nunca enfrentados ficam "???" (descobre cacando), rodape "Descobertos: X de 8"
+- GameManager: BESTIARY_INFO (ficha dos 8 mobs), bestiary_kill/bestiary_count/bestiary_seen, save "bestiary" persistido (save antigo compativel), NOVO JOGO zera
+- mob.gd: kill offline registra no bestiario (dummy de treino NAO conta)
+- network_manager.gd: kill ONLINE registra no cliente via _rpc_mob_reward (servidor autoritativo conta, cliente registra ao receber recompensa)
+- hud.gd: painel BESTIARIO (tecla N, mesmo estilo da tela K), dica de teclas atualizada
+- Teste unitario tests/test_bestiary.gd: BESTIARY_TEST_OK (8 casos: registro, acumulo, dummy ignorado, ordem de seen, ficha completa, round-trip JSON)
+- Validado Godot headless: 0 erros de script
+- Local af95cb2; GitHub 92a5b6f/64ba191/bd3d759/80f0f20/e633fc9 (reparos byte-exatos por blob SHA)
+
 ## 2026-10-01 — v0.6.5 (ciclo 23: BANCO/DEPOSITO — estilo Tibia)
 
 - NOVO scripts/world/bank.gd: NPC banco nas 2 cidades (tecla T) — depositar/sacar itens da mochila (libera os 20 slots), tier de raridade preservado ("espada#2" deposita como raro e volta raro)
