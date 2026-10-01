@@ -1,3 +1,11 @@
+## v0.6.20 — Auditoria de integridade pos-ciclo 43 + REPARO CRITICO do CHANGELOG (ciclo 44, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- CRITICO: CHANGELOG.md no remoto estava DESTRUIDO (26 bytes, placeholder) — restaurado com o conteudo local completo (33488 bytes, blob SHA 43de58d byte-exato verificado lendo de volta)
+- Auditoria blob SHA de 30 arquivos (autoload/entities/world/ui/tests): player/hud/title/main/colliders/decor/mob_sprites/loot_table/network_manager/rarity/items_db/skills_db/equips/fx/audio_manager/mob_authority/touch_controls/bank/quest_npc/shop/spawners/test_bank/test_bestiary/test_estimates/test_food/test_map_check/test_runes/preview_final/hybrid2/maps/mobs/rat byte-exatos
+- Divergencias investigadas: game_manager.gd (semantica completa 14/14 features = encoding MCP, NAO mexer); drop.gd/hp_bar.gd (remoto = local sem acentos, funcional); rat_cave.gd (remoto MAIS NOVO e melhor: spawna rato+morcego+aranha — local adotou o remoto); mob.gd (semantica completa 17/17 features netcode/quests/dummy = encoding); test_fusion.gd (remoto = versao antiga simplificada do teste — local e o correto, pushado); preview_todas.gd (remoto = versao antiga sem walk — local e o correto, pushado)
+- Validacao: headless --import + run real --quit-after = 0 erros; 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.19 — SIDE do player: perfil de verdade + preview de 4 classes (ciclo 43, 01/10)
 Formato: codigo no GitHub (91e675b local, push MCP)
 - SIDE do knight NAO e mais flip da arte de frente: perfil procedural com as cores exatas da arte real (orelha/olho/tronco estreito/espada na frente) — estilo Tibia de verdade
@@ -223,7 +231,7 @@ Formato: [data] versão — o que mudou (commit)
 
 - Interpolacao de mobs no cliente agora e por BUFFER de snapshots (estilo Quake): mira o estado de ~120ms atras, cobre jitter/lag sem rubber-banding; fallback = lerp pro ultimo snapshot
 - LAG ARTIFICIAL (regra gs-netcode): `--netlag=<ms>` atrasa a entrega de snapshots (mobs E players) no NetworkManager — fila ordenada por tempo de entrega; 0 = sem lag (jogo normal)
-- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avanca com mob VIVO
+- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avança com mob VIVO
 - FIX no harness: chat enviado UMA vez so (re-registro duplicava o envio); server espera ~20s pra fase de mobs completar
 - NetTest PASSOU COM LAG 150ms: server OK + cliente A OK + cliente B OK — registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado no servidor (hp caiu no snapshot), saida limpa
 - Validado Godot headless: 0 erros de script
@@ -325,18 +333,18 @@ Formato: [data] versão — o que mudou (commit)
 
 - `cd21605` mob.gd: ataque agendado nao acerta mais player MORTO (checava so no agendamento, nao no hit)
 - `cd21605` mob.gd: hit so acerta se o alvo ainda estiver no alcance (110px) — sem dano fantasma ao fugir
-- `cd21605` mob.gd: leash de perseguiçao (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
+- `cd21605` mob.gd: leash de perseguição (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
 - `cd21605` mob.gd: dummy de treino simplificado (early return no take_damage, sem ramo morto)
 - Validado Godot headless: 0 erros de script
 
-## 2026-10-01 — v0.4.2 (ciclo 4: sincronizaçao GitHub↔local completa)
+## 2026-10-01 — v0.4.2 (ciclo 4: sincronização GitHub↔local completa)
 
-- `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediario reescreveu o arquivo por engano e foi revertido)
-- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das arvores correta (tree_positions coletadas antes de desenhar)
-- player.gd remoto JA contem os handlers R/G (diff restante e cosmético); equips.gd e icons_embedded.gd identicos local/remoto
-- Validaçao: Godot headless `--import` + `--quit` = 0 erros de script
-- LIÇAO registrada: pushar sempre o conteudo lido do arquivo local, nunca reconstruir de diff
+- `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediário reescreveu o arquivo por engano e foi revertido)
+- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das árvores correta (tree_positions coletadas antes de desenhar)
+- player.gd remoto JÁ contém os handlers R/G (diff restante é cosmético); equips.gd e icons_embedded.gd idênticos local/remoto
+- Validação: Godot headless `--import` + `--quit` = 0 erros de script
+- LIÇÃO registrada: pushar sempre o conteúdo lido do arquivo local, nunca reconstruir de diff
 
 ## 2026-10-01 — v0.4.1 (ciclo 3: skills R/G v2 completas + fix de unlock)
 
-- `2f380d0` Skills avançadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
+- `2f380d0` Skills avancadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
