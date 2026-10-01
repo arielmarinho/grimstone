@@ -1,0 +1,7 @@
+static func _draw_circle_ring(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
+	for a in range(72):
+		var ang = a * TAU / 72.0
+		var px = cx + cos(ang) * r
+		var py = cy + sin(ang) * r
+		if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height():
+			img.set_pixel(px, py, c)
