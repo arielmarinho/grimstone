@@ -157,7 +157,7 @@ func _build_feedback() -> void:
 	feedback_label.visible = false
 	add_child(feedback_label)
 
-func show_feedback(msg: String) -> void:
+func _show_feedback(msg: String) -> void:
 	feedback_label.text = msg
 	feedback_label.visible = true
 	feedback_label.modulate.a = 1.0
@@ -179,8 +179,8 @@ func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 
 func set_player(p: Node) -> void:
 	player_ref = p
-	if p != null and not p.feedback.is_connected(show_feedback):
-		p.feedback.connect(show_feedback)
+	if p != null and not p.feedback.is_connected(_show_feedback):
+		p.feedback.connect(_show_feedback)
 
 func _process(_delta: float) -> void:
 	hp_bar.value = float(GameManager.hp) / float(GameManager.hp_max) * 100.0
@@ -448,6 +448,46 @@ func _build_bag() -> void:
 	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
 	fhint.text = "Clique para fundir"
 	bag_panel.add_child(fhint)
+	# --- secao de CINTO DE RUNAS (v0.6.11): teclas Z/X usam a runa sem abrir a mochila ---
+	var btitle = _make_label(Vector2(800, 510), 16, Color(0.5, 0.9, 1.0))
+	btitle.text = "CINTO DE RUNAS"
+	bag_panel.add_child(btitle)
+	var bdesc = _make_label(Vector2(800, 532), 11, Color(0.75, 0.75, 0.8))
+	bdesc.text = "Teclas Z e X usam a runa do slot direto no combate"
+	bag_panel.add_child(bdesc)
+	for slot in ["z", "x"]:
+		var bslot = Button.new()
+		bslot.custom_minimum_size = Vector2(46, 46)
+		bslot.position = Vector2(800 if slot == "z" else 856, 556)
+		var bst = StyleBoxFlat.new()
+		bst.bg_color = Color(0.12, 0.2, 0.26, 0.9)
+		bst.set_corner_radius_all(6)
+		bst.set_border_width_all(2)
+		bst.border_color = Color(0.5, 0.9, 1.0)
+		bslot.add_theme_stylebox_override("normal", bst)
+		var bid: String = str(GameManager.belt.get(slot, ""))
+		if bid != "" and ITEMS_DB.ITEMS.has(bid):
+			var bicon = TextureRect.new()
+			bicon.texture = ITEMS_DB.draw_icon(bid, 32)
+			bicon.custom_minimum_size = Vector2(32, 32)
+			bicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			bicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			bicon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bslot.add_child(bicon)
+		else:
+			var blab = Label.new()
+			blab.text = slot.to_upper()
+			blab.position = Vector2(16, 12)
+			blab.add_theme_font_size_override("font_size", 14)
+			blab.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0, 0.5))
+			blab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bslot.add_child(blab)
+		bslot.tooltip_text = "Slot %s: %s" % [slot.to_upper(), _item_display_name(bid) if bid != "" else "vazio"]
+		bslot.pressed.connect(_assign_belt_slot.bind(slot))
+		bag_panel.add_child(bslot)
+	var bhint = _make_label(Vector2(910, 556), 11, Color(0.7, 0.7, 0.75))
+	bhint.text = "Clique num slot\ne depois numa runa\nda mochila p/ atribuir"
+	bag_panel.add_child(bhint)
 func _refresh_bag() -> void:
 	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
 	var ids = GameManager.bag.keys()
@@ -520,11 +560,31 @@ func _use_bag_item(id: String) -> void:
 			elif it.has("hp") or it.has("mana"):
 				_show_feedback("Usou %s" % it["nome"])
 	elif it["tipo"] == "runa":
+		if _belt_pending != "":
+			# atribuindo ao cinto: nao consome a runa, so aponta o slot
+			GameManager.belt_assign(_belt_pending, base)
+			_show_feedback("Runa %s no slot %s!" % [it["nome"], _belt_pending.to_upper()])
+			_belt_pending = ""
+			_build_bag()
+			return
 		_use_runa_item(id)
 
 # ---------- RUNAS (v0.6.7) ----------
 ## usa a runa da mochila: consome a pedra e aplica o efeito no mundo.
 ## Se a runa precisa de alvo e nao ha monstro, devolve a pedra pra mochila.
+var _belt_pending := ""  # slot do cinto esperando atribuicao ("z"/"x")
+
+func _assign_belt_slot(slot: String) -> void:
+	# 1o clique marca o slot; o proximo clique numa RUNA da mochila atribui
+	AudioManager.play_sfx("ui_click")
+	if _belt_pending == slot:
+		_belt_pending = ""
+		_show_feedback("Atribuicao cancelada")
+		return
+	_belt_pending = slot
+	_show_feedback("Slot %s: clique numa RUNA da mochila p/ atribuir" % slot.to_upper())
+
+
 func _use_runa_item(id: String) -> void:
 	if player_ref == null or player_ref.dead:
 		return
@@ -698,6 +758,7 @@ func _build_cloth_panel() -> void:
 		var st2 = StyleBoxFlat.new()
 		st2.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
 		st2.set_corner_radius_all(6)
+		sw2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
 		cloth_panel.add_child(sw2)
 	var pcores = EQUIPS.PANTS_COLORS.keys()
@@ -709,6 +770,7 @@ func _build_cloth_panel() -> void:
 		var st3 = StyleBoxFlat.new()
 		st3.bg_color = EQUIPS.PANTS_COLORS[p_name]
 		st3.set_corner_radius_all(6)
+		sw3.add_theme_stylebox_override("normal", st3)
 		sw3.pressed.connect(_set_pants.bind(p_name))
 		cloth_panel.add_child(sw3)
 	var hint = _make_label(Vector2(430, 560), 12, Color(0.7, 0.7, 0.75))
@@ -922,3 +984,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_N:
 			AudioManager.play_sfx("ui_click")
 			toggle_bestiary_panel()
+		elif event.keycode == KEY_Z:
+			# cinto de runas (v0.6.11): usa a runa do slot Z sem abrir a mochila
+			if not GameManager.belt_use("z"):
+				_show_feedback("Slot Z vazio ou sem runa! Atribua na mochila (B)")
+		elif event.keycode == KEY_X:
+			# cinto de runas: usa a runa do slot X
+			if not GameManager.belt_use("x"):
+				_show_feedback("Slot X vazio ou sem runa! Atribua na mochila (B)")
