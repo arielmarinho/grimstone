@@ -62,3 +62,22 @@ static func roll_drop(mob_type: String, pos: Vector2, parent: Node) -> void:
 			d.setup(entry["id"], randi_range(entry["min"], entry["max"]))
 			d.position = pos + Vector2(randf() * 72 - 36, randf() * 72 - 36)
 			parent.add_child(d)
+
+# ---------- MULTIPLAYER: loot serializável ----------
+static func roll_loot_list(mob_type: String) -> Array:
+	# sorteia e devolve [{id, qty}] — vai por RPC pro cliente que matou
+	var table: Array = TABLES.get(mob_type, TABLES["rat"])
+	var out: Array = []
+	for entry in table:
+		if randf() <= entry["chance"]:
+			out.append({"id": entry["id"], "qty": randi_range(entry["min"], entry["max"])})
+	return out
+
+static func spawn_loot_list(loot: Array, pos: Vector2, parent: Node) -> void:
+	# cliente: cria os drops/moedas a partir da lista recebida
+	var drop_scene = load("res://scripts/entities/drop.gd")
+	for entry in loot:
+		var d = drop_scene.new()
+		d.setup(entry["id"], entry["qty"])
+		d.position = pos + Vector2(randf() * 72 - 36, randf() * 72 - 36)
+		parent.add_child(d)

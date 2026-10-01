@@ -4,6 +4,7 @@ extends Node2D
 
 var spawner_name: String = ""
 var safe_zone: bool = false
+var map_name: String = ""  # mapa deste spawner (servidor precisa saber pra IA online)
 
 # posicoes em coordenadas de mundo 2X (mapa 1024 desenhado a escala 2)
 # TODAS as posicoes ficam FORA do alcance de aggro (280px) do spawn do player
@@ -36,6 +37,9 @@ const SETS = {
 }
 
 func _ready() -> void:
+	# cliente online: NAO instancia mobs — espelhos vem do servidor (mob_state)
+	if NetworkManager.is_online() and not NetworkManager.is_server:
+		return
 	var mob_scene: PackedScene = load("res://scenes/entities/mobs/rat.tscn")
 	for entry in SETS.get(spawner_name, []):
 		# zona segura: so o dummy de treino (imortal, nao revida) pode existir nela
@@ -44,4 +48,5 @@ func _ready() -> void:
 		var mob = mob_scene.instantiate()
 		mob.mob_type = entry["type"]
 		mob.position = entry["pos"]
+		mob._net_map = map_name
 		add_child(mob)
