@@ -21,6 +21,37 @@ signal player_state(id: int, pos: Vector2, map: String, anim: String)
 signal chat_message(sender: String, text: String, kind: String)  # kind: "msg"|"join"|"leave"|"system"
 signal server_lost  # conexão com o servidor caiu (clientes limpam estado remoto)
 
+# ---------- LAG ARTIFICIAL (regra gs-netcode: simular 200ms) ----------
+# --netlag=<ms> atrasa snapshots recebidos (mobs/players) pra testar interpolação.
+# 0 = sem lag (jogo normal). Só afeta RECEPÇÃO no cliente.
+var net_lag_ms: int = 0
+var _lag_queue: Array = []  # [{at: float(ms epoch), fn: Callable}]
+
+func _process(delta: float) -> void:
+	if net_lag_ms <= 0 or _lag_queue.is_empty():
+		return
+	var now := Time.get_ticks_msec()
+	var i := 0
+	while i < _lag_queue.size() and _lag_queue[i]["at"] <= now:
+		_lag_queue[i]["fn"].call()
+		i += 1
+	if i > 0:
+		_lag_queue = _lag_queue.slice(i)
+
+func _lag_delay(fn: Callable) -> void:
+	# entrega fn depois de net_lag_ms (fila ordenada por tempo de entrega)
+	if net_lag_ms <= 0:
+		fn.call()
+		return
+	var at := Time.get_ticks_msec() + net_lag_ms
+	var entry := {"at": at, "fn": fn}
+	var idx := _lag_queue.size()
+	while idx > 0 and _lag_queue[idx - 1]["at"] > at:
+		idx -= 1
+	_lag_queue.insert(idx, entry)
+
+# ---------- MOBS AUTORITATIVOS (fase 2) ----------
+
 func _ready() -> void:
 	# servidor dedicado: godot --headless -- --server
 	var args = OS.get_cmdline_user_args()
@@ -69,7 +100,6 @@ func _on_connected() -> void:
 	print("[CLIENT] Conectado! meu id: ", my_id)
 	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
 	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
-
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
@@ -142,7 +172,7 @@ func _rpc_position(pos: Vector2, map: String, anim: String) -> void:
 func _relay_position(id: int, pos: Vector2, map: String, anim: String) -> void:
 	if id == my_id:
 		return
-	player_state.emit(id, pos, map, anim)
+	_lag_delay(func(): player_state.emit(id, pos, map, anim))
 
 # ---------- CHAT ----------
 func send_chat(text: String) -> void:
@@ -168,6 +198,13 @@ func _rpc_chat(text: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _relay_chat(sender: String, text: String) -> void:
 	chat_message.emit(sender, text, "msg")
+
+func is_online() -> bool:
+	return active and multiplayer.multiplayer_peer != null \
+		and multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
+
+func online_count() -> int:
+	return players.size() if is_online() else 1
 
 # ---------- MOBS AUTORITATIVOS (fase 2) ----------
 # O servidor roda a IA dos mobs (wander/chase/attack) e transmite o estado;
@@ -217,14 +254,14 @@ func _rpc_mob_state(id: int, data: Dictionary) -> void:
 	if is_server:
 		return
 	mobs[id] = data
-	mob_state.emit(id, data)
+	_lag_delay(func(): mob_state.emit(id, data))
 
 @rpc("authority", "call_remote", "reliable")
 func _rpc_mob_removed(id: int) -> void:
 	if is_server:
 		return
 	mobs.erase(id)
-	mob_removed.emit(id)
+	_lag_delay(func(): mob_removed.emit(id))
 
 @rpc("any_peer", "call_remote", "reliable")
 func _rpc_mob_damage(mob_id: int, dmg: int) -> void:

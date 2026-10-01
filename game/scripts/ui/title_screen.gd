@@ -7,7 +7,7 @@ var ip_input: LineEdit
 func _ready() -> void:
 	# headless (servidor dedicado / NetTest): pula o titulo e vai direto pro jogo
 	for a in OS.get_cmdline_user_args():
-		if a.begins_with("--nettest=") or a == "--server":
+		if a.begins_with("--nettest=") or a == "--server" or a.begins_with("--netlag="):
 			get_tree().change_scene_to_file.call_deferred("res://scenes/main.tscn")
 			return
 	AudioManager.play_music("title")
@@ -23,7 +23,7 @@ func _ready() -> void:
 		star.position = Vector2(sx, sy)
 		star.size = Vector2(2, 2)
 		var br = 0.4 + randf() * 0.6
-		star.color = Color(br, br, br * 1.05, 0.9)
+		star.color = Color(br, br * 1.05, br * 1.05, 0.9)
 		add_child(star)
 	# lua
 	var moon = ColorRect.new()
