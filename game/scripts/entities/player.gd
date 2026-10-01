@@ -1,9 +1,10 @@
 extends CharacterBody2D
-## Player — clique para andar, classes estilo Rucoy (arma define classe),
-## 4 DIRECOES (down/up/side + flip), troca de arma 1-4, customizacao T/Y
+## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E, flechas,
+## critico, customizacao T/Y/U (tunica/cabelo/calca)
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+const SKILLS = preload("res://scripts/autoload/skills_db.gd")
 
 const SPEED = 260.0
 
@@ -19,6 +20,14 @@ var attack_cooldown: float = 0.0
 var weapon: String = "sword"
 var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
+var pants_color: String = "marrom"
+
+# skills ativas (estilo Rucoy)
+var skill_ready := {"Q": true, "E": true}
+var skill_cd := {"Q": 0.0, "E": 0.0}
+var buff_golpe: int = 0
+var buff_furia_time: float = 0.0
+var buff_certeiro: bool = false
 
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
@@ -38,10 +47,11 @@ func _ready() -> void:
 	_build_frames()
 
 func _build_frames() -> void:
+	TEXHELPER.CURRENT_PANTS = pants_color
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color)
+		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -61,7 +71,7 @@ func _strip_tex(t: Texture2D) -> Texture2D:
 	for y in range(im.get_height()):
 		for x in range(im.get_width()):
 			var c = im.get_pixel(x, y)
-			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
 				im.set_pixel(x, y, Color(0, 0, 0, 0))
 	return ImageTexture.create_from_image(im)
 
@@ -81,13 +91,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			var i = cores.find(tunic_color)
 			tunic_color = cores[(i + 1) % cores.size()]
 			_build_frames()
-			print("tunica: ", tunic_color)
 		if event.keycode == KEY_Y:
 			var cores = EQUIPS.CLOTHES_COLORS.keys()
 			var i = cores.find(hair_color)
 			hair_color = cores[(i + 1) % cores.size()]
 			_build_frames()
-			print("cabelo: ", hair_color)
+		if event.keycode == KEY_U:
+			var cores = EQUIPS.PANTS_COLORS.keys()
+			var i = cores.find(pants_color)
+			pants_color = cores[(i + 1) % cores.size()]
+			_build_frames()
+		if event.keycode == KEY_Q:
+			_use_skill("Q")
+		if event.keycode == KEY_E:
+			_use_skill("E")
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var world_pos = get_global_mouse_position()
@@ -100,10 +117,90 @@ func _unhandled_input(event: InputEvent) -> void:
 				moving = true
 				break
 
+# ---------- SKILLS (estilo Rucoy) ----------
+func _use_skill(slot: String) -> void:
+	if dead or not skill_ready[slot]:
+		return
+	var list = SKILLS.SKILLS.get(weapon, [])
+	if list.is_empty():
+		return
+	var sk = list[0] if slot == "Q" else list[1]
+	if GameManager.mana < sk["mana"]:
+		print("mana insuficiente para ", sk["nome"])
+		return
+	GameManager.mana -= sk["mana"]
+	skill_ready[slot] = false
+	skill_cd[slot] = sk["cd"]
+	match sk["id"]:
+		"golpe":
+			buff_golpe = 3
+			print("GOLPE PODEROSO armado!")
+		"rodopio":
+			_skill_aoe(2.0)
+		"furia":
+			buff_furia_time = 8.0
+			print("FURIA! +80% dano por 8s")
+		"atordoar":
+			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			if mob != null:
+				mob.stunned = 3.0
+				mob.take_damage(EQUIPS.WEAPONS[weapon]["dano"] * 2)
+				print("ATORDOADO!")
+		"certeiro":
+			buff_certeiro = true
+			print("TIRO CERTEIRO armado!")
+		"chuva":
+			GameManager.arrows = max(0, GameManager.arrows - 5)
+			_skill_aoe(1.5)
+		"fogo":
+			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			if mob != null:
+				var proj = preload("res://scripts/entities/projectile.gd").new()
+				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
+				proj.setup(global_position, mob.global_position, dmg, "staff", false, true)
+				get_parent().add_child(proj)
+		"cura":
+			var cura = int(GameManager.hp_max * 0.4)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
+			print("CURA! +", cura, " HP")
+	GameManager.add_skill_xp(EQUIPS.WEAPONS[weapon]["skill"], 10)
+
+func _skill_aoe(mult: float) -> void:
+	var w = EQUIPS.WEAPONS[weapon]
+	var dmg_base = int(w["dano"] * mult)
+	for mob in get_tree().get_nodes_in_group("mobs"):
+		if not mob.dead and mob.global_position.distance_to(global_position) < 200.0:
+			var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
+			var dmg = dmg_base * (2 if crit else 1)
+			mob.take_damage(dmg)
+			if crit:
+				_spawn_crit_text(mob.global_position)
+
+func _spawn_crit_text(pos: Vector2) -> void:
+	var l = Label.new()
+	l.text = "CRIT!"
+	l.position = pos + Vector2(-20, -50)
+	l.add_theme_font_size_override("font_size", 14)
+	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 4)
+	get_parent().add_child(l)
+	var tw = l.create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 24.0, 0.6)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(l.queue_free)
+
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
 	attack_cooldown = max(0.0, attack_cooldown - delta)
+	for slot in skill_cd:
+		if not skill_ready[slot]:
+			skill_cd[slot] = max(0.0, skill_cd[slot] - delta)
+			if skill_cd[slot] <= 0.0:
+				skill_ready[slot] = true
+	if buff_furia_time > 0.0:
+		buff_furia_time -= delta
 	if attacking:
 		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
@@ -161,22 +258,44 @@ func _play(base: String) -> void:
 
 func _attack(mob) -> void:
 	var w = EQUIPS.WEAPONS[weapon]
+	# arco gasta flechas
+	if weapon == "bow":
+		if GameManager.arrows <= 0:
+			print("sem flechas! compre na loja")
+			return
+		GameManager.arrows -= 1
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]
 	_play("attack")
-	var dano: int = w["dano"] + randi() % 5 - 2
+	var dmg: int = w["dano"] + randi() % 5 - 2
+	if buff_furia_time > 0.0:
+		dmg = int(dmg * 1.8)
+	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
+	var crit := false
+	if buff_certeiro and weapon == "bow":
+		crit = true
+		buff_certeiro = false
+	else:
+		crit = randf() < SKILLS.crit_chance(skill_lv)
+	if buff_golpe > 0:
+		dmg *= buff_golpe
+		buff_golpe = 0
+	if crit:
+		dmg *= 2
 	if w["tipo"] == "melee":
 		await get_tree().create_timer(0.3).timeout
 		if not dead and is_instance_valid(mob) and not mob.dead:
 			GameManager.add_skill_xp(w["skill"], 4)
-			mob.take_damage(dano)
+			mob.take_damage(dmg)
+			if crit:
+				_spawn_crit_text(mob.global_position)
 	else:
 		await get_tree().create_timer(0.25).timeout
 		if dead:
 			return
 		var proj = preload("res://scripts/entities/projectile.gd").new()
-		proj.setup(global_position, mob.global_position, dano, "bow" if weapon == "bow" else "staff")
+		proj.setup(global_position, mob.global_position, dmg, "bow" if weapon == "bow" else "staff", crit)
 		get_parent().add_child(proj)
 		GameManager.add_skill_xp(w["skill"], 4)
 
