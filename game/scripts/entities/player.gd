@@ -1,6 +1,7 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
 ## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
+## ANIMACOES: 4 direcoes REAIS (up/side/down) via procedural — idle/walk/attack/death
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
@@ -40,18 +41,18 @@ var buff_perfurante: bool = false
 var _last_level: int = 1
 var _regen_timer: float = 0.0
 
-# POLISH: TODAS as animacoes usam a arte REAL (folhas down existentes).
-# flip_h cobre esquerda/direita; up reutiliza a arte de frente (nunca procedural).
+# ANIMS com paths up/side REAIS — o procedural desenha cada direcao
+# (usar o PNG down pra tudo fazia o player andar so pra baixo — bug do usuario)
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-	"idle_up": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-	"idle_side": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
+	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
+	"idle_side": "res://assets/sprites/animation/player/knight/idle/side/knight_idle_side_base.png",
 	"walk_down": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
-	"walk_up": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
-	"walk_side": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
+	"walk_up": "res://assets/sprites/animation/player/knight/walk/up/knight_walk_up_base.png",
+	"walk_side": "res://assets/sprites/animation/player/knight/walk/side/knight_walk_side_base.png",
 	"attack_down": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
-	"attack_up": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
-	"attack_side": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
+	"attack_up": "res://assets/sprites/animation/player/knight/attack/up/knight_attack_up_base.png",
+	"attack_side": "res://assets/sprites/animation/player/knight/attack/side/knight_attack_side_base.png",
 	"death": "res://assets/sprites/animation/player/knight/death/down/knight_death_down_base.png",
 }
 
@@ -98,7 +99,9 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		# PROCEDURAL com 4 direcoes REAIS (up/side/down) — o PNG so tem "down",
+		# usar ele fazia o player andar so pra baixo (bug reportado pelo usuario)
+		var texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
