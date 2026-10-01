@@ -2,6 +2,7 @@ extends Node
 ## Loot tables por tipo de monstro (Tibia-style: raridade por valor)
 
 const RARITY = preload("res://scripts/autoload/rarity.gd")
+const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
 const TABLES = {
 	"rat": [
