@@ -1,14 +1,12 @@
 extends Node
 ## NetTest — teste de rede automatizado (regra gs-netcode: 2 clientes + 1 server no localhost)
 ## Uso:
-##   godot --headless --path . scenes/main.tscn -- --nettest=server
-##   godot --headless --path . scenes/main.tscn -- --nettest=clientA
-##   godot --headless --path . scenes/main.tscn -- --nettest=clientB
+##   godot --headless --path . -- --nettest server
+##   godos --headless --path . -- --nettest clientA
+##   godot --headless --path . -- --nettest clientB
 ## Sequência: server abre ENet 7777; clientes conectam, registram, enviam chat,
 ## movem o player; validamos: registro (players online), relay de posição entre
 ## clientes, chat A->B, e saída limpa sem crash.
-## Logs vão para /tmp/nettest_<role>.log (flush imediato — stdout pode ser
-## perdido por buffering quando o processo é morto por timeout).
 
 var role := ""
 var _log: Array = []
@@ -31,6 +29,7 @@ var _main = null
 var _t := 0.0
 var _phase := 0
 var _fail := false
+var _deadline := 24.0  # saída LIMPA antes do timeout do shell (stdout morre no SIGTERM)
 
 func _ready() -> void:
 	var args = OS.get_cmdline_user_args()
@@ -73,13 +72,14 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 			_t = 0.0
 		1:
 			_t += get_physics_process_delta_time()
-			if NetworkManager.is_online() and NetworkManager.my_id != 1 and not NetworkManager.players.is_empty():
+			# espera OS DOIS registrados (o sync do servidor traz a lista completa)
+			if NetworkManager.is_online() and NetworkManager.my_id != 1 and NetworkManager.players.size() >= 2:
 				_flog("[NETTEST][", name_tag, "] registrado! id=", NetworkManager.my_id, " players=", NetworkManager.players.keys())
 				_phase = 2
 				_t = 0.0
-			elif _t > 10.0:
+			elif _t > 25.0:
 				_fail = true
-				_flog("[NETTEST][", name_tag, "] FALHOU: não registrou em 10s")
+				_flog("[NETTEST][", name_tag, "] FALHOU: não registrou 2 players em 25s — players=", NetworkManager.players.keys())
 				get_tree().quit(1)
 		2:
 			# envia chat e anda
@@ -118,6 +118,10 @@ func _physics_process(delta: float) -> void:
 	if role == "":
 		return
 	_t += delta
+	if _t > _deadline:
+		print("[NETTEST][RESULT] TIMEOUT role=", role, " fase=", _phase, " log=", _log)
+		get_tree().quit(1)
+		return
 	match role:
 		"server":
 			_phase_server()

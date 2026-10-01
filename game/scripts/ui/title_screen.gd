@@ -5,6 +5,11 @@ extends Control
 var ip_input: LineEdit
 
 func _ready() -> void:
+	# headless (servidor dedicado / NetTest): pula o titulo e vai direto pro jogo
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--nettest=") or a == "--server":
+			get_tree().change_scene_to_file.call_deferred("res://scenes/main.tscn")
+			return
 	AudioManager.play_music("title")
 	var bg = ColorRect.new()
 	bg.color = Color(0.06, 0.05, 0.08)
@@ -97,7 +102,7 @@ func _ready() -> void:
 	add_child(ip_input)
 	# versao
 	var ver = Label.new()
-	ver.text = "v0.5.1"
+	ver.text = "v0.4.5"
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
