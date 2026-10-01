@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
-## mochila (B), roupas+calça (C), tela de skills (K), morte
+## mochila (B), roupas+calça (C), tela de skills (K), morte, CHAT (Enter)
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -52,6 +52,78 @@ func _ready() -> void:
 	_build_cloth_panel()
 	_build_skills_panel()
 	_build_feedback()
+	_build_chat()
+
+# ---------- CHAT (Area 9 multiplayer) ----------
+var chat_panel: Control
+var chat_log: RichTextLabel
+var chat_input: LineEdit
+var chat_open: bool = false
+var _chat_lines: int = 0
+
+func _build_chat() -> void:
+	chat_panel = Control.new()
+	chat_panel.position = Vector2(20, 420)
+	chat_panel.size = Vector2(360, 200)
+	chat_panel.visible = false
+	add_child(chat_panel)
+	var bg = ColorRect.new()
+	bg.position = Vector2(0, 0)
+	bg.size = Vector2(360, 200)
+	bg.color = Color(0.05, 0.05, 0.08, 0.72)
+	chat_panel.add_child(bg)
+	chat_log = RichTextLabel.new()
+	chat_log.position = Vector2(6, 4)
+	chat_log.size = Vector2(348, 160)
+	chat_log.scroll_following = true
+	chat_log.bbcode_enabled = true
+	chat_log.add_theme_font_size_override("normal_font_size", 12)
+	chat_panel.add_child(chat_log)
+	chat_input = LineEdit.new()
+	chat_input.position = Vector2(6, 168)
+	chat_input.size = Vector2(348, 26)
+	chat_input.placeholder_text = "Enter p/ abrir chat, Enter envia, Esc fecha..."
+	chat_input.add_theme_font_size_override("font_size", 12)
+	chat_panel.add_child(chat_input)
+	chat_input.text_submitted.connect(_on_chat_submit)
+	NetworkManager.chat_message.connect(_on_chat_message)
+	_append_chat("system", "Bem-vindo ao Grimstone! Enter = chat global.")
+
+func _on_chat_message(sender: String, text: String, kind: String) -> void:
+	match kind:
+		"msg":
+			_append_chat("msg", "[color=#9fd4ff]%s:[/color] %s" % [sender, text])
+		"join":
+			_append_chat("join", "[color=#7fd47f]* %s %s[/color]" % [sender, text])
+		"leave":
+			_append_chat("leave", "[color=#c9a06a]* %s %s[/color]" % [sender, text])
+		_:
+			_append_chat("system", "[color=#d8c88a]%s[/color]" % text)
+
+func _append_chat(kind: String, bbcode: String) -> void:
+	chat_log.append_text(bbcode + "\n")
+	_chat_lines += 1
+
+func toggle_chat() -> void:
+	chat_open = not chat_open
+	chat_panel.visible = chat_open
+	if chat_open:
+		AudioManager.play_sfx("ui_click")
+		chat_input.grab_focus()
+	else:
+		chat_input.release_focus()
+		chat_input.text = ""
+
+func _on_chat_submit(text: String) -> void:
+	text = text.strip_edges()
+	if text != "":
+		NetworkManager.send_chat(text)
+	chat_input.text = ""
+	# fecha o chat depois de enviar (estilo Rucoy)
+	toggle_chat()
+
+func chat_is_typing() -> bool:
+	return chat_open
 
 func _build_feedback() -> void:
 	feedback_label = _make_label(Vector2(0, 590), 16, Color(1.0, 0.75, 0.3))
@@ -99,7 +171,7 @@ func _process(_delta: float) -> void:
 	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -111,6 +183,8 @@ func _process(_delta: float) -> void:
 		elif not player_ref.dead and death_screen.visible:
 			death_screen.visible = false
 	coins_label.text = "Moedas: %d" % GameManager.coins
+	if NetworkManager.is_online():
+		map_label.text = "Nivel %d  |  %s  |  [ONLINE %d]" % [GameManager.level, GameManager.current_map, NetworkManager.online_count()]
 	if bag_panel.visible:
 		_refresh_bag()
 
@@ -543,6 +617,16 @@ func toggle_bag() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			if not chat_open and player_ref != null and not player_ref.dead:
+				toggle_chat()
+			get_viewport().set_input_as_handled()
+			return
+		if chat_open:
+			if event.keycode == KEY_ESCAPE:
+				toggle_chat()
+				get_viewport().set_input_as_handled()
+			return  # enquanto digita, NAO passa teclas pro jogo
 		if event.keycode == KEY_C:
 			AudioManager.play_sfx("ui_click")
 			toggle_cloth_panel()
