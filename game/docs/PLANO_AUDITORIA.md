@@ -23,6 +23,7 @@
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
 | 15 | **Decoracao** | gs-level-design | postes, flores, barris, bandeiras, barraca | implementado ciclo 26 (v0.6.8) — aguarda usuario |
 | 16 | **Sprites direcionais** | gs-pixel-art | mobs com down/up/side reais, rato procedural | implementado ciclo 27 (v0.6.9) — aguarda usuario |
+| 17 | **Integridade GitHub↔local** | gs-qa-testing | auditoria blob SHA de todos os arquivos | OK ciclo 28 (v0.6.10) — 32/36 byte-exatos, 4 = encoding MCP, nenhum corrompido |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -30,6 +31,10 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
+### Area 17 — Auditoria de integridade GitHub↔local (ciclo 28, v0.6.10) CONCLUIDA
+- Auditoria completa de TODOS os arquivos do repo via blob SHA (git hash-object local vs get_file_contents remoto): 32/36 byte-exatos
+- 4 divergencias = encoding de acentos + newline do MCP (game_manager semanticamente completo, 12/12 features) — NENHUM arquivo corrompido/truncado no remoto
+- Godot headless 0 erros
 ### Area 16 — Sprites direcionais dos mobs (ciclo 27, v0.6.9) implementado
 - mobs com down/up/side REAIS (up = costas sem rosto, side = perfil com flip_h); FIX grave: rato INVISIVEL em up/side (so existia PNG "down") — rato procedural completo nas 3 direcoes + death
 - Validacao VISUAL headless: tests/preview_mobs.gd (folha 8 mobs x 3 direcoes) + tests/preview_mobs2.gd (up/side ampliados 2x) — direcoes confirmadas distintas
