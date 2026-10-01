@@ -1,5 +1,7 @@
+class_name TexHelper
 extends Object
-## TexHelper — carrega sprite real do disco; se nao existir, gera grafico procedural
+## TexHelper — carrega sprite real do disco (PNG ou .b64); se nao existir, gera grafico procedural
+## Usado como classe global (class_name) — nao e autoload
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)

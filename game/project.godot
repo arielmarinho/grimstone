@@ -9,7 +9,6 @@ config/icon="res://icon.svg"
 
 [autoload]
 GameManager="*res://scripts/autoload/game_manager.gd"
-TexHelper="*res://scripts/autoload/tex_helper.gd"
 
 [display]
 window/size/viewport_width=1280
