@@ -1,3 +1,11 @@
+## v0.6.22 — b64 4-direcoes COMPLETOS no remoto + fix whitespace (ciclo 49, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Os 6 b64 up/side do knight (idle/walk/attack x up/side) agora estao COMPLETOS no remoto: attack/side pushado (faltava), idle/side reparado (estava truncado em 60 bytes — lixo de push quebrado)
+- FIX CRITICO no tex_helper.gd: _load_image agora remove whitespace INTERNO do b64 (push MCP insere espacos) — sem isso os 4 b64 up/side existentes falhavam no decode e caian no fallback procedural; agora a arte real 4-direcoes carrega DE VERDADE
+- SANDBOX RECICLADO: espelho local grimstone/game e tmp/godot-alpine (Godot de validacao) PERDIDOS na reciclagem do ambiente — GitHub e a fonte da verdade; validacao de sintaxe feita com gdparse (gdtoolkit sobreviveu); reconstrucao do espelho local pendente para proximo ciclo
+- Validacao: gdparse OK no tex_helper; b64 locais decodificam PNGs validos 384x96 (4 frames, IEND OK); remotos verificados lendo de volta (idle/up, idle/side, attack/side completos)
+- Commits: 5b62275 (tex_helper fix), 3aab12e (attack/side), 69ab7fd (idle/side)
+
 ## v0.6.21 — Player ARTE REAL nas 4 direcoes + fallback seguro (ciclo 47, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - Player up/side agora usam ARTE REAL PROPRIA (b64 up/side gerados por IA no estilo da referencia, quantizados pra paleta do down) — fim do procedural no player, quando os b64 existirem no pacote
