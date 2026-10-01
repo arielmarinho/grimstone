@@ -31,7 +31,7 @@ func _ready() -> void:
 	$Player.hair_color = GameManager.hair_color
 	$Player.tunic_color = GameManager.tunic_color
 	$Player._build_frames()
-	$CanvasLayer.set_player($Player)
+	$HUD.set_player($Player)
 
 func _physics_process(_delta: float) -> void:
 	if switching or player.dead:
