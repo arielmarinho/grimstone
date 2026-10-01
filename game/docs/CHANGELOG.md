@@ -1,3 +1,11 @@
+## v0.6.28 — Auditoria Area 6 UI/UX (ciclo 56, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- PANEIS EXCLUSIVOS (regra gs-ui-ux "abrir um fecha o outro"): novo HUD.close_all_panels() fecha mochila/roupas/skills/bestiario/chat + NPCs (grupo npc_panel); loja/banco/missoes chamam call_group("hud","close_all_panels") ao abrir — antes loja+banco+missao abriam SIMULTANEAMENTE e nenhum fechava os paineis do HUD (B/C/K/N)
+- VERSAO CENTRALIZADA: GameManager.GAME_VERSION ("0.6.28") — titulo usava "v0.6.17" HARDCODED (housekeeping manual esquecia); export_presets.cfg 0.6.17 -> 0.6.28
+- Dica de teclas do HUD agora lista Z/X (cinto de runas, faltava desde a v0.6.11)
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.27 — Auditoria Area 4 Mapas pos-redesenho (ciclo 55, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - 3 fixes de colliders fieis a arte (pos v0.6.23/24): muralha SUL da city1 CONTINUA com abertura so no bueiro (mundo x 920-1168 — a arte desenha parede em todo o resto), portao da cerca de treino da city1 VISIVEL na arte (vao sem poste, mundo x 530-630), vao da ponte do lago EXATO (mundo y 986-1038)
