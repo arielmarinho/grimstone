@@ -13,7 +13,7 @@
 | 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transicoes, colisores, spawners | implementado ciclo 5 (aguarda usuario) |
 | 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, precos, drops, pocoes | OK (ciclo 6) |
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
-| 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | pendente |
+| 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | (area nova — implementar do zero) | pendente |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | pendente (apos polish) |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | pendente |
@@ -66,3 +66,12 @@
 - NOVO: loja com feedback colorido (verde = comprou, vermelho = erro) e titulo correto por cidade (era fixado antes do city ser setado)
 - Titulo: versao v0.4.5 (estava v0.3) + ESC sai
 - Validado: Godot headless --import = 0 erros de script
+
+### Area 7 — Balanceamento (ciclo 8, 03:42) OK
+- hp_max/mana_max viraram FUNCAO do level (max_hp_for_level/max_mana_for_level) — save antigo nunca desincroniza (load clampa hp/mana no maximo)
+- Level up estilo Tibia: em combate +30 HP/+15 mana (sem heal gratis no meio do fight); fora de combate enche tudo
+- Cura fora de combate acelerada: ~5% do max a cada 2s (estilo Rucoy) — volta ao fight mais rapido
+- XP dos mobs iniciais +75% (rat 35, slime 50, bat 40) — primeiros levels em ~2min, regra 4
+- Pocoes P mais baratas (15/18) — economia do primeiro minuto fecha com loot de rat/slime
+- TTK/curvas/economia ja equalizados na Area 5 (regras 1-4 da skill); Area 7 consolidou stats derivados + regen
+- Validado Godot headless: 0 erros de script
