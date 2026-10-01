@@ -298,6 +298,8 @@ func take_damage(amount: int, from_peer: int = 0) -> void:
 		return
 	if from_peer != 0:
 		_last_hit_by = from_peer
+	else:
+		_last_hit_by = 1  # golpe do player local (host/offline) — peer id do host
 	hp -= amount
 	AudioManager.play_sfx("hit", 0.15)
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
@@ -336,11 +338,11 @@ func die() -> void:
 	hp_bar.value = 0
 	_play_dir("death")
 	AudioManager.play_sfx("mob_death")
-	# servidor dedicado: recompensa vai por RPC pro ultimo atacante (autoritativo)
-	if NetworkManager.dedicated and _last_hit_by != 0:
+	# online (dedicated OU hosted): recompensa vai por RPC pro ultimo atacante (autoritativo)
+	if NetworkManager.is_server and _last_hit_by != 0:
 		var loot = preload("res://scripts/entities/loot_table.gd").roll_loot_list(mob_type)
 		NetworkManager._rpc_mob_reward.rpc_id(_last_hit_by, xp_reward, loot, global_position, mob_type)
-		NetworkManager._rpc_mob_removed.rpc(_last_hit_by)  # cliente para de mirar
+		NetworkManager._rpc_mob_removed.rpc()  # clientes param de mirar (id vem do snapshot d=true)
 		$RespawnTimer.start(respawn_time)
 		return
 	GameManager.add_xp(xp_reward)
