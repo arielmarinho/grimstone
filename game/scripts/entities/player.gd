@@ -1,523 +1,268 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
-## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
+## regen estilo Tibia (mana sempre, HP fora de combate), cura fora de combate 5%/2s.
 
-const EQUIPS = preload("res://scripts/autoload/equips.gd")
-const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
-const SKILLS = preload("res://scripts/autoload/skills_db.gd")
+signal stats_changed
+signal died
 
-signal feedback(msg: String)
+const EQUIPS = preload("res://scripts/data/equips.gd")
+const TEXHELPER = preload("res://scripts/ui/tex_helper.gd")
+const ITEMS_DB = preload("res://scripts/data/items_db.gd")
 
-const SPEED = 260.0
+const SPEED := 170.0
+const ATTACK_RANGE := 46.0
+const ARROW_RANGE := 260.0
 
-@onready var sprite: AnimatedSprite2D = $Sprite
-
-var target: Vector2 = Vector2.ZERO
-var moving: bool = false
-var attacking: bool = false
-var dead: bool = false
-var facing: String = "down"
-var attack_cooldown: float = 0.0
-
-var weapon: String = "sword"
-var hair_color: String = "castanho"
-var tunic_color: String = "castanho"
-var pants_color: String = "marrom"
-
-# skills ativas (estilo Rucoy) — Q/E basicas, R/G avancadas (desbloqueia na city2)
-var skill_ready := {"Q": true, "E": true, "R": true, "G": true}
-var skill_cd := {"Q": 0.0, "E": 0.0, "R": 0.0, "G": 0.0}
-var buff_golpe: int = 0
-var buff_furia_time: float = 0.0
-var buff_certeiro: bool = false
-var buff_duplo: int = 0
-var buff_bersek_time: float = 0.0
-var buff_precisao: int = 0
-var buff_escudo_time: float = 0.0
-var buff_grito_time: float = 0.0
-var buff_perfurante: bool = false
-
-var _last_level: int = 1
-var _regen_timer: float = 0.0
-
-const ANIMS = {
-	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
-	"idle_side": "res://assets/sprites/animation/player/knight/idle/side/knight_idle_side_base.png",
-	"walk_down": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
-	"walk_up": "res://assets/sprites/animation/player/knight/walk/up/knight_walk_up_base.png",
-	"walk_side": "res://assets/sprites/animation/player/knight/walk/side/knight_walk_side_base.png",
-	"attack_down": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
-	"attack_up": "res://assets/sprites/animation/player/knight/attack/up/knight_attack_up_base.png",
-	"attack_side": "res://assets/sprites/animation/player/knight/attack/side/knight_attack_side_base.png",
-	"death": "res://assets/sprites/animation/player/knight/death/down/knight_death_down_base.png",
+# Classes (arma define a classe — estilo Rucoy)
+const CLASSES = {
+	"sword": {"name": "Guerreiro", "color": Color(0.85, 0.75, 0.55)},
+	"axe": {"name": "Bárbaro", "color": Color(0.8, 0.5, 0.3)},
+	"bow": {"name": "Arqueiro", "color": Color(0.5, 0.8, 0.5)},
+	"staff": {"name": "Mago", "color": Color(0.5, 0.6, 0.9)},
 }
 
+var player_name := "Herói"
+var char_class := "sword"
+var level := 1
+var xp := 0
+var hp := 100.0
+var mana := 50.0
+var coins := 0
+var moving := false
+var target := Vector2.ZERO
+var attack_target: Node = null
+var dead := false
+var in_combat := false
+var combat_timer := 0.0
+
+# Equipamento
+var weapon := "sword"
+var armor := "none"
+var shield := "none"
+var helmet := "none"
+
+# Skills
+var skill_points := 0
+var skills := {}  # id -> level
+var skill_cooldowns := {}
+
+# Touch (Android)
+var touch_mode := false
+
+@onready var sprite: Node2D = $Sprite
+@onready var attack_timer: Timer = $AttackTimer
+
 func _ready() -> void:
-	target = global_position
-	_last_level = GameManager.level
-	_build_frames()
+	add_to_group("player")
+	touch_mode = DisplayServer.is_touchscreen_available()
+	_build_body()
+	_play("idle_down")
+	GameManager.player = self
 
-func _notify_level_up() -> void:
-	# efeito visual: anel dourado expandindo + texto LEVEL UP!
-	var l = Label.new()
-	l.text = "LEVEL UP!"
-	l.position = global_position + Vector2(-35, -80)
-	l.add_theme_font_size_override("font_size", 18)
-	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 5)
-	l.z_index = 50
-	get_parent().add_child(l)
-	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 30.0, 1.0)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 1.0)
-	tw.tween_callback(l.queue_free)
-	# anel: sprite circular dourado que expande e some
-	var img = Image.create(64, 64, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	for a in range(64):
-		var ang = a * TAU / 64.0
-		var px = 32 + cos(ang) * 28.0
-		var py = 32 + sin(ang) * 28.0
-		img.set_pixel(int(px), int(py), Color(1.0, 0.85, 0.25))
-	var ring = Sprite2D.new()
-	ring.texture = ImageTexture.create_from_image(img)
-	ring.position = global_position
-	ring.z_index = 40
-	get_parent().add_child(ring)
-	var tw2 = ring.create_tween()
-	tw2.tween_property(ring, "scale", Vector2(2.2, 2.2), 0.6)
-	tw2.parallel().tween_property(ring, "modulate:a", 0.0, 0.6)
-	tw2.tween_callback(ring.queue_free)
-
-func _build_frames() -> void:
-	TEXHELPER.CURRENT_PANTS = pants_color
-	var sf = SpriteFrames.new()
-	sf.remove_animation("default")
-	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color, pants_color)
-		if texs.is_empty():
-			continue
-		sf.add_animation(anim)
-		sf.set_animation_speed(anim, 8.0)
-		sf.set_animation_loop(anim, anim.begins_with("idle") or anim.begins_with("walk"))
-		for t in texs:
-			sf.add_frame(anim, _strip_tex(t))
-	sprite.sprite_frames = sf
-	sprite.play("idle_down")
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-
-func _strip_tex(t: Texture2D) -> Texture2D:
-	var im = t.get_image()
-	if im == null:
-		return t
-	im.convert(Image.FORMAT_RGBA8)
-	for y in range(im.get_height()):
-		for x in range(im.get_width()):
-			var c = im.get_pixel(x, y)
-			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
-				im.set_pixel(x, y, Color(0, 0, 0, 0))
-	return ImageTexture.create_from_image(im)
-
-func _unhandled_input(event: InputEvent) -> void:
-	if dead:
-		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		var weapons = ["sword", "axe", "bow", "staff"]
-		if event.keycode >= KEY_1 and event.keycode <= KEY_4:
-			var idx = event.keycode - KEY_1
-			if idx < weapons.size() and weapons[idx] != weapon:
-				weapon = weapons[idx]
-				_build_frames()
-				print("arma: ", EQUIPS.WEAPONS[weapon]["nome"], " (", EQUIPS.WEAPONS[weapon]["classe"], ")")
-		if event.keycode == KEY_T:
-			var cores = EQUIPS.CLOTHES_COLORS.keys()
-			var i = cores.find(tunic_color)
-			tunic_color = cores[(i + 1) % cores.size()]
-			_build_frames()
-		if event.keycode == KEY_Y:
-			var cores = EQUIPS.CLOTHES_COLORS.keys()
-			var i = cores.find(hair_color)
-			hair_color = cores[(i + 1) % cores.size()]
-			_build_frames()
-		if event.keycode == KEY_U:
-			var cores = EQUIPS.PANTS_COLORS.keys()
-			var i = cores.find(pants_color)
-			pants_color = cores[(i + 1) % cores.size()]
-			_build_frames()
-		if event.keycode == KEY_Q:
-			_use_skill("Q")
-		if event.keycode == KEY_E:
-			_use_skill("E")
-		if event.keycode == KEY_R:
-			_use_skill("R")
-		if event.keycode == KEY_G:
-			_use_skill("G")
-		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var world_pos = get_global_mouse_position()
-		target = world_pos
-		moving = true
-		var mobs = get_tree().get_nodes_in_group("mobs")
-		for mob in mobs:
-			if not mob.dead and mob.global_position.distance_to(world_pos) < 80.0:
-				target = mob.global_position
-				moving = true
-				break
-
-# ---------- SKILLS (estilo Rucoy) ----------
-func _skill_for_slot(slot: String) -> Dictionary:
-	var list = SKILLS.SKILLS.get(weapon, [])
-	for sk in list:
-		if sk["tecla"] == slot:
-			return sk
-	return {}
-
-func _use_skill(slot: String) -> void:
-	if dead or not skill_ready[slot]:
-		return
-	var sk = _skill_for_slot(slot)
-	if sk.is_empty():
-		return
-	if not SKILLS.skill_unlocked(sk):
-		_show_feedback("%s desbloqueia ao chegar na VILA (city2)!" % sk["nome"])
-		return
-	if GameManager.mana < sk["mana"]:
-		_show_feedback("Mana insuficiente para %s (%d)" % [sk["nome"], sk["mana"]])
-		return
-	GameManager.mana -= sk["mana"]
-	skill_ready[slot] = false
-	skill_cd[slot] = sk["cd"]
-	AudioManager.play_sfx("cast")
-	match sk["id"]:
-		"golpe":
-			buff_golpe = 3
-			print("GOLPE PODEROSO armado!")
-		"rodopio":
-			_skill_aoe(2.0)
-		"furia":
-			buff_furia_time = 8.0
-			print("FURIA! +80% dano por 8s")
-		"atordoar":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
-			if mob != null:
-				mob.stunned = 3.0
-				mob.take_damage(EQUIPS.WEAPONS[weapon]["dano"] * 2)
-				print("ATORDOADO!")
-		"certeiro":
-			buff_certeiro = true
-			print("TIRO CERTEIRO armado!")
-		"chuva":
-			GameManager.arrows = max(0, GameManager.arrows - 5)
-			_skill_aoe(1.5)
-		"fogo":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
-			if mob != null:
-				var proj = preload("res://scripts/entities/projectile.gd").new()
-				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
-				proj.setup(global_position, mob.global_position, dmg, "staff", false, true)
-				get_parent().add_child(proj)
-		"cura":
-			var cura = int(GameManager.hp_max * 0.4)
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
-			print("CURA! +", cura, " HP")
-		# ----- skills avancadas (city2) -----
-		"investida":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"] * 1.5)
-			if mob != null:
-				var dir = (mob.global_position - global_position).normalized()
-				global_position = mob.global_position - dir * 60.0
-				_update_facing(dir)
-				mob.take_damage(int(EQUIPS.WEAPONS[weapon]["dano"] * 2.5))
-				print("INVESTIDA!")
-			else:
-				print("nenhum alvo para a investida")
-		"terremoto":
-			_skill_aoe_stun(2.5, 2.0)
-		"golpe_duplo":
-			buff_duplo = 2
-			print("GOLPE DUPLO armado!")
-		"bersek":
-			buff_bersek_time = 10.0
-			print("BERSERK! +150% dano por 10s")
-		"precisao":
-			buff_precisao = 3
-			print("PRECISAO! proximas 3 flechas sao criticas")
-		"tiro_multi":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
-			if mob != null:
-				if GameManager.arrows < 2:
-					print("sem flechas!")
-					skill_ready[slot] = true
-					skill_cd[slot] = 0.0
-					GameManager.mana += sk["mana"]
-					return
-				GameManager.arrows -= 2
-				var proj = preload("res://scripts/entities/projectile.gd").new()
-				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 2.5)
-				proj.setup(global_position, mob.global_position, dmg, "bow", false)
-				get_parent().add_child(proj)
-				# explosao em area no impacto: marca o alvo
-				_multi_target = mob
-				print("TIRO MULTIPLO!")
-			else:
-				print("nenhum alvo")
-		"escudo":
-			buff_escudo_time = 10.0
-			print("ESCUDO ARCANO! -50% dano por 10s")
-		"nevasca":
-			_skill_aoe_stun(2.2, 1.5, 2.0)
-		# ----- skills avancadas v2 (R/G, desbloqueiam na VILA) -----
-		"duplo":
-			buff_duplo = 2
-			print("GOLPE DUPLO armado! proximos 2 golpes acertam 2x")
-		"grito":
-			buff_grito_time = 12.0
-			print("GRITO DE GUERRA! +50%% dano por 12s")
-		"giratorio":
-			_skill_aoe(3.0)
-		"sangue_frio":
-			var cura = int(GameManager.hp_max * 0.3)
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
-			print("SANGUE FRIO! +", cura, " HP")
-		"perfurante":
-			buff_perfurante = true
-			print("FLECHA PERFURANTE armada! proxima flecha causa 4x")
-		"chuva_p":
-			if GameManager.arrows < 8:
-				print("sem flechas suficientes (precisa de 8)!")
-				skill_ready[slot] = true
-				skill_cd[slot] = 0.0
-				GameManager.mana += sk["mana"]
-				return
-			GameManager.arrows -= 8
-			_skill_aoe(2.5)
-		"nova":
-			_skill_aoe_stun(2.0, 2.0)
-		"cura_m":
-			var cura2 = int(GameManager.hp_max * 0.7)
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura2)
-			print("CURA MAIOR! +", cura2, " HP")
-	GameManager.add_skill_xp(EQUIPS.WEAPONS[weapon]["skill"], 10)
-
-var _multi_target = null
-
-func _skill_aoe_stun(mult: float, stun_time: float, dmg_mult: float = 1.0) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	var dmg_base = int(w["dano"] * mult * dmg_mult)
-	var hit_any := false
-	for mob in get_tree().get_nodes_in_group("mobs"):
-		if not mob.dead and mob.global_position.distance_to(global_position) < 220.0:
-			mob.stunned = stun_time
-			mob.take_damage(dmg_base)
-			hit_any = true
-	if hit_any:
-		print("AREA! dano x%.1f + atordoados %.0fs" % [mult * dmg_mult, stun_time])
-
-func _skill_aoe(mult: float) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	var dmg_base = int(w["dano"] * mult)
-	for mob in get_tree().get_nodes_in_group("mobs"):
-		if not mob.dead and mob.global_position.distance_to(global_position) < 200.0:
-			var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
-			var dmg = dmg_base * (2 if crit else 1)
-			mob.take_damage(dmg)
-			if crit:
-				_spawn_crit_text(mob.global_position)
-
-func _spawn_crit_text(pos: Vector2) -> void:
-	var l = Label.new()
-	l.text = "CRIT!"
-	l.position = pos + Vector2(-20, -50)
-	l.add_theme_font_size_override("font_size", 14)
-	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 4)
-	get_parent().add_child(l)
-	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 24.0, 0.6)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(l.queue_free)
+func _build_body() -> void:
+	# corpo procedural estilo Rucoy: cabeça + cabelo + túnica + calça + arma embutida
+	for c in sprite.get_children():
+		c.queue_free()
+	var skin = Color(0.9, 0.75, 0.6)
+	var hair = Color(0.35, 0.22, 0.12)
+	var tunic = Color(0.45, 0.35, 0.25)
+	var pants = Color(0.3, 0.3, 0.4)
+	# calça
+	var legs = ColorRect.new()
+	legs.size = Vector2(10, 8)
+	legs.position = Vector2(-5, 4)
+	legs.color = pants
+	legs.z_index = -1
+	sprite.add_child(legs)
+	# túnica
+	var body = ColorRect.new()
+	body.size = Vector2(12, 12)
+	body.position = Vector2(-6, -6)
+	body.color = tunic
+	sprite.add_child(body)
+	# cabeça
+	var head = ColorRect.new()
+	head.size = Vector2(10, 9)
+	head.position = Vector2(-5, -14)
+	head.color = skin
+	sprite.add_child(head)
+	# cabelo
+	var hair_r = ColorRect.new()
+	hair_r.size = Vector2(10, 4)
+	hair_r.position = Vector2(-5, -16)
+	hair_r.color = hair
+	sprite.add_child(hair_r)
+	# arma embutida (define a classe)
+	var wpn = ColorRect.new()
+	wpn.size = Vector2(3, 14)
+	wpn.position = Vector2(7, -4)
+	wpn.color = EQUIPS.WEAPONS[weapon]["color"]
+	wpn.rotation_degrees = 35
+	sprite.add_child(wpn)
 
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
-	if GameManager.level > _last_level:
-		_last_level = GameManager.level
-		AudioManager.play_sfx("level_up")
-		_notify_level_up()
-	attack_cooldown = max(0.0, attack_cooldown - delta)
-	for slot in skill_cd:
-		if not skill_ready[slot]:
-			skill_cd[slot] = max(0.0, skill_cd[slot] - delta)
-			if skill_cd[slot] <= 0.0:
-				skill_ready[slot] = true
-	if buff_furia_time > 0.0:
-		buff_furia_time -= delta
-	if buff_bersek_time > 0.0:
-		buff_bersek_time -= delta
-	if buff_escudo_time > 0.0:
-		buff_escudo_time -= delta
-	if buff_grito_time > 0.0:
-		buff_grito_time -= delta
-	# REGEN estilo Tibia: mana sempre (lenta), HP so fora de combate
-	_regen_timer += delta
-	if _regen_timer >= 2.0:
-		_regen_timer = 0.0
-		var in_combat := false
-		for m in get_tree().get_nodes_in_group("mobs"):
-			if not m.dead and not m.dying and m.state == "attack" and global_position.distance_to(m.global_position) < 400.0:
-				in_combat = true
-				break
-		if GameManager.mana < GameManager.mana_max:
-			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + GameManager.level / 10)
-		if not in_combat and GameManager.hp < GameManager.hp_max:
-			# fora de combate cura rapido (estilo Rucoy): ~5% do max a cada 2s
-			var heal = max(3, int(GameManager.hp_max * 0.05))
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + heal)
-	if attacking:
-		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
-			attacking = false
-		return
+	_regen(delta)
+	_combat_tick(delta)
+	_handle_input()
+	_handle_skills()
+	move_and_slide()
 
-	var w = EQUIPS.WEAPONS[weapon]
-	var dist = global_position.distance_to(target)
-	if moving and dist > 6.0:
-		var dir = (target - global_position).normalized()
-		velocity = dir * SPEED
-		move_and_slide()
-		_update_facing(dir)
-		_play("walk")
-		var mob = _mob_in_range(w["alcance"])
-		if mob and attack_cooldown <= 0.0:
-			_attack(mob)
+func _handle_input() -> void:
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		moving = true
+		target = global_position + Vector2(0, -100)
+	elif Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		moving = true
+		target = global_position + Vector2(0, 100)
+	elif Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		moving = true
+		target = global_position + Vector2(-100, 0)
+	elif Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		moving = true
+		target = global_position + Vector2(100, 0)
 	else:
 		moving = false
-		velocity = Vector2.ZERO
-		_play("idle")
-		var mob = _mob_in_range(w["alcance"])
-		if mob and attack_cooldown <= 0.0:
-			_attack(mob)
 
-func _mob_in_range(max_d: float):
-	var best = null
-	var best_d = max_d
-	for mob in get_tree().get_nodes_in_group("mobs"):
-		if mob.dead:
-			continue
-		var d = global_position.distance_to(mob.global_position)
-		if d < best_d:
-			best_d = d
-			best = mob
-	return best
+func _regen(delta: float) -> void:
+	# mana regen SEMPRE (estilo Tibia), escala com level
+	mana = minf(mana + (0.5 + level * 0.1) * delta, max_mana())
+	# HP regen só FORA de combate
+	if not in_combat:
+		hp = minf(hp + max_hp() * 0.05 * (delta / 2.0), max_hp())
 
-func _update_facing(dir: Vector2) -> void:
-	if abs(dir.x) > abs(dir.y):
-		facing = "left" if dir.x < 0 else "right"
-	else:
-		facing = "up" if dir.y < 0 else "down"
+func _combat_tick(delta: float) -> void:
+	if in_combat:
+		combat_timer -= delta
+		if combat_timer <= 0.0:
+			in_combat = false
 
-func _play(base: String) -> void:
-	var anim := base + "_down"
-	if facing == "up":
-		anim = base + "_up"
-		sprite.flip_h = false
-	elif facing == "left" or facing == "right":
-		anim = base + "_side"
-		sprite.flip_h = facing == "left"
-	else:
-		sprite.flip_h = false
-	if sprite.animation != anim:
-		sprite.play(anim)
+func enter_combat() -> void:
+	in_combat = true
+	combat_timer = 6.0
 
-func _attack(mob) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	# arco gasta flechas
-	if weapon == "bow":
-		if GameManager.arrows <= 0:
-			_show_feedback("Sem flechas! Compre na loja.")
-			return
-		GameManager.arrows -= 1
-	if w["tipo"] == "melee":
-		AudioManager.play_sfx("hit")
-	else:
-		AudioManager.play_sfx("shoot" if weapon == "bow" else "cast")
-	_update_facing(mob.global_position - global_position)
-	attacking = true
-	attack_cooldown = w["cooldown"]
-	_play("attack")
-	var dmg: int = w["dano"] + randi() % 5 - 2
-	if buff_furia_time > 0.0:
-		dmg = int(dmg * 1.8)
-	if buff_bersek_time > 0.0:
-		dmg = int(dmg * 2.5)
-	if buff_grito_time > 0.0:
-		dmg = int(dmg * 1.5)
-	if buff_perfurante and weapon == "bow":
-		dmg *= 4
-		buff_perfurante = false
-	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
-	var crit := false
-	if buff_certeiro and weapon == "bow":
-		crit = true
-		buff_certeiro = false
-	elif buff_precisao > 0 and weapon == "bow":
-		crit = true
-		buff_precisao -= 1
-	else:
-		crit = randf() < SKILLS.crit_chance(skill_lv)
-	if buff_golpe > 0:
-		dmg *= buff_golpe
-		buff_golpe = 0
-	if crit:
-		dmg *= 2
-	var hits := 1
-	if buff_duplo > 0 and w["tipo"] == "melee":
-		hits = 2
-		buff_duplo -= 1
-	for h in range(hits):
-		if w["tipo"] == "melee":
-			await get_tree().create_timer(0.3).timeout
-			if dead:
-				return
-			if is_instance_valid(mob) and not mob.dead:
-				GameManager.add_skill_xp(w["skill"], 4)
-				mob.take_damage(dmg)
-				if crit:
-					_spawn_crit_text(mob.global_position)
-		else:
-			await get_tree().create_timer(0.25).timeout
-			if dead:
-				return
-			var tgt = mob.global_position if is_instance_valid(mob) else global_position
-			var proj = preload("res://scripts/entities/projectile.gd").new()
-			proj.setup(global_position, tgt, dmg, "bow" if weapon == "bow" else "staff", crit)
-			get_parent().add_child(proj)
-			GameManager.add_skill_xp(w["skill"], 4)
-			# tiro multiplo: explosao em area ao redor do alvo
-			if _multi_target != null and is_instance_valid(_multi_target) and not _multi_target.dead:
-				for m2 in get_tree().get_nodes_in_group("mobs"):
-					if m2 != _multi_target and not m2.dead and m2.global_position.distance_to(_multi_target.global_position) < 150.0:
-						m2.take_damage(int(dmg * 0.6))
-			_multi_target = null
+func max_hp() -> int:
+	return GameManager.max_hp_for_level(level)
 
-func _show_feedback(msg: String) -> void:
-	feedback.emit(msg)
+func max_mana() -> int:
+	return GameManager.max_mana_for_level(level)
 
-func take_damage(amount: int) -> void:
+func _play(anim: String) -> void:
+	if sprite.has_method("play_anim"):
+		sprite.play_anim(anim)
+
+func _unhandled_input(event: InputEvent) -> void:
 	if dead:
 		return
-	if buff_escudo_time > 0.0:
-		amount = int(amount * 0.5)
-	GameManager.hp = max(0, GameManager.hp - amount)
-	AudioManager.play_sfx("player_hurt")
-	GameManager.add_skill_xp("defesa", 2)
-	if GameManager.hp <= 0:
-		die()
+	if event is InputEventMouseButton and event.pressed:
+		target = get_global_mouse_position()
+		moving = true
+	# skills Q/E/R/G
+	elif event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_Q: use_skill("Q")
+			KEY_E: use_skill("E")
+			KEY_R: use_skill("R")
+			KEY_G: use_skill("G")
+			KEY_F: _try_open_shop()
+			KEY_B: _toggle_bag()
+			KEY_K: _toggle_skills()
 
-func die() -> void:
+func _try_open_shop() -> void:
+	var shops = get_tree().get_nodes_in_group("shop")
+	for s in shops:
+		if global_position.distance_to(s.global_position) < 120.0:
+			s.open()
+			return
+
+func _toggle_bag() -> void:
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("toggle_bag"):
+		hud.toggle_bag()
+
+func _toggle_skills() -> void:
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("toggle_skills"):
+		hud.toggle_skills()
+
+func use_skill(slot: String) -> void:
+	if dead:
+		return
+	var sid = char_class + "_" + slot
+	var sk = SKILLS_DB.get_skill(sid)
+	if sk == null:
+		return
+	if not GameManager.skill_unlocked(sid):
+		return
+	if skill_cooldowns.get(sid, 0.0) > 0.0:
+		return
+	if mana < sk["mana"]:
+		return
+	mana -= sk["mana"]
+	skill_cooldowns[sid] = sk["cooldown"]
+	SKILLS_DB.cast(sid, self)
+
+func add_xp(amount: int) -> void:
+	xp += amount
+	while xp >= xp_for_next():
+		xp -= xp_for_next()
+		level += 1
+		_on_level_up()
+
+func xp_for_next() -> int:
+	return level * 50
+
+func _on_level_up() -> void:
+	# estilo Tibia: em combate NÃO enche (só +30 HP/+15 mana); fora enche tudo
+	if in_combat:
+		hp = minf(hp + 30.0, max_hp())
+		mana = minf(mana + 15.0, max_mana())
+	else:
+		hp = max_hp()
+		mana = max_mana()
+	skill_points += 1
+	AudioManager.play_sfx("level_up")
+	stats_changed.emit()
+
+func gain_skill_xp(amount: int) -> void:
+	var sid = char_class + "_weapon"
+	var cur = skills.get(sid, 10)
+	var need = (cur * cur) * 5
+	skills[sid] = cur + float(amount) / need * 100.0 / 100.0 * 0.0 + amount / float(need) * 100.0
+	if skills[sid] >= 100.0:
+		skills[sid] = 0.0
+		skills[sid + "_lvl"] = skills.get(sid + "_lvl", 10) + 1
+
+func take_damage(amount: float) -> void:
+	if dead:
+		return
+	enter_combat()
+	hp -= amount
+	AudioManager.play_sfx("player_hurt")
+	_flash_damage()
+	stats_changed.emit()
+	if hp <= 0.0:
+		_die()
+
+func _flash_damage() -> void:
+	sprite.modulate = Color(1, 0.3, 0.3)
+	var t = get_tree().create_timer(0.15)
+	t.timeout.connect(func():
+		if is_instance_valid(sprite):
+			sprite.modulate = Color.WHITE)
+
+func heal(amount: float) -> void:
+	hp = minf(hp + amount, max_hp())
+	stats_changed.emit()
+
+func restore_mana(amount: float) -> void:
+	mana = minf(mana + amount, max_mana())
+	stats_changed.emit()
+
+func _die() -> void:
 	dead = true
+	hp = 0.0
 	velocity = Vector2.ZERO
 	_play("death")
 	AudioManager.play_sfx("player_death")
