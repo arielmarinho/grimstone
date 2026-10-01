@@ -5,6 +5,10 @@
 - Pendente: push dos 6 b64 up/side (filtro de contexto omite base64); fallback cobre o jogo no estado atual
 - Validacao: headless 0 erros + run real 0 erros + 7/7 testes OK
 
+### Area 4 — Mapas & Mundo RE-AUDITADA pos-redesenho (ciclo 55, v0.6.27) OK
+- Auditoria dos colliders vs arte NOVA (pos v0.6.23/24): 3 fixes aplicados — muralha SUL da city1 continua com abertura SO no bueiro (mundo x 920-1168), portao da cerca de treino da city1 visivel na arte (vao sem poste, mundo x 530-630), vao da ponte do lago exato (mundo y 986-1038)
+- Validacao: preview + check de pixels + 7/7 testes unitarios OK + run real 0 erros; tex_helper.gd pushado byte-exato (blob SHA 1633c848, 44999 bytes)
+
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
 > Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
@@ -17,7 +21,7 @@
 | 1 | **Combate & Feedback** | gs-game-design + gs-pixel-art | flash de dano, numeros flutuando, morte, level up | OK (ciclo 1) |
 | 2 | **Player & Skills** | gs-game-design | 4 classes, Q/E/R/G, flechas, critico, customizacao | AUDITADO ciclo 54 (v0.6.26) — 6 fixes: nevasca AOE+stun 2.2x/1.5s (era 3x sem stun), escudo 10s (era 8s), certeiro x2 na desc, golpe_duplo 2 ataques na desc, chuva exige 5 flechas, skills com alvo devolvem mana sem alvo (atordoar/fogo/investida/tiro_multi) |
 | 3 | **Monstros & IA** | gs-game-design | 8 tipos, IA wander/aggro/attack, loot | OK (ciclo 4b) |
-| 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transicoes, colisores, spawners | implementado ciclo 5 (aguarda usuario) |
+| 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transicoes, colisores, spawners | AUDITADO ciclo 55 (v0.6.27) pos-redesenho — 3 fixes de colliders fieis a arte: muralha sul city1 continua c/ abertura so no bueiro (mundo x 920-1168), portao da cerca de treino visivel na arte (vao sem poste), vao da ponte do lago exato (mundo y 986-1038) |
 | 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, precos, drops, pocoes | OK (ciclo 6) |
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
