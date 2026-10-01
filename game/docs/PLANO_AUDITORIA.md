@@ -26,7 +26,6 @@
 | 17 | **Integridade GitHub↔local** | gs-qa-testing | auditoria blob SHA de todos os arquivos | OK ciclo 28 (v0.6.10) — 32/36 byte-exatos, 4 = encoding MCP, nenhum corrompido |
 | 18 | **Checklist teste Mac** | gs-qa-testing | TESTE_MAC.md consolidado + regressao 7/7 testes | OK ciclo 29 (v0.6.10) — aguarda usuario testar |
 | 19 | **Cinto de runas + regressoes** | gs-qa-testing | v0.6.11: CINTO Z/X; REGRESSOES: ITEMS_DB sem preload quebrava main.gd (loot_table/game_manager), _show_feedback inexistente (hud) | OK ciclo 33 — NetTest 3/3 + 7/7 testes + headless 0 erros |
-| 20 | **Sincronizacao pos-v0.6.11** | gs-qa-testing | blob SHA dos arquivos alterados; fundir fix visual com base correta | OK ciclo 34 (v0.6.12) — mob/player/hud byte-exatos no remoto |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -34,6 +33,10 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
+### Area 21 — Polish visual de mapas + reparo pos-polish (ciclo 36) OK
+- bordas do mundo em todos os mapas, rato procedural redesenhado (64x44), caverna refeita, casas retangulares, feedback de dano restaurado
+- REPARO: mob.gd/spawners.gd remotos regredidos pra base antiga — re-push byte-exato do local canônico; testes novos (map_check/preview_maps/preview_rat) pushados
+- Validacao: headless 0 erros, 7/7 testes unitarios OK
 ### Area 20 — Sincronizacao GitHub↔local pos-v0.6.11 (ciclo 34) CONCLUIDA
 - blob SHA de 9 arquivos-chave: 4/9 byte-exatos de primeira (loot_table, network_manager, items_db, rarity)
 - 5 divergentes investigados: game_manager e title_screen = encoding MCP (semanticamente completos, NAO mexer); hud.gd remoto SEM a v0.6.11 (cinto Z/X) — local pushado byte-exato (fd7cbf0a); mob.gd e player.gd remotos = fix visual 08:17 aplicado sobre base ANTIGA (perderam from_peer/quests/touch/raridade) — FUNSAO: logica local + ANIMS all-down (arte down real em todas as direcoes), pushados byte-exatos (abfed491 / 4ec07f32)
