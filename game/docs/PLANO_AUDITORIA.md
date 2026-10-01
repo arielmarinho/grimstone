@@ -27,7 +27,6 @@
 | 18 | **Checklist teste Mac** | gs-qa-testing | TESTE_MAC.md consolidado + regressao 7/7 testes | OK ciclo 29 (v0.6.10) — aguarda usuario testar |
 | 19 | **Cinto de runas + regressoes** | gs-qa-testing | v0.6.11: CINTO Z/X; REGRESSOES: ITEMS_DB sem preload quebrava main.gd (loot_table/game_manager), _show_feedback inexistente (hud) | OK ciclo 33 — NetTest 3/3 + 7/7 testes + headless 0 erros |
 | 22 | **Portao sul + integridade pos-fix** | gs-level-design + gs-qa-testing | muralha SUL fiel ao cenario (caminho ate a borda), trigger do bueiro, auditoria blob SHA pos-fix | OK ciclo 37b (v0.6.14) — colliders/main byte-exatos, NetTest 3/3, 7/7 testes |
-| 23 | **Numeros de recompensa** | gs-ui-ux | +XP, +moedas, +cura, +mana, SKILL UP flutuantes | implementado ciclo 38b (v0.6.15) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -36,6 +35,9 @@
 
 ## Log de auditoria
 ### Area 23 — Numeros de recompensa flutuantes (ciclo 38b, v0.6.15) implementado
+
+- FX autoload novo (fx.gd): +XP/+moedas/+cura/+mana/SKILL UP flutuantes via sinais do GameManager
+- FIX ciclo 38c (este ciclo): FX.coin_gain() faltava no fx.gd (coin/drop chamavam funcao inexistente) + corpo do projectile.gd APAGADO no remoto pelo commit de audio f57897d — restaurado byte-exato (b21f2aa0); validado run real 0 erros + 7/7 testes
 - FX autoload (sinais do GameManager): +XP, +moedas, +cura, +mana, SKILL UP flutuantes no player
 - coin/drop chamam FX.coin_gain no pickup; validado headless 0 erros + 7/7 testes
 ### Area 22 — Portao sul + integridade pos-fix (ciclo 37b) VALIDADA

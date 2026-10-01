@@ -3,6 +3,8 @@ Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
 - FX autoload novo (scripts/autoload/fx.gd): numeros flutuantes de GANHO — +XP (azul), +moedas (dourado), +cura (verde), +mana (azul), SKILL UP (dourado grande)
 - GameManager emite sinais xp_gained/coins_gained/healed/mana_gained/skill_up_event; FX conecta no _ready e desenha no player
 - coin.gd/drop.gd chamam FX.coin_gain direto no pickup
+- FIX ciclo 38c: FX.coin_gain() NAO existia no fx.gd (coin/drop chamavam funcao inexistente — moeda nunca sumia, spam de erro) — funcao adicionada (local c15da91, GitHub f5be00b)
+- FIX ciclo 38c: commit de audio f57897d tinha APAGADO o corpo inteiro do projectile.gd no remoto (_ready/_physics_process/_hit/_spawn_crit_text — flechas/bolas de fogo mortas no GitHub) — restaurado byte-exato (b21f2aa0)
 - O dano ja tinha numero flutuante (mob.gd); agora TUDO que o player ganha tambem mostra
 - Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK
 
