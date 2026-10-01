@@ -72,6 +72,9 @@ func _enviar(origem: String) -> void:
 	if busy:
 		return
 	busy = true
+	# espera o frame atual ser DESENHADO antes de capturar — sem isso a captura
+	# sai parcial (só HUD, mundo cinza) quando o _process roda antes do draw
+	await RenderingServer.frame_post_draw
 	# captura o frame ATUAL da viewport (sem gravar em disco, em memória)
 	var img := get_viewport().get_texture().get_image()
 	var b64 := ""
