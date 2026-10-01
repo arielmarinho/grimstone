@@ -1,17 +1,17 @@
 extends Node2D
 ## Main — controla qual mapa está ativo e o spawn do player
-## Cidade tem bueiro; ao andar até ele, desce pra caverna. Na caverna, a grade sobe.
+## Cidade tem bueiro (sul); ao andar até ele, desce pra caverna. Na caverna, a grade (norte) sobe.
 
 const MAPS = {
 	"city1": {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(512, 620),
-		"exit": {"pos": Vector2(512, 100), "radius": 46, "to": "rat_cave"},
+		"exit": {"pos": Vector2(512, 800), "radius": 42, "to": "rat_cave"},
 	},
 	"rat_cave": {
 		"texture": "res://assets/maps/rat_cave.png",
-		"player_spawn": Vector2(512, 150),
-		"exit": {"pos": Vector2(512, 110), "radius": 46, "to": "city1"},
+		"player_spawn": Vector2(512, 400),
+		"exit": {"pos": Vector2(512, 90), "radius": 42, "to": "city1"},
 	},
 }
 
