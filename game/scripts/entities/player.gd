@@ -453,7 +453,7 @@ func _mob_in_range(max_d: float):
 func _update_facing(dir: Vector2) -> void:
 	if abs(dir.x) > abs(dir.y):
 		facing = "left" if dir.x < 0 else "right"
-else:
+	else:
 		facing = "up" if dir.y < 0 else "down"
 
 func _play(base: String) -> void:
