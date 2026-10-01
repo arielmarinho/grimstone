@@ -1,16 +1,15 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, loot
-## Timers como FILHOS do mob (morrem com ele — sem await solto)
-## Strip de magenta em runtime: fundo rosa nunca aparece
+## 4 DIRECOES (down/up/side + flip), timers filhos, strip de magenta
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const LOOT = preload("res://scripts/entities/loot_table.gd")
 
-const WANDER_RADIUS = 120.0
-const AGGRO_RANGE = 140.0
-const ATTACK_RANGE = 46.0
-const WANDER_SPEED = 45.0
-const CHASE_SPEED = 70.0
+const WANDER_RADIUS = 240.0
+const AGGRO_RANGE = 280.0
+const ATTACK_RANGE = 80.0
+const WANDER_SPEED = 90.0
+const CHASE_SPEED = 140.0
 
 var max_hp: int = 40
 var hp: int = 40
@@ -24,6 +23,7 @@ var wander_target: Vector2
 var state: String = "wander"
 var attack_cooldown: float = 0.0
 var respawn_time: float = 8.0
+var facing: String = "down"
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var hp_bar: ProgressBar = $HpBar
@@ -47,9 +47,15 @@ func _ready() -> void:
 	_build_frames()
 
 const ANIMS = {
-	"idle": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
-	"walk": "res://assets/sprites/animation/enemy/rat/walk/down/rat_walk_down.png",
-	"attack": "res://assets/sprites/animation/enemy/rat/attack/down/rat_attack_down.png",
+	"idle_down": "res://assets/sprites/animation/enemy/rat/idle/down/rat_idle_down.png",
+	"idle_up": "res://assets/sprites/animation/enemy/rat/idle/up/rat_idle_up.png",
+	"idle_side": "res://assets/sprites/animation/enemy/rat/idle/side/rat_idle_side.png",
+	"walk_down": "res://assets/sprites/animation/enemy/rat/walk/down/rat_walk_down.png",
+	"walk_up": "res://assets/sprites/animation/enemy/rat/walk/up/rat_walk_up.png",
+	"walk_side": "res://assets/sprites/animation/enemy/rat/walk/side/rat_walk_side.png",
+	"attack_down": "res://assets/sprites/animation/enemy/rat/attack/down/rat_attack_down.png",
+	"attack_up": "res://assets/sprites/animation/enemy/rat/attack/up/rat_attack_up.png",
+	"attack_side": "res://assets/sprites/animation/enemy/rat/attack/side/rat_attack_side.png",
 	"death": "res://assets/sprites/animation/enemy/rat/death/down/rat_death_down.png",
 }
 
@@ -62,11 +68,11 @@ func _build_frames() -> void:
 			continue
 		sf.add_animation(anim)
 		sf.set_animation_speed(anim, 8.0)
-		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
+		sf.set_animation_loop(anim, anim.begins_with("idle") or anim.begins_with("walk"))
 		for t in texs:
 			sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
-	sprite.play("idle")
+	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _strip_tex(t: Texture2D) -> Texture2D:
@@ -112,7 +118,7 @@ func _physics_process(delta: float) -> void:
 			attack_cooldown -= delta
 			if attack_cooldown <= 0.0 and not player.dead:
 				attack_cooldown = 1.2
-				sprite.play("attack")
+				_play_dir("attack")
 				$AtkTimer.start(0.3)
 
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
@@ -128,9 +134,24 @@ func _move(dest: Vector2, speed: float) -> void:
 	var dir = (dest - global_position).normalized()
 	velocity = dir * speed
 	move_and_slide()
-	sprite.flip_h = dir.x > 0
-	if sprite.animation != "walk":
-		sprite.play("walk")
+	if abs(dir.x) > abs(dir.y):
+		facing = "left" if dir.x < 0 else "right"
+	else:
+		facing = "up" if dir.y < 0 else "down"
+	_play_dir("walk")
+
+func _play_dir(base: String) -> void:
+	var anim := base + "_down"
+	if facing == "up":
+		anim = base + "_up"
+		sprite.flip_h = false
+	elif facing == "left" or facing == "right":
+		anim = base + "_side"
+		sprite.flip_h = facing == "left"
+	else:
+		sprite.flip_h = false
+	if sprite.animation != anim:
+		sprite.play(anim)
 
 func _get_player():
 	var nodes = get_tree().get_nodes_in_group("player")
@@ -150,7 +171,7 @@ func die() -> void:
 	hp = 0
 	velocity = Vector2.ZERO
 	hp_bar.value = 0
-	sprite.play("death")
+	_play_dir("death")
 	GameManager.add_xp(xp_reward)
 	LOOT.roll_drop(global_position, get_parent())
 	$RespawnTimer.start(respawn_time)
@@ -160,5 +181,5 @@ func _do_respawn() -> void:
 	dying = false
 	hp = max_hp
 	global_position = home
-	sprite.play("idle")
+	_play_dir("idle")
 	hp_bar.value = 100
