@@ -1,0 +1,1 @@
+Pipeline de sprites do Grimstone (sandbox): chroma key magenta + normalização de frames 1x4 + mapas. Ver scripts/process_sprites.py no workspace.
