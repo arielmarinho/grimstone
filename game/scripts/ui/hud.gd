@@ -758,7 +758,7 @@ func _build_cloth_panel() -> void:
 		var st2 = StyleBoxFlat.new()
 		st2.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
 		st2.set_corner_radius_all(6)
-		sw2.add_theme_stylebox_override("normal", st2)
+		st2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
 		cloth_panel.add_child(sw2)
 	var pcores = EQUIPS.PANTS_COLORS.keys()
