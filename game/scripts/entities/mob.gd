@@ -15,9 +15,9 @@ var mob_type: String = "rat"
 
 # stats por tipo (Tibia-style: progressao de dificuldade)
 const TYPES = {
-	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0},
-	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7},
-	"bat": {"hp": 30, "dano": 6, "xp": 25, "vel": 1.6},
+	"rat": {"hp": 40, "dano": 8, "xp": 35, "vel": 1.0},
+	"slime": {"hp": 60, "dano": 10, "xp": 50, "vel": 0.7},
+	"bat": {"hp": 30, "dano": 6, "xp": 40, "vel": 1.6},
 	"spider": {"hp": 90, "dano": 12, "xp": 55, "vel": 1.2},
 	"wolf": {"hp": 130, "dano": 13, "xp": 90, "vel": 1.4},
 	"goblin": {"hp": 110, "dano": 12, "xp": 70, "vel": 1.3},
