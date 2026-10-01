@@ -1,7 +1,10 @@
 class_name TexHelper
 extends Object
-## TexHelper — carrega sprite real do disco (PNG ou .b64); se nao existir, gera arte procedural ORGANICA
-## (círculos/elipses com sombreado — fiel as referencias Rucoy)
+## TexHelper — ordem de carregamento:
+## 1) assets_override/ (instalado pelo usuario, sem tocar no git)
+## 2) assets/ PNG normal
+## 3) assets/ .b64 (base64 no repo, decodificado em runtime)
+## 4) arte procedural (fallback)
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)
@@ -26,9 +29,16 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	return _procedural(path, weapon, hair, tunic)
 
 static func _load_image(path: String) -> Image:
-	var img = Image.load_from_file(ProjectSettings.globalize_path(path))
+	# 1) override local (assets_override/) — instalado pelo usuario, sem tocar no git
+	var override_path = path.replace("res://assets/", "res://assets_override/")
+	var img = Image.load_from_file(ProjectSettings.globalize_path(override_path))
 	if img != null:
 		return img
+	# 2) PNG normal do projeto
+	img = Image.load_from_file(ProjectSettings.globalize_path(path))
+	if img != null:
+		return img
+	# 3) versao .b64 (base64 no repo, decodificada em runtime)
 	var f = FileAccess.open(path + ".b64", FileAccess.READ)
 	if f == null:
 		return null
