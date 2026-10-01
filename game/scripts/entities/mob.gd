@@ -1,7 +1,6 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, 4 direcoes, timers filhos, strip magenta
-## 8 tipos: rat, slime, bat, spider, wolf, goblin, orc, skeleton
-## FEEDBACK: flash de dano + numero flutuante + morte com fade
+## Subclasses definem: tipo (sprite), stats, loot
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
@@ -11,8 +10,10 @@ const ATTACK_RANGE = 80.0
 const WANDER_SPEED = 90.0
 const CHASE_SPEED = 140.0
 
+# tipo do monstro — muda sprite/stats/loot
 var mob_type: String = "rat"
 
+# stats por tipo (Tibia-style: progressao de dificuldade)
 const TYPES = {
 	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0},
 	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7},
@@ -22,6 +23,7 @@ const TYPES = {
 	"goblin": {"hp": 110, "dano": 16, "xp": 70, "vel": 1.3},
 	"orc": {"hp": 220, "dano": 30, "xp": 150, "vel": 1.0},
 	"skeleton": {"hp": 160, "dano": 24, "xp": 120, "vel": 1.1},
+	"dummy": {"hp": 9999, "dano": 0, "xp": 0, "vel": 0.0},  # alvo de treino: nunca morre, nao revida
 }
 
 var max_hp: int = 40
@@ -110,6 +112,8 @@ func _strip_tex(t: Texture2D) -> Texture2D:
 	return ImageTexture.create_from_image(im)
 
 func _physics_process(delta: float) -> void:
+	if mob_type == "dummy":
+		return  # dummy de treino: estatico, imortal, nunca ataca
 	if dying or dead:
 		return
 	if stunned > 0.0:
@@ -191,15 +195,23 @@ func _get_player():
 func take_damage(amount: int) -> void:
 	if dead or dying:
 		return
+	# dummy de treino: mostra o numero de dano mas nunca morre (treino infinito)
+	if mob_type == "dummy":
+		_flash_damage()
+		_spawn_damage_number(amount)
+		return
 	hp -= amount
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
 	_flash_damage()
 	_spawn_damage_number(amount)
-	if hp <= 0:
+	if hp <= 0 and mob_type != "dummy":
 		die()
+	elif mob_type == "dummy":
+		hp = max_hp  # dummy de treino: HP sempre cheio, nunca morre
 
 # ---------- FEEDBACK VISUAL DE DANO ----------
 func _flash_damage() -> void:
+	# flash branco no sprite (modulate pisca)
 	sprite.modulate = Color(3.0, 3.0, 3.0)
 	var tw = create_tween()
 	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.15)
@@ -228,7 +240,7 @@ func die() -> void:
 	_play_dir("death")
 	GameManager.add_xp(xp_reward)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
-	# corpo desvanece (respawn timer continua)
+	# corpo desvanece (o respawn timer continua rodando)
 	var tw = create_tween()
 	tw.tween_interval(0.8)
 	tw.tween_property(sprite, "modulate:a", 0.0, 1.2)
