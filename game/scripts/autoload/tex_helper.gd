@@ -80,7 +80,7 @@ static func _draw_rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> 
 static func load_map(path: String) -> Texture2D:
 	var img := _load_image(path)
 	if img != null:
-		return img
+		return ImageTexture.create_from_image(img)
 	var img2 = Image.create(512, 512, false, Image.FORMAT_RGBA8)
 	img2.fill(Color(0.35, 0.6, 0.3))
 	for x in range(230, 280):
