@@ -1,3 +1,14 @@
+## v0.6.29 — Auditoria Area 5 Itens & Economia re-auditada (ciclo 57, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- SIMULACAO ANTES DE MEXER (regra 5 gs-combat-balance, scripts/81724fd159dae26a/area5_resim.py): TTK alvo 5-10s OK (orc 8.2s skill 10, 5.9s skill 30); player aguenta 12+ hits do mob do mapa; economia fecha (loot/min >= 2 pocoes do mapa em todos os maps: 104-467 moedas/min vs custo de pocao 30-120/min)
+- POCOES M/G MENOS EFICIENTES QUE A P (bug de economia): vida P 3,3 hp/moeda vs M 2,5 / G 2,7 — ninguem compraria a maior; fix: M 60->45, G 110->90 (vida), M 70->55, G 130->110 (mana) — eficiencia M/G agora >= P em TODOS
+- PRECOS DE ARMA INCOERENTES: city2 vendia machado/arco/cajado MAIS BARATO que city1 (100/130/160 vs 120/150/180) — desconto por progredir; fix: precos unificados (progresso = catalogo maior, nao desconto)
+- PEIXE nao se comprava na city1 (que TEM o lago na arte v0.6.23) — adicionado (10 moedas)
+- ARCO era a UNICA arma sem fonte de drop (espada=goblin, machado=wolf+orc, cajado=skeleton) — goblin agora dropa arco (6%)
+- LABEL HONESTO: loja mostrava "2 moedas" pra flecha mas vende 10 por vez — agora "2 moedas (x10)"
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK; shop.gd/loot_table.gd byte-exatos no remoto (blob SHA conferido)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.28 — Auditoria Area 6 UI/UX (ciclo 56, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - PANEIS EXCLUSIVOS (regra gs-ui-ux "abrir um fecha o outro"): novo HUD.close_all_panels() fecha mochila/roupas/skills/bestiario/chat + NPCs (grupo npc_panel); loja/banco/missoes chamam call_group("hud","close_all_panels") ao abrir — antes loja+banco+missao abriam SIMULTANEAMENTE e nenhum fechava os paineis do HUD (B/C/K/N)
