@@ -155,12 +155,17 @@ func _buy(id: String) -> void:
 	refresh()
 
 func open() -> void:
+	# painel exclusivo (regra gs-ui-ux): abrir a loja fecha os outros paineis
+	get_tree().call_group("hud", "close_all_panels")
+	add_to_group("npc_panel")
+	AudioManager.play_sfx("ui_click")
 	title_label.text = "LOJA — " + ("CIDADE" if city == "city1" else "VILA")
 	panel.visible = true
 	refresh()
 
 func close() -> void:
 	panel.visible = false
+	remove_from_group("npc_panel")
 	msg_label.text = ""
 
 func is_open() -> bool:
