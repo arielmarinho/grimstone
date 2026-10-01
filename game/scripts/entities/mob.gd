@@ -338,6 +338,7 @@ func die() -> void:
 		return
 	GameManager.add_xp(xp_reward)
 	GameManager.quest_on_kill(mob_type)
+	GameManager.bestiary_kill(mob_type)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
 	# corpo desvanece (o respawn timer continua rodando)
 	var tw = create_tween()
