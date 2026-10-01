@@ -15,7 +15,7 @@
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
-| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 (mobs autoritativos testados: server+A+B localhost PASSOU) — teste no Mac pendente |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag ciclo 15 (NetTest c/ lag 150ms PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13 (server+2 clientes localhost: registro, chat, posicao) — teste no Mac pendente |
 
 ## Regra do usuario
@@ -59,7 +59,7 @@
 ### Area 6 — UI/UX (ciclo 7, 03:33-03:45) implementada
 - BUG 1 (grave): _make_label adicionava o label ao ROOT do HUD — labels de titulo/hint dos paineis mochila/roupas/skills ficavam SEMPRE visiveis sobre o jogo e se ACUMULAVAM a cada refresh da tela K. Fix: _make_label so cria; quem adiciona e o painel
 - BUG 2 (perf): mochila reconstruia os 20 botoes A CADA FRAME enquanto aberta — agora rebuild so quando o conteudo muda (assinatura id:qty)
-- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca aparecia
+- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca apareceu
 - BUG 4: preview do painel de roupas NUNCA era renderizado — agora renderiza o knight com as cores atuais e atualiza a cada clique
 - NOVO: cooldown NUMERICO nos botoes Q/E/R/G (segundos restantes no centro, estilo MMO)
 - NOVO: barra de feedback central no HUD — mana insuficiente, skill bloqueada (VILA), sem flechas agora aparecem NA TELA (antes so print no console invisivel)
@@ -104,4 +104,11 @@
 - Servidor dedicado (--server): NetTarget = alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
 - NetTest fase MOBS PASSOU (server+A+B localhost): espelhos chegaram, cliente pediu dano, servidor validou e aplicou, HP caiu no snapshot — RESULT OK nos 3 roles
 - Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
+- Validado headless 0 erros; pendente: teste no Mac do usuario
+
+### Area 9 — netcode: interpolacao + lag artificial (ciclo 15, 05:09+) OK
+- Interpolacao de mobs no cliente agora e por BUFFER de snapshots (mira ~120ms atras) — cobre jitter/lag sem rubber-banding
+- LAG ARTIFICIAL: `--netlag=<ms>` atrasa entrega de snapshots (mobs+players) no NetworkManager — testa interpolacao sob rede ruim
+- FIX harness: `break` dentro do if teleportava mesmo sem mob vivo (skip de fase); chat enviado 1x; server espera fase de mobs (~20s)
+- NetTest PASSOU COM LAG 150ms (server+A+B localhost): registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado — RESULT OK nos 3 roles
 - Validado headless 0 erros; pendente: teste no Mac do usuario
