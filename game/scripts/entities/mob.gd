@@ -332,11 +332,12 @@ func die() -> void:
 	# servidor dedicado: recompensa vai por RPC pro ultimo atacante (autoritativo)
 	if NetworkManager.dedicated and _last_hit_by != 0:
 		var loot = preload("res://scripts/entities/loot_table.gd").roll_loot_list(mob_type)
-		NetworkManager._rpc_mob_reward.rpc_id(_last_hit_by, xp_reward, loot, global_position)
+		NetworkManager._rpc_mob_reward.rpc_id(_last_hit_by, xp_reward, loot, global_position, mob_type)
 		NetworkManager._rpc_mob_removed.rpc(_last_hit_by)  # cliente para de mirar
 		$RespawnTimer.start(respawn_time)
 		return
 	GameManager.add_xp(xp_reward)
+	GameManager.quest_on_kill(mob_type)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
 	# corpo desvanece (o respawn timer continua rodando)
 	var tw = create_tween()

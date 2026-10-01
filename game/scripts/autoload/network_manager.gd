@@ -100,7 +100,6 @@ func _on_connected() -> void:
 	print("[CLIENT] Conectado! meu id: ", my_id)
 	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
 	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
-
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
@@ -277,7 +276,7 @@ func _rpc_mob_damage(mob_id: int, dmg: int) -> void:
 			return
 
 signal damage_local_player(dmg: int)   # servidor manda dano pro player local (cliente)
-signal mob_reward(xp: int, loot: Array, pos: Vector2)  # xp/loot do mob que EU matei
+signal mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String)  # xp/loot do mob que EU matei
 
 func request_mob_damage(mob_id: int, dmg: int) -> void:
 	# cliente pede pro servidor aplicar dano num mob autoritativo
@@ -292,7 +291,7 @@ func _rpc_damage_player(dmg: int) -> void:
 	damage_local_player.emit(dmg)
 
 @rpc("authority", "call_remote", "reliable")
-func _rpc_mob_reward(xp: int, loot: Array, pos: Vector2) -> void:
+func _rpc_mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String = "") -> void:
 	if is_server:
 		return
-	mob_reward.emit(xp, loot, pos)
+	mob_reward.emit(xp, loot, pos, mob_type)
