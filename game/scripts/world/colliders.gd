@@ -102,7 +102,7 @@ static func _city2(parent: Node) -> void:
 	_add_rect(parent, Vector2(1470, 1620), Vector2(52, 52))
 	_add_rect(parent, Vector2(1650, 1500), Vector2(52, 52))
 	_add_rect(parent, Vector2(1660, 720), Vector2(52, 52))
-	_add_rect(parent, Vector2(1320, 420), Vector2(140, 100))
+	_add_rect(parent, Vector2(1320, 380), Vector2(140, 100))
 
 static func _forest(parent: Node) -> void:
 	# bordas densas de arvore — ABERTURA NORTE (x 932-1156) pra city2
