@@ -15,8 +15,8 @@
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
-| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag ciclo 15 (NetTest c/ lag 150ms PASSOU) — teste no Mac pendente |
-| 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13 (server+2 clientes localhost: registro, chat, posicao) — teste no Mac pendente |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
+| 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -106,9 +106,10 @@
 - Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
 - Validado headless 0 erros; pendente: teste no Mac do usuario
 
-### Area 9 — netcode: interpolacao + lag artificial (ciclo 15, 05:09+) OK
-- Interpolacao de mobs no cliente agora e por BUFFER de snapshots (mira ~120ms atras) — cobre jitter/lag sem rubber-banding
-- LAG ARTIFICIAL: `--netlag=<ms>` atrasa entrega de snapshots (mobs+players) no NetworkManager — testa interpolacao sob rede ruim
-- FIX harness: `break` dentro do if teleportava mesmo sem mob vivo (skip de fase); chat enviado 1x; server espera fase de mobs (~20s)
-- NetTest PASSOU COM LAG 150ms (server+A+B localhost): registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado — RESULT OK nos 3 roles
+### Area 9 — ciclo 15: interpolacao + lag artificial (05:06+) OK
+- FIX GRAVE: limpeza do ciclo 14 (47aefdf) removeu is_online() inteiro junto com o codigo morto — parse error quebrava o NetworkManager no boot; funcao restaurada
+- Lag artificial --netlag=<ms> no NetworkManager (fila de entrega atrasada nos snapshots recebidos)
+- Interpolacao por BUFFER de snapshots no NetMob (mira ~120ms no passado) — mobs remotos deslizam suave
+- NetTest: server fase 2 estendida 8s->20s; fix break que teleportava sem mob vivo
+- NetTest COM LAG PASSOU: server + A + B com --netlag=150 — registro, chat, posicao, dano em mob via RPC, hp caiu no snapshot (RESULT OK nos 3 roles)
 - Validado headless 0 erros; pendente: teste no Mac do usuario
