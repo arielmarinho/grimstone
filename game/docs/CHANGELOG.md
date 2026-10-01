@@ -1,5 +1,16 @@
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.8 (ciclo 26: DECOR — decoracao das cidades)
+
+- NOVO: decoracao procedural nas 2 cidades (scripts/world/decor.gd) — postes de luz com braco e lampada + brilho aditivo (BLEND_MODE_ADD), canteiros de flores ao redor da fonte/estatua, barris de madeira com aros de metal, caixotes com diagonal, bandeiras vermelhas onduladas nos portoes e barraca de feira com toldo listrado + mercadorias
+- Objetos solidos (barris, caixotes, barraca) com colisor proprio (StaticBody2D circle r=26 no decor + rects casando no colliders.gd)
+- Integrado ao switch_map: DECOR.build_decor(name, map_layer) logo apos build_colliders — limpa junto com o mapa ao trocar
+- Validado Godot headless: 0 erros de script
+- Local 118351c; GitHub 7272ba0/2e80c75/594a821 (blob SHA byte-exato: decor 0a7cc106, main 7048f499, colliders 11719725)
+- Proximo: teste no Mac do usuario (acumulado grande) OU build APK no Mac
+
+Formato: [data] versão — o que mudou (commit)
+
 ## 2026-10-01 — v0.6.7 (ciclo 25: RUNAS — escopo expandido)
 
 - 4 runas estilo Tibia (items_db.gd): Runa de Fogo (bola de fogo no alvo mais proximo), Runa de Gelo (dano + atordoa 2s), Runa da Trovoada (dano em area 220px ao redor), Runa de Cura (+40% HP)
@@ -10,8 +21,6 @@
 - Loot: skeleton dropa fogo 8% / gelo 6%, goblin trovoada 5%, slime cura 4%
 - Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
 - Proximo: teste no Mac do usuario (acumulado grande) OU house/decoracao OU build APK
-
-Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
 
@@ -176,7 +185,7 @@ Formato: [data] versão — o que mudou (commit)
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim morte, preview roupas) + cooldown numerico Q/E/R/G + feedback na tela + loja/titulo polidos; GitHub v0.4.6 (32f33c1), headless 0 erros. Proximo: Area 7 Balanceamento.
 - Loja: titulo correto por cidade, feedback colorido de compra
 - Titulo: v0.4.5 + ESC sai
 
