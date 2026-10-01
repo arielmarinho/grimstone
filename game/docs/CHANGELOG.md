@@ -1,3 +1,13 @@
+## v0.6.21 — Player ARTE REAL nas 4 direcoes + fallback seguro (ciclo 47, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Player up/side agora usam ARTE REAL PROPRIA (b64 up/side gerados por IA no estilo da referencia, quantizados pra paleta do down) — fim do procedural no player, quando os b64 existirem no pacote
+- FALLBACK SEGURO: sem o b64 (repo/pacote antigo), up = arte real editada (rosto->cabelo, v0.6.17) e side = perfil procedural (v0.6.19) — o jogo NUNCA fica sem animacao em nenhum estado
+- Validacao VISUAL obrigatoria cumprida: preview_final3.gd (artifacts/player_real4_dirs.png) + check_real4.gd programatico (up/side = 3000+ px diferentes do down; up = 1 px de pele no rosto vs 114 no down = costas de verdade)
+- Validacao: headless --import + run real --quit-after = 0 erros; 7/7 testes unitarios OK
+- INCIDENTE (reincidente): 1o push do player.gd reconstruido de memoria saiu 6998 bytes (vs 20595) — reparado imediatamente com o local verbatim (20595, blob SHA 15e0fdd byte-exato); regra ABSOLUTA reforcada: NUNCA reconstruir arquivo grande de memoria
+- Pendente: push dos 6 b64 up/side (filtro de contexto omite base64 — metodo alternativo em preparo); com o fallback, o jogo funciona igual em qualquer estado
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.20 — Auditoria de integridade pos-ciclo 43 + REPARO CRITICO do CHANGELOG (ciclo 44, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - CRITICO: CHANGELOG.md no remoto estava DESTRUIDO (26 bytes, placeholder) — restaurado com o conteudo local completo (33488 bytes, blob SHA 43de58d byte-exato verificado lendo de volta)
@@ -254,9 +264,9 @@ Formato: [data] versão — o que mudou (commit)
 - FIX parse error no net_test.gd: variavel local `f` colidia com o parametro `f` de _flog — o harness NUNCA chegou a rodar (o ciclo 12 reportou PASSOU com logs de execucao anterior)
 - FIX timing do harness: cliente agora espera OS DOIS players registrados antes de avancar (antes desistia em 10s; o servidor logava "1 online" 2x — diagnostico errado de "server perde player")
 - Deadline de saida limpa (24s) antes do timeout do shell
-- TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat A<->B relayado, POSICAO relayada entre clientes, saida limpa
+- TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat relay A<->B, POSICAO relayada entre clientes, saida limpa
 - Validado Godot headless: 0 erros de script
-- Proximo: mobs autoritativos no servidor + teste no Mac do usuario
+- Proximo: mobs autoritativos no servidor, teste no Mac do usuario
 
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
