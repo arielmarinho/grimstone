@@ -18,13 +18,13 @@ const WEAPONS = {
 	"bow": {
 		"nome": "Arco", "classe": "Arqueiro",
 		"cor": Color(0.5, 0.36, 0.2), "cor_cabo": Color(0.85, 0.82, 0.75),
-		"dano": 10, "alcance": 260.0, "cooldown": 0.9, "skill": "distancia",
+		"dano": 14, "alcance": 260.0, "cooldown": 0.8, "skill": "distancia",
 		"tipo": "ranged",
 	},
 	"staff": {
 		"nome": "Cajado", "classe": "Mago",
 		"cor": Color(0.45, 0.32, 0.18), "cor_orb": Color(0.3, 0.55, 0.95),
-		"dano": 18, "alcance": 220.0, "cooldown": 1.1, "skill": "magia",
+		"dano": 19, "alcance": 220.0, "cooldown": 1.1, "skill": "magia",
 		"tipo": "magic",
 	},
 }
