@@ -1,4 +1,4 @@
-# BUILD ANDROID — Grimstone (v0.5.5)
+# BUILD ANDROID — Grimstone (v0.6.10)
 
 O sandbox (Linux ARM64 musl) NÃO consegue buildar o APK: falta JDK/SDK glibc e o
 `aapt2` do Google é x86_64-only (tentativa com qemu+musl falhou em símbolos
@@ -18,7 +18,7 @@ fortify `__longjmp_chk`/`__memcpy_chk`). **O build final é no Mac do usuário.*
    criar keystore de release própria:
    ```
    keytool -genkeypair -v -keystore grimstone-release.keystore -alias grimstone \
-     -keyalg RSA -keysize 2048 -validity 10000
+   -keyalg RSA -keysize 2048 -validity 10000
    ```
 
 ## Build
@@ -31,7 +31,7 @@ fortify `__longjmp_chk`/`__memcpy_chk`). **O build final é no Mac do usuário.*
 
 - arm64-v8a only (Play Store moderna; adicionar armeabi-v7a se quiser devices antigos)
 - target SDK 34, immersive mode (fullscreen), internet permission (multiplayer)
-- package `com.spacespanker.grimstone`, versão 0.5.5 (code 1)
+- package `com.spacespanker.grimstone`, versão 0.6.10 (code 1)
 - Gradle build ligado (obrigatório pra AAB da Play Store depois: mudar
   `gradle_build/export_format=1` pra gerar .aab)
 
