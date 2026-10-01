@@ -2,6 +2,8 @@ extends Node2D
 ## Main — controla qual mapa está ativo e o spawn do player
 ## Cidade tem bueiro; ao andar até ele, desce pra caverna. Na caverna, a grade sobe.
 
+const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+
 const MAPS = {
 	"city1": {
 		"texture": "res://assets/maps/city1.png",
@@ -50,7 +52,7 @@ func switch_map(name: String) -> void:
 	for c in map_layer.get_children():
 		c.queue_free()
 	var sprite = Sprite2D.new()
-	sprite.texture = TexHelper.load_map(MAPS[name]["texture"])
+	sprite.texture = TEXHELPER.load_map(MAPS[name]["texture"])
 	sprite.centered = false
 	map_layer.add_child(sprite)
 	player.global_position = MAPS[name]["player_spawn"]

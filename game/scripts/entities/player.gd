@@ -2,6 +2,9 @@ extends CharacterBody2D
 ## Player — clique para andar, classes estilo Rucoy (arma define classe),
 ## troca de arma com teclas 1-4, customização cabelo (Y) e túnica (T)
 
+const EQUIPS = preload("res://scripts/autoload/equips.gd")
+const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+
 const SPEED = 140.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -32,7 +35,7 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TexHelper.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color)
+		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -54,15 +57,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			if idx < weapons.size() and weapons[idx] != weapon:
 				weapon = weapons[idx]
 				_build_frames()
-				print("arma: ", Equips.WEAPONS[weapon]["nome"], " (", Equips.WEAPONS[weapon]["classe"], ")")
+				print("arma: ", EQUIPS.WEAPONS[weapon]["nome"], " (", EQUIPS.WEAPONS[weapon]["classe"], ")")
 		if event.keycode == KEY_T:
-			var cores = Equips.CLOTHES_COLORS.keys()
+			var cores = EQUIPS.CLOTHES_COLORS.keys()
 			var i = cores.find(tunic_color)
 			tunic_color = cores[(i + 1) % cores.size()]
 			_build_frames()
 			print("tunica: ", tunic_color)
 		if event.keycode == KEY_Y:
-			var cores = Equips.CLOTHES_COLORS.keys()
+			var cores = EQUIPS.CLOTHES_COLORS.keys()
 			var i = cores.find(hair_color)
 			hair_color = cores[(i + 1) % cores.size()]
 			_build_frames()
@@ -88,7 +91,7 @@ func _physics_process(delta: float) -> void:
 			attacking = false
 		return
 
-	var w = Equips.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[weapon]
 	var dist = global_position.distance_to(target)
 	if moving and dist > 6.0:
 		var dir = (target - global_position).normalized()
@@ -130,7 +133,7 @@ func _play(anim: String) -> void:
 		sprite.play(anim)
 
 func _attack(mob) -> void:
-	var w = Equips.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[weapon]
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]

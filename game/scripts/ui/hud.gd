@@ -11,6 +11,9 @@ var cloth_panel: Control
 var preview: TextureRect
 var player_ref: Node = null
 
+const EQUIPS = preload("res://scripts/autoload/equips.gd")
+const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+
 func _ready() -> void:
 	hp_bar = _make_bar(Color(0.85, 0.2, 0.2), Vector2(20, 16))
 	mana_bar = _make_bar(Color(0.25, 0.45, 0.9), Vector2(20, 40))
@@ -41,7 +44,7 @@ func _process(_delta: float) -> void:
 	xp_bar.value = float(GameManager.xp - prev_xp) / float(next_xp - prev_xp) * 100.0
 	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
 	if player_ref != null:
-		var w = Equips.WEAPONS[player_ref.weapon]
+		var w = EQUIPS.WEAPONS[player_ref.weapon]
 		class_label.text = "%s (arma: %s)  [1-4 arma | T tunica | Y cabelo | C painel]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
@@ -93,14 +96,14 @@ func _build_cloth_panel() -> void:
 	var lh = _make_label(Vector2(430, 330), 14, Color(1, 1, 1))
 	lh.text = "CABELO (clique a cor)"
 	cloth_panel.add_child(lh)
-	var cores = Equips.CLOTHES_COLORS.keys()
+	var cores = EQUIPS.CLOTHES_COLORS.keys()
 	for i in range(cores.size()):
 		var c_name = cores[i]
 		var sw = Button.new()
 		sw.position = Vector2(430 + i * 34, 236)
 		sw.size = Vector2(30, 30)
 		var st = StyleBoxFlat.new()
-		st.bg_color = Equips.CLOTHES_COLORS[c_name]
+		st.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
 		st.set_corner_radius_all(6)
 		sw.add_theme_stylebox_override("normal", st)
 		sw.pressed.connect(_set_tunic.bind(c_name))
@@ -109,7 +112,7 @@ func _build_cloth_panel() -> void:
 		sw2.position = Vector2(430 + i * 34, 356)
 		sw2.size = Vector2(30, 30)
 		var st2 = StyleBoxFlat.new()
-		st2.bg_color = Equips.CLOTHES_COLORS[c_name]
+		st2.bg_color = EQUIPS.CLOTHES_COLORS[c_name]
 		st2.set_corner_radius_all(6)
 		sw2.add_theme_stylebox_override("normal", st2)
 		sw2.pressed.connect(_set_hair.bind(c_name))
@@ -121,7 +124,7 @@ func _build_cloth_panel() -> void:
 func _make_preview(weapon: String, hair: String, tunic: String) -> Texture2D:
 	var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	TexHelper._draw_knight(img, 0, false, false, false, weapon, hair, tunic)
+	TEXHELPER._draw_knight(img, 0, false, false, false, weapon, hair, tunic)
 	return ImageTexture.create_from_image(img)
 
 func _set_tunic(c: String) -> void:

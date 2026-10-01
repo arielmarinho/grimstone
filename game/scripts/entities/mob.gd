@@ -1,6 +1,8 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, drop de moedas
 
+const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+
 const WANDER_RADIUS = 120.0
 const AGGRO_RANGE = 140.0
 const ATTACK_RANGE = 46.0
@@ -42,7 +44,7 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TexHelper.load_sheet(ANIMS[anim])
+		var texs = TEXHELPER.load_sheet(ANIMS[anim])
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
