@@ -45,6 +45,10 @@ func _on_coins_gained(amount: int) -> void:
 	if p != Vector2.ZERO:
 		float_text(p, "+%d" % amount, Color(1.0, 0.85, 0.25))
 
+## chamado DIRETO por coin.gd/drop.gd no pickup (moeda nao passa pelo sinal coins_gained)
+func coin_gain(pos: Vector2, amount: int) -> void:
+	float_text(pos, "+%d" % amount, Color(1.0, 0.85, 0.25))
+
 func _on_healed(amount: int) -> void:
 	var p := _player_pos()
 	if p != Vector2.ZERO and amount > 0:
