@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0player000001"]
+[gd_scene load_steps=3 format=3 uid="uid://b0player000001"]
+
+[sub_resource type="CircleShape2D" id="shape_p"]
+radius = 14.0
 
 [ext_resource type="Script" path="res://scripts/entities/player.gd" id="1_pl"]
+[ext_resource type="Script" path="res://scripts/entities/hp_bar.gd" id="2_bar"]
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_pl")
@@ -8,6 +12,7 @@ script = ExtResource("1_pl")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 
 [node name="Collision" type="CollisionShape2D" parent="."]
+shape = SubResource("shape_p")
 
 [node name="Camera" type="Camera2D" parent="."]
 zoom = Vector2(1.5, 1.5)
@@ -20,3 +25,4 @@ offset_bottom = -44.0
 max_value = 100.0
 value = 100.0
 show_percentage = false
+script = ExtResource("2_bar")
