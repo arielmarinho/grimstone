@@ -30,6 +30,7 @@ var _t := 0.0
 var _phase := 0
 var _fail := false
 var _phase_mobs_wait := 0
+var _chat_sent := false  # chat enviado uma vez só (re-registro duplicava o envio)
 var _deadline := 24.0  # saída LIMPA antes do timeout do shell (stdout morre no SIGTERM)
 
 func _ready() -> void:
@@ -57,9 +58,9 @@ func _phase_server() -> void:
 				_phase = 2
 				_t = 0.0
 		2:
-			# deixa os clientes trocarem chat/posição por ~8s
+			# deixa os clientes trocarem chat/posição E completarem a fase de mobs (~20s)
 			_t += get_physics_process_delta_time()
-			if _t > 8.0:
+			if _t > 20.0:
 				_flog("[NETTEST][SERVER] DONE — encerrando")
 				_flog("[NETTEST][RESULT] server OK")
 				get_tree().quit(0)
@@ -87,15 +88,17 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 			_t += get_physics_process_delta_time()
 			var nm = _main.net_mobs if _main != null else {}
 			if _phase_mobs_wait == 0:
-				# chat continua sendo validado (fase 3)
-				NetworkManager.send_chat(chat_text)
-				_flog("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
+				# chat continua sendo validado (fase 3) — envia UMA vez só
+				if not _chat_sent:
+					_chat_sent = true
+					NetworkManager.send_chat(chat_text)
+					_flog("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
 				if nm.size() > 0:
 					_phase_mobs_wait = 1
 					_flog("[NETTEST][", name_tag, "] mobs espelhados: ", nm.size())
 					_t = 0.0
 			elif _phase_mobs_wait == 1 and _t > 1.0:
-				# teleporta o player pra BEIRA de um mob (anti-cheat do servidor exige proximidade)
+				# teleporta o player pra BEIRA de um mob VIVO (varre todos, nao so o 1o)
 				for mid in nm:
 					var m = nm[mid]
 					if is_instance_valid(m) and not m.dead:
@@ -103,9 +106,9 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 							_main.player.global_position = m.global_position + Vector2(70, 0)
 						_phase_mobs_wait = 2
 						_t = 0.0
-					break
+						break
 			elif _phase_mobs_wait == 2 and _t > 1.5:
-				# pede dano no primeiro mob espelhado
+				# pede dano no primeiro mob espelhado VIVO (varre todos)
 				for mid in nm:
 					var m = nm[mid]
 					if is_instance_valid(m) and not m.dead:
@@ -114,7 +117,7 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 						_flog("[NETTEST][", name_tag, "] pediu dano 5 no mob ", mid, " (hp=", hp_before, ")")
 						_phase_mobs_wait = 3
 						_t = 0.0
-					break
+						break
 			elif _phase_mobs_wait == 3 and _t > 2.0:
 				# valida: hp do espelho caiu (snapshot autoritativo chegou)
 				var ok := false
