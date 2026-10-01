@@ -129,6 +129,7 @@ func _buy(id: String) -> void:
 	if id == "flecha":
 		GameManager.coins -= price
 		GameManager.arrows += 10
+		AudioManager.play_sfx("coin")
 		msg_label.text = "+10 flechas!"
 		msg_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
 		refresh()
@@ -138,6 +139,7 @@ func _buy(id: String) -> void:
 		msg_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.3))
 		return
 	GameManager.coins -= price
+	AudioManager.play_sfx("coin")
 	msg_label.text = "%s comprado!" % ITEMS_DB.ITEMS[id]["nome"]
 	msg_label.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
 	refresh()

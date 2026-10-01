@@ -3,6 +3,7 @@ extends Control
 ## JOGAR continua o save (ou comeca novo), NOVO JOGO zera o save
 
 func _ready() -> void:
+	AudioManager.play_music("title")
 	var bg = ColorRect.new()
 	bg.color = Color(0.06, 0.05, 0.08)
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -96,6 +97,7 @@ func _make_button(text: String, pos: Vector2) -> Button:
 	btn.add_theme_stylebox_override("pressed", st_h)
 	btn.add_theme_font_size_override("font_size", 18)
 	btn.add_theme_color_override("font_color", Color(0.95, 0.9, 0.8))
+	btn.pressed.connect(func(): AudioManager.play_sfx("ui_click"))
 	return btn
 
 func _start_game() -> void:
