@@ -1,6 +1,6 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, 4 direcoes, timers filhos, strip magenta
-## Subclasses definem: tipo (sprite), stats, loot
+## 8 tipos: rat, slime, bat, spider, wolf, goblin, orc, skeleton
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
@@ -10,16 +10,17 @@ const ATTACK_RANGE = 80.0
 const WANDER_SPEED = 90.0
 const CHASE_SPEED = 140.0
 
-# tipo do monstro — muda sprite/stats/loot
 var mob_type: String = "rat"
 
-# stats por tipo (Tibia-style: progressao de dificuldade)
 const TYPES = {
-	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0, "skill": "espada"},
-	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7, "skill": "espada"},
-	"bat": {"hp": 30, "dano": 6, "xp": 25, "vel": 1.6, "skill": "distancia"},
-	"spider": {"hp": 90, "dano": 14, "xp": 55, "vel": 1.2, "skill": "espada"},
-	"wolf": {"hp": 130, "dano": 20, "xp": 90, "vel": 1.4, "skill": "espada"},
+	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0},
+	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7},
+	"bat": {"hp": 30, "dano": 6, "xp": 25, "vel": 1.6},
+	"spider": {"hp": 90, "dano": 14, "xp": 55, "vel": 1.2},
+	"wolf": {"hp": 130, "dano": 20, "xp": 90, "vel": 1.4},
+	"goblin": {"hp": 110, "dano": 16, "xp": 70, "vel": 1.3},
+	"orc": {"hp": 220, "dano": 30, "xp": 150, "vel": 1.0},
+	"skeleton": {"hp": 160, "dano": 24, "xp": 120, "vel": 1.1},
 }
 
 var max_hp: int = 40
@@ -35,6 +36,7 @@ var state: String = "wander"
 var attack_cooldown: float = 0.0
 var respawn_time: float = 10.0
 var facing: String = "down"
+var stunned: float = 0.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var hp_bar: ProgressBar = $HpBar
@@ -77,6 +79,8 @@ const ANIMS = {
 }
 
 func _build_frames() -> void:
+	# roteia o sprite procedural pro tipo certo (paths sao compartilhados)
+	TEXHELPER.CURRENT_MOB = mob_type
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
@@ -100,12 +104,17 @@ func _strip_tex(t: Texture2D) -> Texture2D:
 	for y in range(im.get_height()):
 		for x in range(im.get_width()):
 			var c = im.get_pixel(x, y)
-			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
 				im.set_pixel(x, y, Color(0, 0, 0, 0))
 	return ImageTexture.create_from_image(im)
 
 func _physics_process(delta: float) -> void:
 	if dying or dead:
+		return
+	if stunned > 0.0:
+		stunned -= delta
+		velocity = Vector2.ZERO
+		hp_bar.value = float(hp) / float(max_hp) * 100.0
 		return
 	var player = _get_player()
 	if player == null:
@@ -194,7 +203,7 @@ func die() -> void:
 	hp_bar.value = 0
 	_play_dir("death")
 	GameManager.add_xp(xp_reward)
-	LootTable.roll_drop(mob_type, global_position, get_parent())
+	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
 	$RespawnTimer.start(respawn_time)
 
 func _do_respawn() -> void:
