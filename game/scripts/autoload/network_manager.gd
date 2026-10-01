@@ -100,6 +100,7 @@ func _on_connected() -> void:
 	print("[CLIENT] Conectado! meu id: ", my_id)
 	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
 	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
+
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
