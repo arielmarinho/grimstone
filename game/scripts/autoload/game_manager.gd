@@ -65,6 +65,39 @@ func EQUIPS_OK(w: String) -> bool:
 func xp_for_level(lv: int) -> int:
 	return int(50.0 / 3.0 * (pow(lv, 3) - 6 * pow(lv, 2) + 17 * lv - 12))
 
+# --- estimativas de tempo (tela K) ---
+# taxas medias medidas no jogo: golpe basico = 4 xp de skill por hit (~1 hit/s farmando) -> ~240 xp/min
+# defesa = 2 xp por dano tomado (~1 hit tomado a cada 2s) -> ~60 xp/min
+# level = media ~60 xp por mob, ~1 kill a cada 8s (TTK 5-10s) -> ~450 xp/min
+const SKILL_XP_PER_MIN := 240.0
+const DEFESA_XP_PER_MIN := 60.0
+const LEVEL_XP_PER_MIN := 450.0
+
+func skill_xp_need(skill: String) -> int:
+	var lv: int = 10
+	if skills.has(skill):
+		lv = skills[skill]["level"]
+	return lv * lv * 5
+
+func fmt_time_min(mins: float) -> String:
+	if mins < 1.0:
+		return "%ds" % int(max(1.0, mins * 60.0))
+	if mins < 90.0:
+		return "%.0fmin" % mins
+	return "%.1fh" % (mins / 60.0)
+
+func skill_time_left(skill: String) -> String:
+	var rate := SKILL_XP_PER_MIN
+	if skill == "defesa":
+		rate = DEFESA_XP_PER_MIN
+	var have: int = skills[skill]["xp"] if skills.has(skill) else 0
+	var falta: int = max(0, skill_xp_need(skill) - have)
+	return fmt_time_min(float(falta) / rate)
+
+func level_time_left() -> String:
+	var falta: int = max(0, xp_for_level(level + 1) - xp)
+	return fmt_time_min(float(falta) / LEVEL_XP_PER_MIN)
+
 # stats derivados do level (fonte unica de verdade — save antigo nunca mais desincroniza)
 func max_hp_for_level(lv: int) -> int:
 	return 100 + (lv - 1) * 10
