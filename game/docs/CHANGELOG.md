@@ -1,23 +1,18 @@
+## 2026-10-01 — v0.5.0 (ciclo 10: Area 9 Multiplayer — integracao completa)
 
+- RemotePlayer novo (scripts/entities/remote_player.gd): avatar visual de outro player — sprite procedural com a APARENCIA dele (arma/cabelo/tunica/calca), nome em cima, interpolacao suave do snapshot 15Hz (teleport se >300px)
+- NetworkManager v2: registro agora manda APARENCIA (weapon/hair/tunic/pants); novo sinal player_state (posicao+mapa+anim) separado do player_joined; chat com kinds msg/join/leave/system; eco da propria msg pro autor
+- main.gd integra multiplayer: spawna/remove RemotePlayers nos sinais, envia minha posicao a 15Hz com anim "base:facing" (idle/walk/attack), filtra por mapa (so ve quem esta no MESMO mapa), limpa tudo se cair a conexao
+- HUD: chat global (Enter abre, Enter envia e fecha, Esc cancela; log colorido msg/join/leave/system; enquanto digita, teclas NAO vazam pro jogo); contador [ONLINE n] no HUD quando conectado
+- Titulo: botoes HOSPEDAR JOGO (listen server) e CONECTAR (IP, default 127.0.0.1); versao v0.5.0
+- Validado Godot headless 4.6 alpine: --import + --quit = 0 erros de script
+- Pendente (proximo ciclo): mobs autoritativos no server, teste 2 clientes + 1 server no localhost, servidor dedicado real
 
 ## v0.4.8 — Audio (Area 8)
 - AudioManager autoload (audio_manager.gd): audio 100% procedural, sintetizado em GDScript no startup — zero arquivos binarios
 - 12 SFX (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door) com pool de 8 players e pitch variavel
 - 3 musicas chiptune em loop com crossfade: titulo / cidade / caverna+floresta
 - Sons integrados: combate, loot, pocao, loja, UI, portao, level up, morte
-
-## v0.4.7 (ciclo 8 — Area 7 Balanceamento)
-- game_manager.gd: hp_max/mana_max DERIVADOS do level (100+10/level, 50+5/level) — save antigo nunca mais desincroniza
-- Level up estilo Tibia: NAO enche HP/mana em combate (+30/+15 parcial); fora de combate enche tudo
-- player.gd: cura fora de combate acelerada (~5% do max a cada 2s, estilo Rucoy)
-- mob.gd: XP dos mobs iniciais +75% (rat 35, slime 50, bat 40) — early game menos grind
-- shop.gd: pocoes P mais baratas (vida 20->15, mana 25->18) — primeiro minuto de jogo mais suave
-- Validado Godot headless: 0 erros de script
-
-## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
-- Loja: titulo correto por cidade, feedback colorido de compra
-- Titulo: v0.4.5 + ESC sai
 
 # GRIMSTONE — Changelog
 
