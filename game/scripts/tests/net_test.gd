@@ -7,9 +7,26 @@ extends Node
 ## Sequência: server abre ENet 7777; clientes conectam, registram, enviam chat,
 ## movem o player; validamos: registro (players online), relay de posição entre
 ## clientes, chat A->B, e saída limpa sem crash.
+## Logs vão para /tmp/nettest_<role>.log (flush imediato — stdout pode ser
+## perdido por buffering quando o processo é morto por timeout).
 
 var role := ""
 var _log: Array = []
+var _flog_path := ""
+
+func _flog(msg: String, a = null, b = null, c = null, d = null, e = null, f = null, g = null) -> void:
+	for extra in [a, b, c, d, e, f, g]:
+		if extra != null:
+			msg += " " + str(extra)
+	print(msg)
+	if _flog_path == "":
+		return
+	var fh = FileAccess.open(_flog_path, FileAccess.READ_WRITE if FileAccess.file_exists(_flog_path) else FileAccess.WRITE)
+	if fh == null:
+		return
+	fh.seek_end()
+	fh.store_line(msg)
+	fh.flush()
 var _main = null
 var _t := 0.0
 var _phase := 0
@@ -22,27 +39,29 @@ func _ready() -> void:
 			role = a.get_slice("=", 1)
 	if role == "":
 		return  # não é teste — jogo normal
+	_flog_path = "/tmp/nettest_%s.log" % role
+	FileAccess.open(_flog_path, FileAccess.WRITE).store_line("start")
 	# este nó é injetado DENTRO da main (main.gd faz add_child) — main já é meu pai
 	_main = get_parent()
-	print("[NETTEST] role=", role, " acoplado à main")
+	_flog("[NETTEST] role=", role, " acoplado à main")
 
 func _phase_server() -> void:
 	match _phase:
 		0:
 			NetworkManager.start_server()
-			print("[NETTEST][SERVER] aguardando 2 clientes...")
+			_flog("[NETTEST][SERVER] aguardando 2 clientes...")
 			_phase = 1
 		1:
 			if NetworkManager.players.size() >= 2:
-				print("[NETTEST][SERVER] 2 clientes registrados: ", NetworkManager.players.keys())
+				_flog("[NETTEST][SERVER] 2 clientes registrados: ", NetworkManager.players.keys())
 				_phase = 2
 				_t = 0.0
 		2:
 			# deixa os clientes trocarem chat/posição por ~8s
 			_t += get_physics_process_delta_time()
 			if _t > 8.0:
-				print("[NETTEST][SERVER] DONE — encerrando")
-				print("[NETTEST][RESULT] server OK")
+				_flog("[NETTEST][SERVER] DONE — encerrando")
+				_flog("[NETTEST][RESULT] server OK")
 				get_tree().quit(0)
 
 func _phase_client(name_tag: String, chat_text: String) -> void:
@@ -55,17 +74,17 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 		1:
 			_t += get_physics_process_delta_time()
 			if NetworkManager.is_online() and NetworkManager.my_id != 1 and not NetworkManager.players.is_empty():
-				print("[NETTEST][", name_tag, "] registrado! id=", NetworkManager.my_id, " players=", NetworkManager.players.keys())
+				_flog("[NETTEST][", name_tag, "] registrado! id=", NetworkManager.my_id, " players=", NetworkManager.players.keys())
 				_phase = 2
 				_t = 0.0
 			elif _t > 10.0:
 				_fail = true
-				print("[NETTEST][", name_tag, "] FALHOU: não registrou em 10s")
+				_flog("[NETTEST][", name_tag, "] FALHOU: não registrou em 10s")
 				get_tree().quit(1)
 		2:
 			# envia chat e anda
 			NetworkManager.send_chat(chat_text)
-			print("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
+			_flog("[NETTEST][", name_tag, "] chat enviado: ", chat_text)
 			if _main and _main.player:
 				_main.player.moving = true
 			_phase = 3
@@ -82,17 +101,17 @@ func _phase_client(name_tag: String, chat_text: String) -> void:
 					if entry.begins_with("POS:"):
 						got_pos = true
 				if got_chat and got_pos:
-					print("[NETTEST][", name_tag, "] OK — recebeu chat E posição do outro player")
-					print("[NETTEST][RESULT] ", name_tag, " OK")
+					_flog("[NETTEST][", name_tag, "] OK — recebeu chat E posição do outro player")
+					_flog("[NETTEST][RESULT] ", name_tag, " OK")
 				else:
 					_fail = true
-					print("[NETTEST][", name_tag, "] FALHOU: chat=", got_chat, " pos=", got_pos, " log=", _log)
+					_flog("[NETTEST][", name_tag, "] FALHOU: chat=", got_chat, " pos=", got_pos, " log=", _log)
 					get_tree().quit(1)
 				_phase = 4
 		4:
 			# server encerrou → sair limpo
 			if not NetworkManager.is_online():
-				print("[NETTEST][", name_tag, "] server caiu — saindo limpo")
+				_flog("[NETTEST][", name_tag, "] server caiu — saindo limpo")
 				get_tree().quit(0)
 
 func _physics_process(delta: float) -> void:
