@@ -54,7 +54,7 @@ const NET_SEND_HZ := 10.0
 var _net_map: String = ""      # mapa atual (preenchido pelo spawner no servidor)
 var _net_target_pos: Vector2 = Vector2.ZERO
 var _net_anim: String = "idle:down"
-var _net_buf: Array = []       # buffer de snapshots [{t, p, a}] p/ interpolação c/ lag
+var _net_buf: Array = []       # buffer de snapshots [{t, p, a}] p/ interpolacao c/ lag
 const NET_BUF_MS := 120        # interpola ~120ms no passado (cobre jitter de rede)
 var _last_hit_by: int = 0      # peer id do ultimo atacante (servidor, pra xp/loot)
 var _net_target = null         # alvo virtual (servidor dedicado, sem player local)
@@ -286,12 +286,7 @@ func take_damage(amount: int, from_peer: int = 0) -> void:
 	if not net_authority:
 		# espelho no cliente: pede pro servidor aplicar
 		NetworkManager.request_mob_damage(net_id, amount)
-		return
-	# dummy de treino: mostra o numero de dano mas nunca morre (treino infinito)
-	if mob_type == "dummy":
-		_flash_damage()
-		_spawn_damage_number(amount)
-		return
+	return
 	if from_peer != 0:
 		_last_hit_by = from_peer
 	hp -= amount
@@ -341,7 +336,7 @@ func die() -> void:
 		return
 	GameManager.add_xp(xp_reward)
 	GameManager.quest_on_kill(mob_type)
-	GameManager.bestiary_kill(mob_type)
+	GameManager.bestiary_kill(m_type)
 	preload("res://scripts/entities/loot_table.gd").roll_drop(mob_type, global_position, get_parent())
 	# corpo desvanece (o respawn timer continua rodando)
 	var tw = create_tween()
@@ -399,8 +394,8 @@ func _on_net_removed(id: int) -> void:
 func _net_mirror_physics(_delta: float) -> void:
 	if dead or dying:
 		return  # cadaver nao desliza
-	# interpolação por BUFFER (gs-netcode): mira o estado de ~120ms atrás,
-	# cobre jitter/lag sem rubber-banding; fallback = lerp pro último snapshot
+	# interpolacao por BUFFER (gs-netcode): mira o estado de ~120ms atras,
+	# cobre jitter/lag sem rubber-banding; fallback = lerp pro ultimo snapshot
 	var goal := _net_target_pos
 	var anim := _net_anim
 	if _net_buf.size() >= 2:
@@ -410,14 +405,14 @@ func _net_mirror_physics(_delta: float) -> void:
 		for i in range(1, _net_buf.size()):
 			var b = _net_buf[i]
 			if int(b["t"]) >= past:
-				# segmento [a, b] contém o instante "past" — interpola dentro dele
+				# segmento [a, b] contem o instante "past" — interpola dentro dele
 				var span := float(int(b["t"]) - int(a["t"]))
 				var f := 0.0 if span <= 0.0 else clampf((float(past) - float(int(a["t"]))) / span, 0.0, 1.0)
 				goal = a["p"].lerp(b["p"], f)
 				anim = str(b["a"])
 				break
 			a = b
-		# snapshot mais novo que "past" (rede rápida): usa o mais novo disponível
+		# snapshot mais novo que "past" (rede rapida): usa o mais novo disponivel
 		if int(_net_buf[-1]["t"]) < past:
 			goal = _net_buf[-1]["p"]
 			anim = str(_net_buf[-1]["a"])
