@@ -15,9 +15,8 @@
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
-| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | teste localhost PASSOU ciclo 13 (aguarda mobs autoritativos + teste no Mac) |
-| 10 | **QA final** | gs-qa-testing | fluxo completo, release | auditoria estatica ciclo 11 (5 fixes) — teste no Mac pendente |
-| 11 | **NetTest** | gs-netcode | 2 clientes + server localhost automatizado | PASSOU (ciclo 13) |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 (mobs autoritativos testados: server+A+B localhost PASSOU) — teste no Mac pendente |
+| 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13 (server+2 clientes localhost: registro, chat, posicao) — teste no Mac pendente |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -97,11 +96,12 @@
 - BUG 4: tecla E conflitava skill E vs abrir loja (main usava Input.is_key_pressed). Fix: loja agora e tecla F (placa LOJA [F])
 - BUG 5: NOVO JOGO nao resetava skills/city2_visited/city2_unlocked — save novo herdava progresso. Fix: reset completo em title_screen.gd
 - Validado: Godot headless --import + --quit-after = 0 erros de script
+- PENDENTE (proximo ciclo): teste real 2 clientes + 1 servidor (regra gs-netcode), teste no Mac do usuario
 
-### Area 11 — NetTest (ciclos 12-13, 04:10-04:35) PASSOU
-- Ciclo 12: fixes criticos (sinal server_lost, is_online com active, fim do spam RPC offline) + harness criado — mas o "PASSOU" reportado era FALSO: o net_test.gd tinha parse error (var `f` colidia com parametro `f` de _flog) e nunca rodou; os logs positivos eram de execucao anterior
-- Ciclo 13 (este): parse error corrigido; timing corrigido (cliente espera OS DOIS registrados — o "server perde 1o player" era o cliente A desistindo antes do B conectar); deadline de saida limpa 24s
-- TESTE REAL: server OK + cliente A OK + cliente B OK no localhost — registro simultaneo (2 online), chat A<->B, POSICAO relayada entre clientes, saida limpa sem crash
-- Comando: ICU_DATA=<icu78> tmp/run_godot.sh --headless --path grimstone/game "res://scenes/main.tscn" -- --nettest=server|clientA|clientB (cena main.tscn EXPLICITa — o title.tscn default nao injeta o harness)
-- Validado Godot headless: 0 erros de script
-- PENDENTE: mobs autoritativos no servidor; teste no Mac do usuario
+### Area 9 — fase 2: Mobs autoritativos (ciclo 14, 04:42+) implementado
+- Servidor roda a IA dos mobs e replica snapshot 10Hz; clientes so renderizam espelhos (NetMob) — regra gs-netcode #1/#3
+- Dano do cliente via RPC validado NO SERVIDOR (vivo + range 400px); XP/loot autoritativos via roll_loot_list -> RPC pro ultimo atacante (Rucoy)
+- Servidor dedicado (--server): NetTarget = alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
+- NetTest fase MOBS PASSOU (server+A+B localhost): espelhos chegaram, cliente pediu dano, servidor validou e aplicou, HP caiu no snapshot — RESULT OK nos 3 roles
+- Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
+- Validado headless 0 erros; pendente: teste no Mac do usuario
