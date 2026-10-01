@@ -129,7 +129,8 @@ static func _load_image(path: String) -> Image:
 	var f = FileAccess.open(path + ".b64", FileAccess.READ)
 	if f == null:
 		return null
-	var b64 = f.get_as_text().strip_edges()
+	# b64 pode ter whitespace interno (push MCP insere espacos) — remover TUDO
+	var b64 = f.get_as_text().replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "").strip_edges()
 	if b64.is_empty():
 		return null
 	var buf = Marshalls.base64_to_raw(b64)
