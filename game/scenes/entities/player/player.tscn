@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://b0player000001"]
+[gd_scene load_steps=4 format=3 uid="uid://b0player000001"]
 
 [sub_resource type="CircleShape2D" id="shape_p"]
 radius = 14.0
