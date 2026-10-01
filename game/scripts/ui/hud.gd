@@ -262,16 +262,6 @@ func _refresh_fuse() -> void:
 		slot.pressed.connect(_fuse_click.bind(id))
 		fuse_grid.add_child(slot)
 
-func _item_display_name(id: String) -> String:
-	var base: String = id.split("#")[0]
-	var it = ITEMS_DB.ITEMS.get(base, null)
-	if it == null:
-		return base
-	var tier := RARITY.tier_of(id)
-	if tier > 0 and it.get("tipo", "") == "arma":
-		return "%s %s" % [it["nome"], RARITY.sufixo(tier)]
-	return it["nome"]
-
 func _fuse_click(id: String) -> void:
 	if player_ref == null or player_ref.dead:
 		return
@@ -283,10 +273,11 @@ func _fuse_click(id: String) -> void:
 	var novo_id := RARITY.key_with_tier(id.split("#")[0], tier + 1)
 	_show_feedback("FUSAO! %s -> %s!" % [nome_antes, _item_display_name(novo_id)])
 	# se a arma equipada era uma das fundidas e sumiu, re-equipa a base
-	if not GameManager.bag.has(player_ref.weapon) and player_ref.weapon.split("#")[0] == id.split("#")[0]:
-		player_ref.weapon = id.split("#")[0]
-		player_ref._build_frames()
-	_refresh_fuse()
+	if not GameManager.EQUIPS_OK(GameManager.weapon):
+		GameManager.weapon = GameManager.weapon_base()
+		if player_ref != null:
+			player_ref.weapon = GameManager.weapon
+			player_ref._build_frames()
 
 func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
 	var bar = ProgressBar.new()
@@ -333,6 +324,7 @@ func _build_hotbar() -> void:
 func _select_weapon(wid: String) -> void:
 	if player_ref != null and not player_ref.dead:
 		player_ref.weapon = wid
+		GameManager.weapon = wid
 		player_ref._build_frames()
 
 func _process_hotbar_highlight() -> void:
@@ -342,15 +334,16 @@ func _process_hotbar_highlight() -> void:
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
 		stn.set_border_width_all(2)
-		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
+		stn.border_color = Color(0.95, 0.8, 0.3) if GameManager.weapon_base() == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- BOTÕES DE SKILL (Q/E/R/G, estilo Rucoy) ----------
+# ---------- BOTÕES DE SKILL (Q/E, estilo Rucoy) ----------
 func _build_skill_buttons() -> void:
-	for i in range(4):
-		var slot = ["Q", "E", "R", "G"][i]
+	var slots = ["Q", "E", "R", "G"]
+	for i in range(slots.size()):
+		var slot: String = slots[i]
 		var btn = Button.new()
-		btn.position = Vector2(760 + i * 50, 640)
+		btn.position = Vector2(710 + i * 50, 640)
 		btn.size = Vector2(46, 46)
 		var key_l = Label.new()
 		key_l.text = slot
@@ -366,6 +359,15 @@ func _build_skill_buttons() -> void:
 		name_l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(name_l)
+		var cd_l = Label.new()
+		cd_l.name = "CdLabel"
+		cd_l.position = Vector2(14, 12)
+		cd_l.add_theme_font_size_override("font_size", 14)
+		cd_l.add_theme_color_override("font_color", Color(1, 1, 1))
+		cd_l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		cd_l.add_theme_constant_override("outline_size", 4)
+		cd_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(cd_l)
 		btn.pressed.connect(_press_skill.bind(slot))
 		add_child(btn)
 		skill_btns[slot] = btn
@@ -376,26 +378,36 @@ func _press_skill(slot: String) -> void:
 
 func _process_skill_buttons() -> void:
 	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
-	for i in range(4):
-		var slot = ["Q", "E", "R", "G"][i]
+	var slots = ["Q", "E", "R", "G"]
+	for i in range(slots.size()):
+		var slot: String = slots[i]
 		var btn = skill_btns[slot]
 		var name_l = btn.get_node("SkillName")
-		if i < list.size():
-			name_l.text = list[i]["nome"].split(" ")[0]
-		elif GameManager.city2_unlocked:
-			name_l.text = "—"
+		var cd_l = btn.get_node("CdLabel")
+		var sk: Dictionary = {}
+		for s2 in list:
+			if s2["tecla"] == slot:
+				sk = s2
+				break
+		if not sk.is_empty():
+			if SKILLS.skill_unlocked(sk):
+				name_l.text = sk["nome"].split(" ")[0]
+			else:
+				name_l.text = "???"
+		# cooldown numerico no centro do botao (estilo MMO)
+		if not player_ref.skill_ready[slot]:
+			cd_l.text = str(int(ceil(player_ref.skill_cd[slot])))
+			cd_l.visible = true
 		else:
-			name_l.text = "🔒"
+			cd_l.visible = false
 		var stn = StyleBoxFlat.new()
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
 		stn.set_border_width_all(2)
-		if i >= list.size() and not GameManager.city2_unlocked:
-			stn.border_color = Color(0.4, 0.4, 0.45)
-		elif player_ref.skill_ready[slot]:
-			stn.border_color = Color(0.4, 0.8, 0.4)
+		if not sk.is_empty() and not SKILLS.skill_unlocked(sk):
+			stn.border_color = Color(0.45, 0.45, 0.5)
 		else:
-			stn.border_color = Color(0.6, 0.2, 0.2)
+			stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
 		btn.add_theme_stylebox_override("normal", stn)
 
 # ---------- MOCHILA (tecla B) ----------
@@ -405,7 +417,7 @@ func _build_bag() -> void:
 	add_child(bag_panel)
 	var bg = ColorRect.new()
 	bg.position = Vector2(495, 130)
-	bg.size = Vector2(290, 460)
+	bg.size = Vector2(290, 380)
 	bg.color = Color(0.1, 0.09, 0.12, 0.95)
 	bag_panel.add_child(bg)
 	var title = _make_label(Vector2(510, 140), 18, Color(1, 1, 1))
@@ -417,23 +429,76 @@ func _build_bag() -> void:
 	bag_grid.add_theme_constant_override("h_separation", 6)
 	bag_grid.add_theme_constant_override("v_separation", 6)
 	bag_panel.add_child(bag_grid)
-	var fuse_title = _make_label(Vector2(510, 420), 13, Color(0.95, 0.8, 0.3))
-	fuse_title.text = "FUSAO (3 iguais -> tier seguinte):"
-	bag_panel.add_child(fuse_title)
+	var hint = _make_label(Vector2(510, 480), 12, Color(0.7, 0.7, 0.75))
+	hint.text = "Clique para usar/equipar | B fecha"
+	bag_panel.add_child(hint)
+	# --- secao de FUSAO (3 iguais do mesmo tier -> 1 do tier seguinte, 50 moedas) ---
+	var ftitle = _make_label(Vector2(800, 140), 16, Color(1.0, 0.82, 0.25))
+	ftitle.text = "FUSAO DE ITENS"
+	bag_panel.add_child(ftitle)
+	var fdesc = _make_label(Vector2(800, 162), 11, Color(0.75, 0.75, 0.8))
+	fdesc.text = "3 iguais do mesmo tier + 50 moedas\n= 1 do tier seguinte (Lendario nao funde)"
+	bag_panel.add_child(fdesc)
 	fuse_grid = GridContainer.new()
-	fuse_grid.columns = 5
-	fuse_grid.position = Vector2(510, 445)
+	fuse_grid.columns = 4
+	fuse_grid.position = Vector2(800, 200)
 	fuse_grid.add_theme_constant_override("h_separation", 6)
 	fuse_grid.add_theme_constant_override("v_separation", 6)
 	bag_panel.add_child(fuse_grid)
-	var hint = _make_label(Vector2(510, 560), 12, Color(0.7, 0.7, 0.75))
-	hint.text = "Clique para usar/equipar | B fecha"
-	bag_panel.add_child(hint)
-
+	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
+	fhint.text = "Clique para fundir"
+	bag_panel.add_child(fhint)
+	# --- secao de CINTO DE RUNAS (v0.6.11): teclas Z/X usam a runa sem abrir a mochila ---
+	var btitle = _make_label(Vector2(800, 510), 16, Color(0.5, 0.9, 1.0))
+	btitle.text = "CINTO DE RUNAS"
+	bag_panel.add_child(btitle)
+	var bdesc = _make_label(Vector2(800, 532), 11, Color(0.75, 0.75, 0.8))
+	bdesc.text = "Teclas Z e X usam a runa do slot direto no combate"
+	bag_panel.add_child(bdesc)
+	for slot in ["z", "x"]:
+		var bslot = Button.new()
+		bslot.custom_minimum_size = Vector2(46, 46)
+		bslot.position = Vector2(800 if slot == "z" else 856, 556)
+		var bst = StyleBoxFlat.new()
+		bst.bg_color = Color(0.12, 0.2, 0.26, 0.9)
+		bst.set_corner_radius_all(6)
+		bst.set_border_width_all(2)
+		bst.border_color = Color(0.5, 0.9, 1.0)
+		bslot.add_theme_stylebox_override("normal", bst)
+		var bid: String = str(GameManager.belt.get(slot, ""))
+		if bid != "" and ITEMS_DB.ITEMS.has(bid):
+			var bicon = TextureRect.new()
+			bicon.texture = ITEMS_DB.draw_icon(bid, 32)
+			bicon.custom_minimum_size = Vector2(32, 32)
+			bicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			bicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			bicon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bslot.add_child(bicon)
+		else:
+			var blab = Label.new()
+			blab.text = slot.to_upper()
+			blab.position = Vector2(16, 12)
+			blab.add_theme_font_size_override("font_size", 14)
+			blab.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0, 0.5))
+			blab.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			bslot.add_child(blab)
+		bslot.tooltip_text = "Slot %s: %s" % [slot.to_upper(), _item_display_name(bid) if bid != "" else "vazio"]
+		bslot.pressed.connect(_assign_belt_slot.bind(slot))
+		bag_panel.add_child(bslot)
+	var bhint = _make_label(Vector2(910, 556), 11, Color(0.7, 0.7, 0.75))
+	bhint.text = "Clique num slot\ne depois numa runa\nda mochila p/ atribuir"
+	bag_panel.add_child(bhint)
 func _refresh_bag() -> void:
+	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
+	var ids = GameManager.bag.keys()
+	var sig := ""
+	for id in ids:
+		sig += "%s:%d," % [id, GameManager.bag[id]]
+	if sig == _bag_sig:
+		return
+	_bag_sig = sig
 	for c in bag_grid.get_children():
 		c.queue_free()
-	var ids = GameManager.bag.keys()
 	for i in range(GameManager.BAG_MAX):
 		var slot = Button.new()
 		slot.custom_minimum_size = Vector2(46, 46)
@@ -463,6 +528,16 @@ func _refresh_bag() -> void:
 			slot.pressed.connect(_use_bag_item.bind(id))
 		bag_grid.add_child(slot)
 
+func _item_display_name(id: String) -> String:
+	var base: String = id.split("#")[0]
+	var it = ITEMS_DB.ITEMS.get(base, null)
+	if it == null:
+		return base
+	var tier := RARITY.tier_of(id)
+	if tier > 0 and it.get("tipo", "") == "arma":
+		return "%s %s" % [it["nome"], RARITY.sufixo(tier)]
+	return it["nome"]
+
 func _use_bag_item(id: String) -> void:
 	if player_ref == null or player_ref.dead:
 		return
@@ -471,10 +546,123 @@ func _use_bag_item(id: String) -> void:
 	if it == null:
 		return
 	if it["tipo"] == "arma":
+		# equipar arma da mochila — pode ter tier de raridade ("espada#2")
 		player_ref.weapon = id
+		GameManager.weapon = id
 		player_ref._build_frames()
+		if RARITY.tier_of(id) > 0:
+			_show_feedback("Equipada: %s!" % _item_display_name(id))
 	elif it["tipo"] == "uso":
-		GameManager.use_item(id)
+		if GameManager.use_item(id):
+			AudioManager.play_sfx("potion")
+			if it.has("comida"):
+				_show_feedback("Nham! Bem alimentado — regen 2x por %s" % GameManager.fmt_time_min(float(it["comida"]) / 60.0))
+			elif it.has("hp") or it.has("mana"):
+				_show_feedback("Usou %s" % it["nome"])
+	elif it["tipo"] == "runa":
+		if _belt_pending != "":
+			# atribuindo ao cinto: nao consome a runa, so aponta o slot
+			GameManager.belt_assign(_belt_pending, base)
+			_show_feedback("Runa %s no slot %s!" % [it["nome"], _belt_pending.to_upper()])
+			_belt_pending = ""
+			_build_bag()
+			return
+		_use_runa_item(id)
+
+# ---------- RUNAS (v0.6.7) ----------
+## usa a runa da mochila: consome a pedra e aplica o efeito no mundo.
+## Se a runa precisa de alvo e nao ha monstro, devolve a pedra pra mochila.
+var _belt_pending := ""  # slot do cinto esperando atribuicao ("z"/"x")
+
+func _assign_belt_slot(slot: String) -> void:
+	# 1o clique marca o slot; o proximo clique numa RUNA da mochila atribui
+	AudioManager.play_sfx("ui_click")
+	if _belt_pending == slot:
+		_belt_pending = ""
+		_show_feedback("Atribuicao cancelada")
+		return
+	_belt_pending = slot
+	_show_feedback("Slot %s: clique numa RUNA da mochila p/ atribuir" % slot.to_upper())
+
+
+func _use_runa_item(id: String) -> void:
+	if player_ref == null or player_ref.dead:
+		return
+	var r = GameManager.RUNAS.get(id, null)
+	if r == null:
+		return
+	var dmg: int = GameManager.runa_dano(id)
+	match r["efeito"]:
+		"fogo":
+			var mob = player_ref._mob_in_range(400.0)
+			if mob == null:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			var proj = preload("res://scripts/entities/projectile.gd").new()
+			proj.setup(player_ref.global_position, mob.global_position, dmg, "staff", false, true)
+			get_parent().add_child(proj)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa de Fogo! %d de dano" % dmg)
+		"gelo":
+			var mob2 = player_ref._mob_in_range(400.0)
+			if mob2 == null:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			mob2.stunned = 2.0
+			mob2.take_damage(dmg)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa de Gelo! Congelou por 2s (%d de dano)" % dmg)
+		"trovoada":
+			var hits := _runa_aoe(dmg, Color(0.95, 0.9, 0.3))
+			if hits == 0:
+				_show_feedback("Nenhum monstro por perto para a %s" % it_name_of(id))
+				return
+			GameManager.remove_item(id, 1)
+			AudioManager.play_sfx("cast")
+			_show_feedback("Runa da Trovoada! %d atingidos (%d de dano)" % [hits, dmg])
+		"cura":
+			GameManager.remove_item(id, 1)
+			var cura := int(GameManager.hp_max * 0.4)
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura)
+			AudioManager.play_sfx("potion")
+			_show_feedback("Runa de Cura! +%d HP" % cura)
+
+## dano em area ao redor do player (runa da trovoada); retorna quantos foram atingidos
+func _runa_aoe(dmg: int, cor: Color) -> int:
+	var hits := 0
+	for mob in get_tree().get_nodes_in_group("mobs"):
+		if mob.dead:
+			continue
+		if player_ref.global_position.distance_to(mob.global_position) < 220.0:
+			mob.take_damage(dmg)
+			hits += 1
+	# anel de energia no chao
+	var ring = Sprite2D.new()
+	ring.texture = _make_runa_ring(cor)
+	ring.global_position = player_ref.global_position
+	ring.z_index = 5
+	get_parent().add_child(ring)
+	var tw = ring.create_tween()
+	tw.tween_property(ring, "scale", Vector2(2.2, 2.2), 0.4)
+	tw.parallel().tween_property(ring, "modulate:a", 0.0, 0.4)
+	tw.tween_callback(ring.queue_free)
+	return hits
+
+func _make_runa_ring(c: Color) -> ImageTexture:
+	var img = Image.create(220, 220, false, Image.FORMAT_RGBA8)
+	for y in range(220):
+		for x in range(220):
+			var d = Vector2(x - 110.0, y - 110.0).length()
+			if d > 96.0 and d < 108.0:
+				img.set_pixel(x, y, Color(c.r, c.g, c.b, 0.7))
+	return ImageTexture.create_from_image(img)
+
+func it_name_of(id: String) -> String:
+	var base: String = id.split("#")[0]
+	var it2 = ITEMS_DB.ITEMS.get(base, null)
+	return it2["nome"] if it2 != null else id
 
 # ---------- TELA DE MORTE ----------
 func _build_death_screen() -> void:
@@ -484,6 +672,7 @@ func _build_death_screen() -> void:
 	var dim = ColorRect.new()
 	dim.color = Color(0.3, 0.0, 0.0, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.size = Vector2(1280, 720)
 	death_screen.add_child(dim)
 	var title = Label.new()
 	title.text = "VOCE MORREU"
@@ -538,6 +727,7 @@ func _build_cloth_panel() -> void:
 	preview = TextureRect.new()
 	preview.position = Vector2(620, 180)
 	preview.custom_minimum_size = Vector2(192, 192)
+	preview.size = Vector2(192, 192)
 	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	cloth_panel.add_child(preview)
@@ -583,7 +773,7 @@ func _build_cloth_panel() -> void:
 		sw3.add_theme_stylebox_override("normal", st3)
 		sw3.pressed.connect(_set_pants.bind(p_name))
 		cloth_panel.add_child(sw3)
-	var hint = _make_label(Vector2(430, 520), 12, Color(0.7, 0.7, 0.75))
+	var hint = _make_label(Vector2(430, 560), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "C para fechar"
 	cloth_panel.add_child(hint)
 
@@ -591,16 +781,29 @@ func _set_tunic(c: String) -> void:
 	if player_ref != null:
 		player_ref.tunic_color = c
 		player_ref._build_frames()
+	_update_preview()
 
 func _set_hair(c: String) -> void:
 	if player_ref != null:
 		player_ref.hair_color = c
 		player_ref._build_frames()
+	_update_preview()
 
 func _set_pants(c: String) -> void:
 	if player_ref != null:
 		player_ref.pants_color = c
 		player_ref._build_frames()
+	_update_preview()
+
+func _update_preview() -> void:
+	# preview do knight com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado
+	if player_ref == null:
+		return
+	var texs = TEXHELPER.load_sheet_custom(
+		"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
+		player_ref.weapon, player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+	if not texs.is_empty():
+		preview.texture = texs[0]
 
 # ---------- TELA DE SKILLS (tecla K) — estilo Rucoy ----------
 func _build_skills_panel() -> void:
@@ -630,39 +833,54 @@ func _refresh_skills_panel() -> void:
 	for c in skills_panel.get_children():
 		if c is Label and c.text != "SKILLS":
 			c.queue_free()
+		elif c is Button:
+			c.queue_free()
 	var y := 180.0
 	var combat = {"espada": "Espada", "machado": "Machado", "distancia": "Distancia", "magia": "Magia", "defesa": "Defesa"}
 	for sk in combat:
 		if GameManager.skills.has(sk):
+			var lv: int = GameManager.skills[sk]["level"]
+			var need: int = GameManager.skill_xp_need(sk)
 			var l = _make_label(Vector2(370, y), 15, Color(0.9, 0.9, 0.95))
-			l.text = "%s: nivel %d  (%d/%d xp)  — up em ~%s" % [combat[sk], GameManager.skills[sk]["level"], GameManager.skills[sk]["xp"], GameManager.skill_xp_need(sk), GameManager.skill_time_left(sk)]
+			l.text = "%s: nivel %d  (%d/%d xp) — up em ~%s" % [combat[sk], lv, GameManager.skills[sk]["xp"], need, GameManager.skill_time_left(sk)]
+			skills_panel.add_child(l)
 			y += 26
 	y += 10
-	var ll = _make_label(Vector2(370, y), 15, Color(0.95, 0.8, 0.3))
-	ll.text = "Proximo LEVEL em ~%s" % GameManager.level_time_left()
-	y += 30
 	if player_ref != null:
 		var st = _make_label(Vector2(370, y), 16, Color(0.6, 0.9, 1.0))
-		st.text = "Skills de %s (tecla ou botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
+		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
+		skills_panel.add_child(st)
 		y += 30
 		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
 		for i in range(list.size()):
 			var sk = list[i]
-			var ready := player_ref.skill_ready[sk["tecla"]]
+			if not SKILLS.skill_unlocked(sk):
+				var lb = _make_label(Vector2(370, y), 14, Color(0.55, 0.55, 0.6))
+				lb.text = "[%s] ??? — desbloqueia ao chegar na VILA (city2)" % sk["tecla"]
+				skills_panel.add_child(lb)
+				y += 24
+				continue
+			var ready: bool = player_ref.skill_ready[sk["tecla"]]
 			var l = _make_label(Vector2(370, y), 14, Color(0.4, 0.8, 0.4) if ready else Color(0.7, 0.3, 0.3))
 			l.text = "[%s] %s  (mana %d, recarga %.0fs) — %s" % [sk["tecla"], sk["nome"], sk["mana"], sk["cd"], sk["desc"]]
+			skills_panel.add_child(l)
 			y += 24
 		y += 10
-		var crit_lv = GameManager.skills.get(player_ref.weapon, {"level": 10})["level"]
+		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[player_ref.weapon]["skill"], {"level": 10})["level"]
 		var lc = _make_label(Vector2(370, y), 14, Color(1.0, 0.85, 0.3))
 		lc.text = "Chance de critico: %.1f%% (dano x2)" % (SKILLS.crit_chance(crit_lv) * 100.0)
+		skills_panel.add_child(lc)
 	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "K para fechar"
 	skills_panel.add_child(hint)
+	# estimativas de progresso (estilo Tibia: o player sabe quanto falta)
+	if player_ref != null:
+		var est = _make_label(Vector2(370, 545), 13, Color(0.95, 0.75, 0.4))
+		est.text = "Proximo LEVEL %d em ~%s (mata ~1 mob a cada 8s)" % [GameManager.level + 1, GameManager.level_time_left()]
+		skills_panel.add_child(est)
 
-# ---------- BESTIARIO (tecla N) ----------
+# ---------- BESTIARIO (v0.6.6, tecla N): registro de caca estilo Tibia ----------
 var bestiary_panel: Control
-var bestiary_grid: GridContainer
 
 func _build_bestiary_panel() -> void:
 	bestiary_panel = Control.new()
@@ -670,82 +888,107 @@ func _build_bestiary_panel() -> void:
 	add_child(bestiary_panel)
 	var bg = ColorRect.new()
 	bg.position = Vector2(340, 120)
-	bg.size = Vector2(600, 500)
-	bg.color = Color(0.1, 0.08, 0.1, 0.97)
+	bg.size = Vector2(600, 480)
+	bg.color = Color(0.08, 0.08, 0.11, 0.97)
 	bestiary_panel.add_child(bg)
 	var title = Label.new()
 	title.text = "BESTIARIO"
 	title.position = Vector2(370, 135)
 	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color(0.9, 0.5, 0.5))
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 	bestiary_panel.add_child(title)
-	bestiary_grid = GridContainer.new()
-	bestiary_grid.columns = 1
-	bestiary_grid.position = Vector2(370, 180)
-	bestiary_grid.add_theme_constant_override("v_separation", 6)
-	bestiary_panel.add_child(bestiary_grid)
-	var hint = _make_label(Vector2(370, 590), 12, Color(0.7, 0.7, 0.75))
-	hint.text = "N ou ESC fecha"
-	bestiary_panel.add_child(hint)
 
 func toggle_bestiary_panel() -> void:
 	bestiary_panel.visible = not bestiary_panel.visible
 	if bestiary_panel.visible:
-		_refresh_bestiary()
+		_refresh_bestiary_panel()
 		bag_panel.visible = false
 		cloth_panel.visible = false
 		skills_panel.visible = false
 
-func _refresh_bestiary() -> void:
-	for c in bestiary_grid.get_children():
-		c.queue_free()
+func _refresh_bestiary_panel() -> void:
+	for c in bestiary_panel.get_children():
+		if c is Label and c.text != "BESTIARIO":
+			c.queue_free()
+	var y := 180.0
+	var seen := 0
 	for t in GameManager.BESTIARY_INFO:
-		var info = GameManager.BESTIARY_INFO[t]
-		var kills = GameManager.bestiary_count(t)
-		var l = Label.new()
-		if kills == 0:
-			l.text = "???  — %s" % info["onde"]
-			l.add_theme_color_override("font_color", Color(0.45, 0.45, 0.5))
+		var info: Dictionary = GameManager.BESTIARY_INFO[t]
+		var kills: int = GameManager.bestiary_count(t)
+		if kills > 0:
+			seen += 1
+			var l = _make_label(Vector2(370, y), 14, Color(0.9, 0.9, 0.95))
+			l.text = "%s — %d derrotado(s)   (%s)" % [info["nome"], kills, info["onde"]]
+			bestiary_panel.add_child(l)
+			y += 22
+			var d = _make_label(Vector2(384, y), 12, Color(0.6, 0.65, 0.7))
+			d.text = info["desc"]
+			bestiary_panel.add_child(d)
+			y += 24
 		else:
-			l.text = "%s  x%d  — %s\n%s" % [info["nome"], kills, info["onde"], info["desc"]]
-			l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-		l.add_theme_font_size_override("font_size", 13)
-		bestiary_grid.add_child(l)
+			# nunca derrotado: fica oculto (estilo Tibia — descobre cacando)
+			var l = _make_label(Vector2(370, y), 14, Color(0.45, 0.45, 0.5))
+			l.text = "??? — monstro ainda nao enfrentado"
+			bestiary_panel.add_child(l)
+			y += 24
+	var foot = _make_label(Vector2(370, y + 8), 13, Color(0.95, 0.75, 0.4))
+	foot.text = "Descobertos: %d de %d" % [seen, GameManager.BESTIARY_INFO.size()]
+	bestiary_panel.add_child(foot)
+	var hint = _make_label(Vector2(370, 570), 12, Color(0.7, 0.7, 0.75))
+	hint.text = "N para fechar"
+	bestiary_panel.add_child(hint)
 
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
+		_update_preview()
 		bag_panel.visible = false
 		skills_panel.visible = false
-		bestiary_panel.visible = false
 
 func toggle_bag() -> void:
 	bag_panel.visible = not bag_panel.visible
 	if bag_panel.visible:
 		cloth_panel.visible = false
 		skills_panel.visible = false
-		bestiary_panel.visible = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
+			if not chat_open and player_ref != null and not player_ref.dead:
+				toggle_chat()
+			get_viewport().set_input_as_handled()
+			return
+		if chat_open:
+			if event.keycode == KEY_ESCAPE:
+				toggle_chat()
+				get_viewport().set_input_as_handled()
+			return  # enquanto digita, NAO passa teclas pro jogo
 		if event.keycode == KEY_C:
+			AudioManager.play_sfx("ui_click")
 			toggle_cloth_panel()
 		elif event.keycode == KEY_B:
+			AudioManager.play_sfx("ui_click")
 			toggle_bag()
 		elif event.keycode == KEY_K:
+			AudioManager.play_sfx("ui_click")
 			toggle_skills_panel()
+		elif event.keycode == KEY_J:
+			# J: abre o painel de missoes se estiver perto do NPC (feedback se longe)
+			var qnpc = get_tree().get_first_node_in_group("quest_npc")
+			if qnpc != null and qnpc.has_method("open"):
+				var pl = player_ref.global_position if player_ref != null else Vector2.ZERO
+				if pl.distance_to(qnpc.global_position) < 120.0:
+					qnpc.open()
+				else:
+					_show_feedback("Procure o MESTRE DAS MISSOES na cidade (marcado no mapa)!")
 		elif event.keycode == KEY_N:
+			AudioManager.play_sfx("ui_click")
 			toggle_bestiary_panel()
-		elif event.keycode == KEY_ENTER:
-			toggle_chat()
-		elif event.keycode == KEY_ESCAPE:
-			if chat_open:
-				toggle_chat()
-			else:
-				close_all_panels()
-
-func close_all_panels() -> void:
-	bag_panel.visible = false
-	cloth_panel.visible = false
-	skills_panel.visible = false
-	bestiary_panel.visible = false
+		elif event.keycode == KEY_Z:
+			# cinto de runas (v0.6.11): usa a runa do slot Z sem abrir a mochila
+			if not GameManager.belt_use("z"):
+				_show_feedback("Slot Z vazio ou sem runa! Atribua na mochila (B)")
+		elif event.keycode == KEY_X:
+			# cinto de runas: usa a runa do slot X
+			if not GameManager.belt_use("x"):
+				_show_feedback("Slot X vazio ou sem runa! Atribua na mochila (B)")
