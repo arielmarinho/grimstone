@@ -28,6 +28,25 @@ var city2_unlocked: bool = false
 
 const RARITY = preload("res://scripts/autoload/rarity.gd")
 
+const FUSION_COST := 50
+
+## fusao de itens: 3 iguais do mesmo tier -> 1 do tier seguinte (custa FUSION_COST; lendario nao funde)
+func can_fuse(id: String) -> bool:
+	var tier := RARITY.tier_of(id)
+	return tier < RARITY.TIERS.size() - 1 and bag.get(id, 0) >= 3 and coins >= FUSION_COST
+
+func fuse_item(id: String) -> bool:
+	var tier := RARITY.tier_of(id)
+	if tier >= RARITY.TIERS.size() - 1:
+		return false
+	if bag.get(id, 0) < 3 or coins < FUSION_COST:
+		return false
+	if not remove_item(id, 3):
+		return false
+	coins -= FUSION_COST
+	add_item(RARITY.key_with_tier(id.split("#")[0], tier + 1), 1)
+	return true
+
 ## arma equipada pode ser "espada#2" (tier de raridade) — dano multiplicado pelo tier
 func weapon_base() -> String:
 	return weapon.split("#")[0]
