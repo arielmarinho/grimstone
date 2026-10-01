@@ -1,39 +1,50 @@
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
-> Método: cada especialista audita SUA área do jogo do zero, aponta problemas,
-> melhora até aprovar. Só então passa pra próxima área. O usuário valida cada uma no final.
+> Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
+> melhora ate aprovar. So entao passa pra proxima area. O usuario valida cada uma no final.
 
-## Ordem de auditoria (do mais visível pro menos)
+## Ordem de auditoria (do mais visivel pro menos)
 
-| # | Área | Especialista | Escopo | Status |
+| # | Area | Especialista | Escopo | Status |
 |---|---|---|---|---|
-| 1 | **Combate & Feedback** | gs-game-design + gs-pixel-art | flash de dano, números flutuando, morte, level up | ✅ APROVADO (ciclo 1) |
-| 2 | **Player & Skills** | gs-game-design | 4 classes, Q/E/R/G, flechas, crítico, customização | implementado ciclo 2 (aguarda usuário) |
-| 3 | **Monstros & IA** | gs-game-design | 8 tipos, IA wander/aggro/attack, loot | ⬜ |
-| 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transições, colisores, spawners | ⬜ |
-| 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, preços, drops, poções | ⬜ |
-| 6 | **UI/UX** | gs-ui-ux | HUD, mochila, painéis, título, teclas | ⬜ |
-| 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | ⬜ |
-| 8 | **Áudio** | gs-audio | (área nova — implementar do zero) | ⬜ |
-| 9 | **Multiplayer** | gs-netcode | fundação, mobs autoritativos | ⬜ (após polish) |
-| 10 | **QA final** | gs-qa-testing | fluxo completo, release | ⬜ |
+| 1 | **Combate & Feedback** | gs-game-design + gs-pixel-art | flash de dano, numeros flutuando, morte, level up | OK (ciclo 1) |
+| 2 | **Player & Skills** | gs-game-design | 4 classes, Q/E/R/G, flechas, critico, customizacao | implementado ciclo 2 (aguarda usuario) |
+| 3 | **Monstros & IA** | gs-game-design | 8 tipos, IA wander/aggro/attack, loot | OK (ciclo 4) |
+| 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transicoes, colisores, spawners | OK (ciclo 5) |
+| 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, precos, drops, pocoes | pendente |
+| 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | pendente |
+| 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | pendente |
+| 8 | **Audio** | gs-audio | (area nova — implementar do zero) | pendente |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | pendente (apos polish) |
+| 10 | **QA final** | gs-qa-testing | fluxo completo, release | pendente |
 
-## Regra do usuário
-- Ciclos de 10 min; se não terminar ou ficar ruim, o próximo ciclo APRIJORA o mesmo item
-- Especialista só avança quando achar que está BOM
-- Usuário valida cada área no final
+## Regra do usuario
+- Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
+- Especialista so avanca quando achar que esta BOM
+- Usuario valida cada area no final
 
 ## Log de auditoria
-### Área 1 — Combate & Feedback (02:51-03:01) ✅
-- Mapeado: dano era só número na barra, SEM flash, SEM números flutuantes, morte instantânea
-- Implementado: flash branco no sprite ao levar hit (0.15s), número de dano flutuante (sobe e some), morte com fade (corpo desvanece 0.8s+1.2s), level up com anel dourado expandindo + texto
+### Area 1 — Combate & Feedback (02:51-03:01) OK
+- Mapeado: dano era so numero na barra, SEM flash, SEM numeros flutuantes, morte instantanea
+- Implementado: flash branco no sprite ao levar hit (0.15s), numero de dano flutuante (sobe e some), morte com fade (corpo desvanece 0.8s+1.2s), level up com anel dourado expandindo + texto
+- Validado: sintaxe OK (gdparse); Godot headless indisponivel no sandbox (binario glibc/musl incompativel) — usuario valida no Mac
+
+### Area 2 — Player & Skills (ciclos 2-3) implementado v2
+- City2 libera mais ataques: 2 skills avancadas por classe (teclas R e G), desbloqueadas ao pisar na city2 (flag city2_visited salva no save)
+- v2 (ciclo 3, commit 2f380d0): sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s); axe Giratorio (AOE x3)+Sangue Frio (cura 30%); bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas); staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
+- FIXES do ciclo 3: unlock usava flag errada (nunca desbloqueava); ids do skills_db sem handler no player (mana gasta sem efeito); shop.gd com CATALOG inexistente
+- HUD: 4 botoes (Q/E/R/G); bloqueadas mostram "???" cinza; tela K explica o desbloqueio
+- Validado: Godot headless 4.6 alpine = 0 erros de parse/script; teste visual pendente no Mac do usuario
+
+### Area 3 — Monstros & IA (ciclo 4) OK
+- 4 fixes reais no mob.gd (commit cd21605): ataque agendado nao acerta player MORTO (checava so no agendamento), hit so acerta se alvo no alcance 110px (sem dano fantasma ao fugir), leash 700px do spawn (mob nao persegue o mapa inteiro), dummy simplificado
 - Validado: Godot headless 0 erros
 
-### Área 2 — Player & Skills (ciclo 2) implementado
-- City2 libera mais ataques: 2 skills novas por classe (teclas R e G), desbloqueadas ao pisar na city2 (flag salva no save)
-- sword: Investida (avança + 2.5x) e Terremoto (AoE 2.5x + stun 2s)
-- axe: Golpe Duplo (2 hits) e Bersek (+150% dano 10s)
-- bow: Precisão (3 críticos garantidos) e Tiro Múltiplo (explosão em área no alvo)
-- staff: Escudo Arcano (-50% dano 10s) e Nevasca (AoE + stun 1.5s)
-- HUD: 4 botões (Q/E/R/G); bloqueadas mostram "???" cinza; tela K explica o desbloqueio
-- Validado: gdparse OK nos 5 arquivos; Godot headless INDISPONÍVEL no sandbox (binário glibc/musl incompatível — ver scripts/6227259cbeb72070/run.sh); teste visual pendente no Mac do usuário
+### Area 4 — Mapas & Mundo (03:21-03:30) OK
+- BUG GRAVE corrigido: saida NORTE da floresta estava BLOQUEADA por colisor de borda — impossivel voltar de floresta pra city2 (mapa virava armadilha de mao unica)
+- Colisores agora casam com a ARTE: aberturas dos portoes com 224px (arte desenhada em 46px x2), antes eram 190px desalinhados
+- Predios com colisao: 3 predios city1 + 4 casas city2 + forja (player atravessava antes)
+- City2 virou ZONA SEGURA: so o dummy de treino spawna (bats/spiders/goblins removidos — era area de treino com mobs agressivos em cima do player)
+- Transicao inteligente: voltar de um mapa posiciona o player NO PORTAO correspondente (arrive), nao mais no spawn default (evita loop de re-trigger de saida)
+- Spawns fora do alcance de aggro (280px) do spawn do player em todos os mapas
+- Validado: Godot headless --import + --quit = 0 erros de script
