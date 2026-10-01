@@ -38,8 +38,10 @@ static func _city1(parent: Node) -> void:
 	_add_rect(parent, Vector2(260, 1011), Vector2(80, 1422))
 	_add_rect(parent, Vector2(1788, 616), Vector2(80, 632))
 	_add_rect(parent, Vector2(1788, 1439), Vector2(80, 566))
-	_add_rect(parent, Vector2(596, 1762), Vector2(672, 80))
-	_add_rect(parent, Vector2(1472, 1762), Vector2(632, 80))
+	# muralha SUL fiel ao cenário: o caminho de terra do bueiro desce ATÉ a borda
+	# (arte desenha o caminho até y1024) — sem parede cortando o caminho
+	_add_rect(parent, Vector2(350, 1762), Vector2(300, 80))
+	_add_rect(parent, Vector2(1700, 1762), Vector2(300, 80))
 	# fonte central
 	var f = StaticBody2D.new()
 	f.position = Vector2(1024, 1024)
@@ -67,8 +69,9 @@ static func _city2(parent: Node) -> void:
 	# portao SUL (floresta): abertura x 932-1156 (casando com a arte)
 	_add_rect(parent, Vector2(1024, 260), Vector2(2048, 80))
 	_add_rect(parent, Vector2(1788, 1011), Vector2(80, 1422))
-	_add_rect(parent, Vector2(596, 1762), Vector2(672, 80))
-	_add_rect(parent, Vector2(1472, 1762), Vector2(632, 80))
+	# muralha SUL fiel ao cenario: estrada de pedra desce ate a borda
+	_add_rect(parent, Vector2(350, 1762), Vector2(300, 80))
+	_add_rect(parent, Vector2(1700, 1762), Vector2(300, 80))
 	_add_rect(parent, Vector2(260, 616), Vector2(80, 632))
 	_add_rect(parent, Vector2(260, 1439), Vector2(80, 566))
 	# estatua central
