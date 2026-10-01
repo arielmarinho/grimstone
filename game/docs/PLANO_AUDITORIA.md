@@ -15,7 +15,7 @@
 | # | Area | Especialista | Escopo | Status |
 |---|---|---|---|---|
 | 1 | **Combate & Feedback** | gs-game-design + gs-pixel-art | flash de dano, numeros flutuando, morte, level up | OK (ciclo 1) |
-| 2 | **Player & Skills** | gs-game-design | 4 classes, Q/E/R/G, flechas, critico, customizacao | implementado ciclo 2 (aguarda usuario) |
+| 2 | **Player & Skills** | gs-game-design | 4 classes, Q/E/R/G, flechas, critico, customizacao | AUDITADO ciclo 54 (v0.6.26) — 6 fixes: nevasca AOE+stun 2.2x/1.5s (era 3x sem stun), escudo 10s (era 8s), certeiro x2 na desc, golpe_duplo 2 ataques na desc, chuva exige 5 flechas, skills com alvo devolvem mana sem alvo (atordoar/fogo/investida/tiro_multi) |
 | 3 | **Monstros & IA** | gs-game-design | 8 tipos, IA wander/aggro/attack, loot | OK (ciclo 4b) |
 | 4 | **Mapas & Mundo** | gs-level-design | 4 mapas, transicoes, colisores, spawners | implementado ciclo 5 (aguarda usuario) |
 | 5 | **Itens & Economia** | gs-combat-balance | itens, lojas, precos, drops, pocoes | OK (ciclo 6) |
