@@ -2,15 +2,25 @@
 
 Formato: [data] versão — o que mudou (commit)
 
-## 2026-10-01 — v0.5.5 (ciclo 15: interpolação + lag artificial + fixes)
+## 2026-10-01 — v0.5.6 (ciclo 16: touch controls Android + preset de export)
 
-- FIX GRAVE: limpeza do ciclo 14 (47aefdf) removeu `is_online()` inteiro junto com o código morto — parse error quebrava o NetworkManager no boot; função restaurada
-- Lag artificial `--netlag=<ms>` no NetworkManager (fila de entrega atrasada) para testar robustez com latência real
-- Interpolação por BUFFER de snapshots no NetMob (mira ~120ms no passado) — mobs remotos deslizam suave em vez de teleportar por snapshot
-- NetTest: server fase 2 estendida 8s→20s (clientes precisam completar a fase de mobs antes do DONE); fix break que teleportava sem mob vivo
-- NetTest COM LAG PASSOU: server + A + B com --netlag=150 — registro, chat, posição, dano em mob via RPC validado no servidor, hp caiu no snapshot autoritativo (RESULT OK nos 3 roles)
+- TouchControls autoload (scripts/ui/touch_controls.gd): joystick virtual (canto inf. esquerdo) + 4 botoes de skill Q/E/R/G (inf. direito) + tap em qualquer lugar = mover/atacar (estilo Rucoy)
+- Invisivel em desktop (DisplayServer.is_touchscreen_available()) — zero impacto no jogo de PC
+- player.gd: joystick alimenta o movimento continuo (joy_vec > 0.2 define target a frente)
+- export_presets.cfg NOVO: preset Android (arm64-v8a, target SDK 34, immersive, internet p/ multiplayer, package com.spacespanker.grimstone, v0.5.5 code 1, gradle build)
+- docs/BUILD_ANDROID.md NOVO: guia completo de build no Mac do usuario (sandbox nao consegue: aapt2 e x86_64+glibc, qemu+musl falha em simbolos fortify) + pendencias (touch OK agora, orientacao a conferir, keystore release pra Play)
+- Validado Godot headless --import + --quit: 0 erros de script
+- Proximo: conferir orientacao landscape no project.godot, teste no Mac, build APK real
+
+## 2026-10-01 — v0.5.5 (ciclo 15: netcode — interpolacao por buffer + lag artificial + NetTest c/ lag PASSOU)
+
+- Interpolacao de mobs no cliente agora e por BUFFER de snapshots (estilo Quake): mira o estado de ~120ms atras, cobre jitter/lag sem rubber-banding; fallback = lerp pro ultimo snapshot
+- LAG ARTIFICIAL (regra gs-netcode): `--netlag=<ms>` atrasa a entrega de snapshots (mobs E players) no NetworkManager — fila ordenada por tempo de entrega; 0 = sem lag (jogo normal)
+- FIX no harness: `break` dentro do if teleportava o player mesmo SEM mob vivo (skipava fase); agora varre todos os espelhos e so avança com mob VIVO
+- FIX no harness: chat enviado UMA vez so (re-registro duplicava o envio); server espera ~20s pra fase de mobs completar
+- NetTest PASSOU COM LAG 150ms: server OK + cliente A OK + cliente B OK — registro, chat A<->B, sync posicao, espelhos de mob, dano via RPC validado no servidor (hp caiu no snapshot), saida limpa
 - Validado Godot headless: 0 erros de script
-- Próximo: teste no Mac do usuário (git pull + apagar .godot); depois polish/Android
+- Proximo: teste no Mac do usuario (git pull + apagar .godot) OU polish/Android
 
 ## 2026-10-01 — v0.5.4 (ciclo 14: fase 2 online — MOBS AUTORITATIVOS)
 
@@ -32,6 +42,15 @@ Formato: [data] versão — o que mudou (commit)
 - TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat A<->B relayado, POSICAO relayada entre clientes, saida limpa
 - Validado Godot headless: 0 erros de script
 - Proximo: mobs autoritativos no servidor + teste no Mac do usuario
+
+## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
+
+- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
+- FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
+- NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
+- TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
+- Validado: Godot headless --import 0 erros de script
+- Proximo: mobs autoritativos no servidor, teste no Mac do usuario
 
 ## 2026-10-01 — v0.5.1 (ciclo 11: Area 10 QA — auditoria estatica)
 
@@ -72,7 +91,7 @@ Formato: [data] versão — o que mudou (commit)
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim morte, preview roupas, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
 - Titulo: v0.4.5 + ESC sai
 
@@ -114,12 +133,3 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.4.1 (ciclo 3: skills R/G v2 completas + fix de unlock)
 
 - `2f380d0` Skills avancadas R/G REFEITAS (v2) e 100% funcionais: sword Golpe Duplo (2 hits)+Grito de Guerra (+50% dano 12s), axe Giratorio (AOE x3)+Sangue Frio (cura 30%), bow Flecha Perfurante (x4)+Chuva Pesada (AOE x2.5, 8 flechas), staff Nova de Gelo (AOE stun 2s)+Cura Maior (70% HP)
-
-## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
-
-- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
-- FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
-- NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
-- TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
-- Validado: Godot headless --import 0 erros de script
-- Proximo: mobs autoritativos no servidor, teste no Mac do usuario
