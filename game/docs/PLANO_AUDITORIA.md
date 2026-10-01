@@ -21,6 +21,7 @@
 | 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) — aguarda usuario |
 | 13 | **Banco/Depósito** | gs-game-design | NPC banco, depositar/sacar itens | implementado ciclo 23 (v0.6.5) — aguarda usuario |
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
+| 15 | **Runas & Polish** | gs-game-design | runas estilo Tibia, feedback de dano | implementado ciclo 25 (v0.6.7) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -28,6 +29,14 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
+### Area 15 — Runas & Polish (ciclo 25, v0.6.7) implementado
+- RUNAS estilo Tibia: 4 runas (fogo/gelo/trovoada/cura) — qualquer classe usa, NAO gasta mana, consome a pedra; dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02))
+- hud.gd: uso pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro; trovoada com anel de energia visual
+- Lojas: city1 vende cura (40); city2 vende as 4; loot: skeleton fogo 8%/gelo 6%, goblin trovoada 5%, slime cura 4%
+- Polish de combate: flash vermelho + shake de camera no player ao tomar dano; camera com position_smoothing
+- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
+- Push verificado por blob SHA: items_db/loot_table/shop/player.tscn/test_runes/CHANGELOG byte-exatos; game_manager e hud divergiam so em encoding de acentos (cosmetico) — hud alinhado byte-exato
+- Pendente: teste no Mac do usuario
 ### Area 14 — Bestiario (ciclo 24, v0.6.6) implementado
 - GameManager.BESTIARY_INFO: ficha dos 8 mobs (nome, onde vive, lore curta)
 - bestiary_kill/count/seen + save "bestiary" persistido (save antigo OK), NOVO JOGO zera
