@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://b0rat00000002"]
+
+[ext_resource type="Script" path="res://scripts/entities/mob.gd" id="1_mob"]
+
+[node name="Rat" type="CharacterBody2D"]
+script = ExtResource("1_mob")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+
+[node name="Collision" type="CollisionShape2D" parent="."]
+
+[node name="HpBar" type="ProgressBar" parent="."]
+offset_left = -20.0
+offset_top = -44.0
+offset_right = 20.0
+offset_bottom = -38.0
+max_value = 100.0
+value = 100.0
+show_percentage = false
