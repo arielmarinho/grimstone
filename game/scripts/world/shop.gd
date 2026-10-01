@@ -5,8 +5,8 @@ const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
 # catalogo por cidade: city1 = base, city2 = tiers melhores + bulk
 const CATALOG_CITY1 = {
-	"pocao_vida_p": 20,
-	"pocao_mana_p": 25,
+	"pocao_vida_p": 15,
+	"pocao_mana_p": 18,
 	"flecha": 2,
 	"espada": 50,
 	"machado": 120,

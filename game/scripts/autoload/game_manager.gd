@@ -29,14 +29,32 @@ var city2_unlocked: bool = false
 func xp_for_level(lv: int) -> int:
 	return int(50.0 / 3.0 * (pow(lv, 3) - 6 * pow(lv, 2) + 17 * lv - 12))
 
+# stats derivados do level (fonte unica de verdade — save antigo nunca mais desincroniza)
+func max_hp_for_level(lv: int) -> int:
+	return 100 + (lv - 1) * 10
+
+func max_mana_for_level(lv: int) -> int:
+	return 50 + (lv - 1) * 5
+
 func add_xp(amount: int) -> void:
 	xp += amount
 	while level < 999 and xp >= xp_for_level(level + 1):
 		level += 1
-		hp_max += 10
-		mana_max += 5
-		hp = hp_max
-		mana = mana_max
+		hp_max = max_hp_for_level(level)
+		mana_max = max_mana_for_level(level)
+		# estilo Tibia: level up NAO enche vida/mana se o player esta em combate
+		# (evita "heal gratis" no meio do fight); fora de combate enche normal
+		var in_combat := false
+		for m in get_tree().get_nodes_in_group("mobs"):
+			if is_instance_valid(m) and not m.dead and not m.dying and m.state == "attack":
+				in_combat = true
+				break
+		if not in_combat:
+			hp = hp_max
+			mana = mana_max
+		else:
+			hp = min(hp_max, hp + 30)
+			mana = min(mana_max, mana + 15)
 		print("LEVEL UP! Nivel ", level)
 
 func add_skill_xp(skill: String, amount: int) -> void:
@@ -102,10 +120,10 @@ func load_game() -> bool:
 	player_name = parsed.get("player_name", "Grimstone")
 	level = int(parsed.get("level", 1))
 	xp = int(parsed.get("xp", 0))
-	hp = int(parsed.get("hp", 100))
-	hp_max = int(parsed.get("hp_max", 100))
-	mana = int(parsed.get("mana", 50))
-	mana_max = int(parsed.get("mana_max", 50))
+	hp_max = max_hp_for_level(level)  # derivado do level — save antigo nunca desincroniza
+	hp = min(int(parsed.get("hp", hp_max)), hp_max)
+	mana_max = max_mana_for_level(level)
+	mana = min(int(parsed.get("mana", mana_max)), mana_max)
 	skills = parsed.get("skills", skills)
 	current_map = parsed.get("current_map", "city1")
 	weapon = parsed.get("weapon", "sword")
