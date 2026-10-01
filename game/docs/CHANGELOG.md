@@ -2,6 +2,15 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.1 (ciclo 19: FUSAO DE ITENS — 3 iguais do mesmo tier -> 1 do tier seguinte)
+
+- game_manager.gd: can_fuse(id)/fuse_item(id) — 3 itens IGUAIS do mesmo tier + 50 moedas = 1 do tier SEGUINTE (espada#1 x3 -> espada#2); Lendario (tier 4) nao funde
+- hud.gd: secao "FUSAO DE ITENS" dentro do painel da mochila (B) — grid com slots borda na cor da raridade, tooltip "X -> Y (50 moedas)", clique funde com feedback "FUSAO!" + som
+- Se a arma EQUIPADA era uma das fundidas e sumiu da mochila, re-equipa automaticamente a base (nunca fica sem arma)
+- Teste unitario tests/test_fusion.gd (SceneTree headless): cadeia espada#1->#2->#3, bloqueio de lendario, falta de moedas/quantidade — FUSION_TEST_OK
+- Validado Godot headless --import + --quit: 0 erros de script
+- Proximo: estimativas de tempo na tela K / teste no Mac do usuario
+
 ## 2026-10-01 — v0.6.0 (ciclo 18: RARIDADE DE ITENS — 5 tiers + sufixos)
 
 - NOVO `scripts/autoload/rarity.gd`: 5 tiers estilo RPG (Comum 70% / Incrivel 20% +10% / Raro 7% +25% / Epico 2.5% +50% / Lendario 0.5% +100%) conforme docs/DESIGN_ONLINE.md secao 4
@@ -105,7 +114,7 @@ Formato: [data] versão — o que mudou (commit)
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
 - HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
-- Titulo: versao v0.4.5 (estava v0.3) + ESC sai
+- Titulo: v0.4.5 + ESC sai
 
 ## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
 

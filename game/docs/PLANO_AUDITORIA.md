@@ -17,7 +17,7 @@
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
-| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE implementada ciclo 18 (v0.6.0) — fusao pendente (v0.6.1) |
+| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO implementadas ciclos 18-19 (v0.6.0/v0.6.1) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -114,10 +114,9 @@
 - BUILD_ANDROID.md atualizado (pendência 2 = FEITA)
 - Headless 0 erros. Próximo: teste no Mac do usuário OU build APK real no Mac (guia pronto)
 
-## Ciclo 18 (05:29, 01/10) — v0.6.0 RARIDADE DE ITENS implementada
-- rarity.gd novo: 5 tiers (Comum/Incrivel/Raro/Epico/Lendario) com chances 70/20/7/2.5/0.5% e multiplicadores de dano 1.0/1.1/1.25/1.5/2.0
-- Armas dropadas por mobs ganham tier sorteado (RARITY_BONUS por mob: orc/skeleton 3, wolf 2, spider/goblin 1); vale offline E online (roll_loot_list)
-- Aura colorida no drop no chao + tooltip "Espada Raro" na mochila + feedback ao equipar
-- TODO dano do player multiplica pelo tier da arma equipada; teclas 1-4 = arma comum
-- Save antigo 100% compativel (tier 0 = chave sem "#")
-- Headless 0 erros. Proximo: fusao de itens (painel F, v0.6.1)
+## Ciclo 19 (05:37, 01/10) — Area 11: FUSAO DE ITENS implementada (v0.6.1)
+- 3 iguais do mesmo tier + 50 moedas -> 1 do tier seguinte (lendario nao funde) — conforme DESIGN_ONLINE.md secao 4
+- UI no painel da mochila (B): grid de fusao com borda na cor da raridade, tooltip com o resultado, feedback + som ao fundir
+- Arma equipada fundida = re-equipa a base automaticamente
+- Teste unitario headless tests/test_fusion.gd PASSOU (FUSION_TEST_OK); projeto 0 erros de script
+- Pendente: teste no Mac do usuario
