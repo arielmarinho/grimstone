@@ -29,12 +29,18 @@ const WEAPONS = {
 	},
 }
 
+# Paleta de customização (cabelo + túnica) — cores extraídas das referências
+# do usuário (knight castanho/preto/branco + túnica vermelha)
 const CLOTHES_COLORS = {
+	"castanho": Color(0.53, 0.28, 0.15),
 	"dourado": Color(0.86, 0.75, 0.39),
 	"ruivo": Color(0.75, 0.31, 0.16),
 	"preto": Color(0.12, 0.12, 0.14),
 	"castanho_claro": Color(0.59, 0.41, 0.24),
 	"branco": Color(0.78, 0.78, 0.8),
+	"vermelho": Color(0.67, 0.08, 0.08),
+	"azul": Color(0.25, 0.4, 0.7),
+	"verde": Color(0.3, 0.55, 0.3),
 }
 
 const PANTS_COLORS = {
