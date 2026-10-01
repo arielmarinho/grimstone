@@ -11,8 +11,8 @@ const MAPS = {
 		"texture": "res://assets/maps/city1.png",
 		"player_spawn": Vector2(1024, 1240),
 		"exits": [
-			{"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓"},
-			{"pos": Vector2(1990, 1024), "radius": 84, "to": "city2", "label": "VILA →"},
+			{"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓", "arrive": Vector2(1024, 1000)},
+			{"pos": Vector2(1990, 1024), "radius": 84, "to": "city2", "label": "VILA →", "arrive": Vector2(340, 1024)},
 		],
 		"shop": Vector2(580, 1340),
 		"spawner": "city1_mobs",
@@ -21,17 +21,18 @@ const MAPS = {
 		"texture": "res://assets/maps/city2.png",
 		"player_spawn": Vector2(260, 1024),
 		"exits": [
-			{"pos": Vector2(60, 1024), "radius": 84, "to": "city1", "label": "← CIDADE"},
-			{"pos": Vector2(1024, 1990), "radius": 84, "to": "forest", "label": "FLORESTA ↓"},
+			{"pos": Vector2(60, 1024), "radius": 84, "to": "city1", "label": "← CIDADE", "arrive": Vector2(1690, 1024)},
+			{"pos": Vector2(1024, 1990), "radius": 84, "to": "forest", "label": "FLORESTA ↓", "arrive": Vector2(1024, 300)},
 		],
 		"shop": Vector2(1560, 660),
 		"spawner": "city2_mobs",
+		"safe_zone": true,
 	},
 	"forest": {
 		"texture": "res://assets/maps/forest.png",
 		"player_spawn": Vector2(1024, 260),
 		"exits": [
-			{"pos": Vector2(1024, 60), "radius": 84, "to": "city2", "label": "↑ VILA"},
+			{"pos": Vector2(1024, 60), "radius": 84, "to": "city2", "label": "↑ VILA", "arrive": Vector2(1024, 1690)},
 		],
 		"spawner": "forest_mobs",
 	},
@@ -39,7 +40,7 @@ const MAPS = {
 		"texture": "res://assets/maps/rat_cave.png",
 		"player_spawn": Vector2(1024, 800),
 		"exits": [
-			{"pos": Vector2(1024, 180), "radius": 84, "to": "city1", "label": "SAÍDA ↑"},
+			{"pos": Vector2(1024, 180), "radius": 84, "to": "city1", "label": "SAÍDA ↑", "arrive": Vector2(1024, 1560)},
 		],
 		"spawner": "cave_mobs",
 	},
@@ -94,7 +95,7 @@ func _physics_process(_delta: float) -> void:
 	for ex in MAPS[current].get("exits", []):
 		if player.global_position.distance_to(ex["pos"]) < ex["radius"]:
 			switching = true
-			switch_map(ex["to"])
+			switch_map(ex["to"], ex.get("arrive", null))
 			switching = false
 			return
 	if shop != null and MAPS[current].has("shop"):
@@ -131,7 +132,7 @@ func _unlock_city2() -> void:
 		tw.tween_callback(l.queue_free)
 	print("CITY2: skills avancadas (R/G) desbloqueadas!")
 
-func switch_map(name: String) -> void:
+func switch_map(name: String, arrive_pos = null) -> void:
 	if name == current or not MAPS.has(name):
 		return
 	current = name
@@ -146,7 +147,8 @@ func switch_map(name: String) -> void:
 	sprite.scale = Vector2(2, 2)
 	map_layer.add_child(sprite)
 	if player != null:
-		player.global_position = MAPS[name]["player_spawn"]
+		# portao correspondente (chegando de outro mapa) ou spawn default
+		player.global_position = arrive_pos if arrive_pos != null else MAPS[name]["player_spawn"]
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		mob.queue_free()
 	var spawner_name = MAPS[name].get("spawner", "")
@@ -155,6 +157,9 @@ func switch_map(name: String) -> void:
 		var node = spawner.new()
 		node.spawner_name = spawner_name
 		entities.add_child(node)
+		# zona segura (city2): mobs agressivos nao atacam dentro dela
+		if MAPS[name].get("safe_zone", false):
+			node.safe_zone = true
 	COLLIDERS.build_colliders(name, map_layer)
 	for ex in MAPS[current].get("exits", []):
 		var marker = Label.new()

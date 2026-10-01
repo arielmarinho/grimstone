@@ -1,5 +1,6 @@
 extends Node2D
 ## Colisores dos 4 mapas — mundo 2X (2048x2048)
+## REGRA: colisores casam com a ARTE (muralha da arte y 143-895 -> mundo 286-1790)
 
 static func build_colliders(map_name: String, parent: Node) -> void:
 	for c in parent.get_children():

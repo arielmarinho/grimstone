@@ -1,8 +1,12 @@
 extends Node2D
 ## Spawners de mobs por mapa — mobs diferentes em cada regiao
+## safe_zone (city2): so o dummy de treino spawna; mobs agressivos ficam fora
 
 var spawner_name: String = ""
+var safe_zone: bool = false
 
+# posicoes em coordenadas de mundo 2X (mapa 1024 desenhado a escala 2)
+# TODAS as posicoes ficam FORA do alcance de aggro (280px) do spawn do player
 const SETS = {
 	"city1_mobs": [
 		{"type": "rat", "pos": Vector2(400, 500)},
@@ -11,11 +15,7 @@ const SETS = {
 		{"type": "slime", "pos": Vector2(1700, 1700)},
 	],
 	"city2_mobs": [
-		{"type": "dummy", "pos": Vector2(1024, 1300)},
-		{"type": "bat", "pos": Vector2(500, 400)},
-		{"type": "bat", "pos": Vector2(1600, 500)},
-		{"type": "spider", "pos": Vector2(500, 1600)},
-		{"type": "goblin", "pos": Vector2(1600, 1600)},
+		{"type": "dummy", "pos": Vector2(1024, 1300)},  # alvo de treino (perto do centro-sul)
 	],
 	"forest_mobs": [
 		{"type": "wolf", "pos": Vector2(500, 700)},
@@ -38,6 +38,9 @@ const SETS = {
 func _ready() -> void:
 	var mob_scene: PackedScene = load("res://scenes/entities/mobs/rat.tscn")
 	for entry in SETS.get(spawner_name, []):
+		# zona segura: so o dummy de treino (imortal, nao revida) pode existir nela
+		if safe_zone and entry["type"] != "dummy":
+			continue
 		var mob = mob_scene.instantiate()
 		mob.mob_type = entry["type"]
 		mob.position = entry["pos"]
