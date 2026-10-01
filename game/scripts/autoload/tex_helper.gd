@@ -24,8 +24,7 @@ static func _load_image(path: String) -> Image:
 		return null
 	var buf = Marshalls.base64_to_raw(b64)
 	var dec = Image.new()
-	var err = dec.load_png_from_buffer(buf)
-	if err != OK:
+	if dec.load_png_from_buffer(buf) != OK:
 		push_error("falha ao decodificar: " + path)
 		return null
 	return dec
