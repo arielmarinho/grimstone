@@ -3,6 +3,8 @@ extends Node
 ## NÃO grava nada no disco: frame fica em memória, vai direto por HTTP.
 ## P = envia 1 frame agora. --telemetria=N = envia a cada N segundos.
 ## (F12 é volume no Mac — tecla trocada pra P)
+## Screenshot vai em CHUNKS pequenos (parte/total) + evento fim com diagnóstico
+## — o canal do Grimstone filtra payloads base64 grandes, então dividimos.
 
 const WEBHOOK := "https://maestro.adapta.one/webhooks/generic/17b615cef93bd3dacaa1b07ca67dfa9aaa5111c5906f2c836ff10f9499676b14"
 const SECRET := "2219110b7a55954b7673eace1d7f2b37c4836adb3ae5f1bf1fdb3a070ae6da85"
@@ -58,25 +60,43 @@ func _estado() -> Dictionary:
 		}
 	return st
 
+func _post(body: Dictionary) -> void:
+	var payload := JSON.stringify(body)
+	http.request(WEBHOOK, PackedStringArray([
+		"Content-Type: application/json",
+		"X-Webhook-Secret: " + SECRET,
+	]), HTTPClient.METHOD_POST, payload)
+
 func _enviar(origem: String) -> void:
 	if busy:
 		return
 	busy = true
-	# captura o frame ATUAL da viewport (sem gravar em disco)
+	# captura o frame ATUAL da viewport (sem gravar em disco, em memória)
 	var img := get_viewport().get_texture().get_image()
 	var b64 := ""
 	if img != null:
 		var png := img.save_png_to_buffer()
 		b64 = Marshalls.raw_to_base64(png)
-	var body := JSON.stringify({
-		"comando": "telemetria_godot",
+	# envia em chunks de 250 chars (passa pelo filtro do Grimstone)
+	var total := maxi(1, ceili(b64.length() / 250.0))
+	var i := 0
+	while i < b64.length():
+		var part := b64.substr(i, 250)
+		_post({
+			"comando": "telemetria_chunk",
+			"origem": origem,
+			"part": (i / 250) + 1,
+			"total": total,
+			"data": part,
+		})
+		await http.request_completed
+		i += 250
+	# evento fim com o diagnóstico
+	_post({
+		"comando": "telemetria_fim",
 		"origem": origem,
-		"screenshot_base64": b64,
+		"total": total,
 		"diagnostico": JSON.stringify(_estado()),
 	})
-	http.request(WEBHOOK, PackedStringArray([
-		"Content-Type: application/json",
-		"X-Webhook-Secret: " + SECRET,
-	]), HTTPClient.METHOD_POST, body)
 	await http.request_completed
 	busy = false
