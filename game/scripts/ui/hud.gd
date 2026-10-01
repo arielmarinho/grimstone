@@ -1,5 +1,6 @@
 extends CanvasLayer
-## HUD — barras, hotbar de armas, skills Q/E/R/G, mochila, roupas, chat, missoes
+## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
+## mochila (B), roupas+calça (C), tela de skills (K), morte
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -200,7 +201,7 @@ func _process(_delta: float) -> void:
 		fed_label.visible = false
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | J missoes | Enter chat]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | J missoes | T banco | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -446,7 +447,6 @@ func _build_bag() -> void:
 	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
 	fhint.text = "Clique para fundir"
 	bag_panel.add_child(fhint)
-
 func _refresh_bag() -> void:
 	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
 	var ids = GameManager.bag.keys()
