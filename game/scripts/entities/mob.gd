@@ -1,5 +1,5 @@
 extends CharacterBody2D
-## Mob base — IA wander/chase/attack, HP bar, respawn
+## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, drop de moedas
 
 const WANDER_RADIUS = 120.0
 const AGGRO_RANGE = 140.0
@@ -27,6 +27,7 @@ func _ready() -> void:
 	add_to_group("mobs")
 	home = global_position
 	wander_target = global_position
+	max_hp = max_hp + randi() % 5 - 2
 	hp = max_hp
 	_build_frames()
 
@@ -119,9 +120,17 @@ func die() -> void:
 	hp_bar.value = 0
 	sprite.play("death")
 	GameManager.add_xp(xp_reward)
+	_drop_coins()
 	print("rato morreu, respawn em ", respawn_time, "s")
 	await get_tree().create_timer(respawn_time).timeout
 	respawn()
+
+func _drop_coins() -> void:
+	var n = 1 + randi() % 3
+	for i in range(n):
+		var coin = preload("res://scripts/entities/coin.gd").new()
+		coin.position = global_position + Vector2(randf() * 30 - 15, randf() * 30 - 15)
+		get_parent().add_child(coin)
 
 func respawn() -> void:
 	if not is_inside_tree():

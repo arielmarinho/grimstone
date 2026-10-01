@@ -1,5 +1,5 @@
 extends Node
-## GameManager — estado global (serializável, pronto pra online futuro)
+## GameManager — autoload: estado global do jogo (serializável, pronto pra online futuro)
 
 const SAVE_PATH = "user://savegame.json"
 
@@ -15,6 +15,10 @@ var skills := {
 	"defesa": {"level": 10, "xp": 0},
 }
 var current_map: String = "city1"
+var coins: int = 0
+var weapon: String = "sword"
+var hair_color: String = "castanho"
+var tunic_color: String = "castanho"
 
 func xp_for_level(lv: int) -> int:
 	return int(50.0 / 3.0 * (pow(lv, 3) - 6 * pow(lv, 2) + 17 * lv - 12))
@@ -45,6 +49,7 @@ func save_game() -> void:
 		"player_name": player_name, "level": level, "xp": xp,
 		"hp": hp, "hp_max": hp_max, "mana": mana, "mana_max": mana_max,
 		"skills": skills, "current_map": current_map,
+		"weapon": weapon, "hair_color": hair_color, "tunic_color": tunic_color, "coins": coins,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -65,4 +70,8 @@ func load_game() -> bool:
 	mana_max = int(parsed.get("mana_max", 50))
 	skills = parsed.get("skills", skills)
 	current_map = parsed.get("current_map", "city1")
+	weapon = parsed.get("weapon", "sword")
+	coins = int(parsed.get("coins", 0))
+	hair_color = parsed.get("hair_color", "castanho")
+	tunic_color = parsed.get("tunic_color", "castanho")
 	return true
