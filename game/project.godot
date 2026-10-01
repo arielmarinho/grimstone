@@ -12,6 +12,7 @@ GameManager="*res://scripts/autoload/game_manager.gd"
 NetworkManager="*res://scripts/autoload/network_manager.gd"
 AudioManager="*res://scripts/autoload/audio_manager.gd"
 MobAuthority="*res://scripts/autoload/mob_authority.gd"
+TouchControls="*res://scripts/ui/touch_controls.gd"
 
 [display]
 window/size/viewport_width=1280
