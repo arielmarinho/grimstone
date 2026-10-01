@@ -18,6 +18,7 @@
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
 | 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO+ESTIMATIVAS implementadas ciclos 18-20 (v0.6.0/v0.6.1/v0.6.2) — aguarda usuario |
+| 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -114,6 +115,12 @@
 - BUILD_ANDROID.md atualizado (pendência 2 = FEITA)
 - Headless 0 erros. Próximo: teste no Mac do usuário OU build APK real no Mac (guia pronto)
 
+## Ciclo 20 (05:50, 01/10) — Area 11: ESTIMATIVAS DE TEMPO na tela K (v0.6.2)
+- Tela K agora mostra quanto falta pra cada skill subir ("up em ~Xmin") e pro proximo level ("~Ymin") — taxas medidas no jogo (skill 240 xp/min, defesa 60 xp/min, level 450 xp/min)
+- FIX: tela K usava formula ERRADA de xp de skill (level*100) em vez da curva real (level^2*5) — mostrava necessidade 2x maior no lvl 10
+- Teste unitario tests/test_estimates.gd PASSOU; headless 0 erros
+- Pendente: teste no Mac do usuario
+
 ## Ciclo 19 (05:37, 01/10) — Area 11: FUSAO DE ITENS implementada (v0.6.1)
 - 3 iguais do mesmo tier + 50 moedas -> 1 do tier seguinte (lendario nao funde) — conforme DESIGN_ONLINE.md secao 4
 - UI no painel da mochila (B): grid de fusao com borda na cor da raridade, tooltip com o resultado, feedback + som ao fundir
@@ -121,8 +128,8 @@
 - Teste unitario headless tests/test_fusion.gd PASSOU (FUSION_TEST_OK); projeto 0 erros de script
 - Pendente: teste no Mac do usuario
 
-## Ciclo 20 (05:50, 01/10) — Area 11: ESTIMATIVAS DE TEMPO na tela K (v0.6.2)
-- Tela K agora mostra quanto falta pra cada skill subir ("up em ~Xmin") e pro proximo level ("~Ymin") — taxas medidas no jogo (skill 240 xp/min, defesa 60 xp/min, level 450 xp/min)
-- FIX: tela K usava formula ERRADA de xp de skill (level*100) em vez da curva real (level^2*5) — mostrava necessidade 2x maior no lvl 10
-- Teste unitario tests/test_estimates.gd PASSOU; headless 0 erros
-- Pendente: teste no Mac do usuario
+## Ciclo 21 (05:52, 01/10) — Area 12: QUESTS COM NPC (v0.6.3)
+- NPC Mestre das Missões nas 2 cidades (tecla J): 6 missões de caça em cadeia (ratos->slimes->aranhas->goblins->orcs->esqueletos), recompensas 40-250 moedas + 100-900 xp
+- Kill conta offline (mob.gd) e online (_rpc_mob_reward carrega mob_type); persistido no save; NOVO JOGO zera
+- Teste unitário QUEST_TEST_OK; headless 0 erros
+- Pendente: teste no Mac do usuário
