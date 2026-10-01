@@ -167,12 +167,16 @@ func is_open() -> bool:
 
 func open() -> void:
 	AudioManager.play_sfx("ui_click")
+	# painel exclusivo (regra gs-ui-ux): abrir o banco fecha os outros paineis
+	get_tree().call_group("hud", "close_all_panels")
+	add_to_group("npc_panel")
 	_sig = ""  # força refresh
 	_refresh()
 	panel.visible = true
 
 func close() -> void:
 	panel.visible = false
+	remove_from_group("npc_panel")
 	msg_label.text = ""
 
 func _refresh() -> void:
