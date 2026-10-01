@@ -15,8 +15,8 @@
 | 6 | **UI/UX** | gs-ui-ux | HUD, mochila, paineis, titulo, teclas | implementado ciclo 7 (aguarda usuario) |
 | 7 | **Balanceamento** | gs-combat-balance | TTK, curvas, economia fecha | OK (ciclo 8) |
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
-| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | integrado ciclo 10 (aguarda teste 2 clientes) |
-| 10 | **QA final** | gs-qa-testing | fluxo completo, release | pendente |
+| 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | integrado ciclo 10 (aguarda usuario/teste 2 clientes) |
+| 10 | **QA final** | gs-qa-testing | fluxo completo, release | auditoria estatica ciclo 11 (5 fixes) — teste no Mac pendente |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -88,3 +88,12 @@
 - Fundacao (e47966d) estava ISOLADA: nada do jogo chamava o NetworkManager — nenhum player remoto aparecia, chat sem UI, titulo sem entrada online
 - Integrado: RemotePlayer (avatar com aparencia real + nome + interpolacao), main.gd spawna/remove/sincroniza a 15Hz, filtro por mapa, HUD com chat Enter + contador ONLINE, titulo com HOSPEDAR/CONECTAR(IP)
 - Validado headless 0 erros; teste real 2 clientes + 1 server pendente (proximo ciclo, regra da skill gs-netcode)
+
+### Area 10 — QA final (ciclo 11, 04:05+) auditoria estatica
+- BUG GRAVE 1: RemotePlayer usava @onready $Sprite mas e criado POR CODIGO (sem .tscn) — primeiro player remoto CRASHAVA ao entrar. Fix: sprite criado no _ready antes de _build_frames
+- BUG GRAVE 2: main.gd conectava NetworkManager._on_server_lost.connect(func(): ...) — connect de Callable de METODO e invalido (server_lost nunca limpava os remote players). Fix: connect direto do metodo
+- BUG 3: _rpc_chat no servidor emitia eco pro autor com GameManager.player_name (nome do SERVIDOR, nao do autor). Fix: eco unico via _relay_chat broadcast
+- BUG 4: tecla E conflitava skill E vs abrir loja (main usava Input.is_key_pressed). Fix: loja agora e tecla F (placa LOJA [F])
+- BUG 5: NOVO JOGO nao resetava skills/city2_visited/city2_unlocked — save novo herdava progresso. Fix: reset completo em title_screen.gd
+- Validado: Godot headless --import + --quit-after = 0 erros de script
+- PENDENTE (proximo ciclo): teste real 2 clientes + 1 servidor (regra gs-netcode), teste no Mac do usuario

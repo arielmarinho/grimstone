@@ -1,3 +1,9 @@
+## 2026-10-01 — v0.5.1 (ciclo 11: Area 10 QA — auditoria estatica)
+
+- `d7c964d` 5 fixes de QA: RemotePlayer sem Sprite (crash player 2), connect invalido de _on_server_lost, NOVO JOGO nao resetava skills/city2, eco de chat com nome errado no servidor, loja E->F (conflito com skill E)
+- Validado Godot headless: 0 erros de script
+- Proximo: teste real multiplayer (2 clientes + servidor) + teste no Mac
+
 ## 2026-10-01 — v0.5.0 (ciclo 10: Area 9 Multiplayer — integracao completa)
 
 - RemotePlayer novo (scripts/entities/remote_player.gd): avatar visual de outro player — sprite procedural com a APARENCIA dele (arma/cabelo/tunica/calca), nome em cima, interpolacao suave do snapshot 15Hz (teleport se >300px)
@@ -13,6 +19,19 @@
 - 12 SFX (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door) com pool de 8 players e pitch variavel
 - 3 musicas chiptune em loop com crossfade: titulo / cidade / caverna+floresta
 - Sons integrados: combate, loot, pocao, loja, UI, portao, level up, morte
+
+## v0.4.7 (ciclo 8 — Area 7 Balanceamento)
+- game_manager.gd: hp_max/mana_max DERIVADOS do level (100+10/level, 50+5/level) — save antigo nunca mais desincroniza
+- Level up estilo Tibia: NAO enche HP/mana em combate (+30/+15 parcial); fora de combate enche tudo
+- player.gd: cura fora de combate acelerada (~5% do max a cada 2s, estilo Rucoy)
+- mob.gd: XP dos mobs iniciais +75% (rat 35, slime 50, bat 40) — early game menos grind
+- shop.gd: pocoes P mais baratas (vida 20->15, mana 25->18) — primeiro minuto de jogo mais suave
+- Validado Godot headless: 0 erros de script
+
+## v0.4.6 (ciclo 7 — Area 6 UI/UX)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- Loja: titulo correto por cidade, feedback colorido de compra
+- Titulo: v0.4.5 + ESC sai
 
 # GRIMSTONE — Changelog
 
