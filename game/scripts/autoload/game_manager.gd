@@ -30,6 +30,9 @@ var quests := {}  # id -> {"progress": int, "done": bool, "claimed": bool}
 var well_fed_time: float = 0.0
 const WELL_FED_MAX: float = 600.0  # cap de 10min empilhando comidas
 
+# banco/depósito estilo Tibia: itens guardados fora da mochila (id -> qty)
+var bank := {}
+
 signal quest_done(id: String)
 
 ## sinal de quest concluida (progresso cheio, falta ENTREGAR no NPC) — HUD mostra aviso
@@ -245,6 +248,7 @@ func save_game() -> void:
 		"pants_color": pants_color, "arrows": arrows, "city2_visited": city2_visited,
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 		"quests": quests, "well_fed": int(well_fed_time),
+		"bank": bank,
 	}
 	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	f.store_string(JSON.stringify(data, "\t"))
@@ -287,4 +291,30 @@ func load_game() -> bool:
 		quests = {}
 	# comida: save antigo sem "well_fed" = 0 (não persiste entre sessões longas)
 	well_fed_time = float(int(parsed.get("well_fed", 0)))
+	# banco: save antigo sem "bank" = vazio (não perde nada)
+	bank = parsed.get("bank", {})
+	if not bank is Dictionary:
+		bank = {}
+	return true
+
+# ---------- BANCO/DEPÓSITO (estilo Tibia) ----------
+## deposita qty do item da mochila pro banco (tier conta: "espada#2" é slot próprio)
+func bank_deposit(id: String, qty: int = 1) -> bool:
+	if not bag.has(id) or bag[id] < qty:
+		return false
+	bag[id] -= qty
+	if bag[id] <= 0:
+		bag.erase(id)
+	bank[id] = int(bank.get(id, 0)) + qty
+	return true
+
+## saca qty do item do banco pra mochila (respeita BAG_MAX)
+func bank_withdraw(id: String, qty: int = 1) -> bool:
+	if not bank.has(id) or bank[id] < qty:
+		return false
+	if not add_item(id, qty):
+		return false
+	bank[id] -= qty
+	if bank[id] <= 0:
+		bank.erase(id)
 	return true
