@@ -119,6 +119,10 @@ func _build_frames() -> void:
 					texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
 				else:
 					texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		# BLINDAGEM: se TUDO falhar (PNG + fallback), procedural garante a
+		# animação — "no animation with name X" NUNCA acontece
+		if texs.is_empty():
+			texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
