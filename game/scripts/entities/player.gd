@@ -331,19 +331,78 @@ func _spawn_crit_text(pos: Vector2) -> void:
 	l.text = "CRIT!"
 	l.position = pos + Vector2(-20, -50)
 	l.add_theme_font_size_override("font_size", 14)
-	l.add_theme_color_override("font_color", Color(1.0, 0.4, 0.2))
+	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	l.add_theme_constant_override("outline_size", 4)
-	l.z_index = 50
 	get_parent().add_child(l)
 	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 25.0, 0.7)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.7)
+	tw.tween_property(l, "position:y", l.position.y - 24.0, 0.6)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
 	tw.tween_callback(l.queue_free)
 
-func _mob_in_range(rng: float):
+func _physics_process(delta: float) -> void:
+	if dead:
+		return
+	if GameManager.level > _last_level:
+		_last_level = GameManager.level
+		AudioManager.play_sfx("level_up")
+		_notify_level_up()
+	attack_cooldown = max(0.0, attack_cooldown - delta)
+	for slot in skill_cd:
+		if not skill_ready[slot]:
+			skill_cd[slot] = max(0.0, skill_cd[slot] - delta)
+			if skill_cd[slot] <= 0.0:
+				skill_ready[slot] = true
+	if buff_furia_time > 0.0:
+		buff_furia_time -= delta
+	if buff_bersek_time > 0.0:
+		buff_bersek_time -= delta
+	if buff_escudo_time > 0.0:
+		buff_escudo_time -= delta
+	if buff_grito_time > 0.0:
+		buff_grito_time -= delta
+	# REGEN estilo Tibia: mana sempre (lenta), HP so fora de combate
+	_regen_timer += delta
+	if _regen_timer >= 2.0:
+		_regen_timer = 0.0
+		var in_combat := false
+		for m in get_tree().get_nodes_in_group("mobs"):
+			if not m.dead and not m.dying and m.state == "attack" and global_position.distance_to(m.global_position) < 400.0:
+				in_combat = true
+				break
+		if GameManager.mana < GameManager.mana_max:
+			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + GameManager.level / 10)
+		if not in_combat and GameManager.hp < GameManager.hp_max:
+			# fora de combate cura rapido (estilo Rucoy): ~5% do max a cada 2s
+			var heal = max(3, int(GameManager.hp_max * 0.05))
+			GameManager.hp = min(GameManager.hp_max, GameManager.hp + heal)
+	if attacking:
+		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
+			attacking = false
+		return
+
+	var w = EQUIPS.WEAPONS[weapon]
+	var dist = global_position.distance_to(target)
+	if moving and dist > 6.0:
+		var dir = (target - global_position).normalized()
+		velocity = dir * SPEED
+		move_and_slide()
+		_update_facing(dir)
+		_play("walk")
+		var mob = _mob_in_range(w["alcance"])
+		if mob and attack_cooldown <= 0.0:
+			_attack(mob)
+	else:
+		moving = false
+		velocity = Vector2.ZERO
+		_play("idle")
+		var mob = _mob_in_range(w["alcance"])
+		if mob and attack_cooldown <= 0.0:
+			_attack(mob)
+
+func _mob_in_range(max_d: float):
 	var best = null
-	var best_d = rng
+	var best_d = max_d
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if mob.dead:
 			continue
@@ -352,67 +411,6 @@ func _mob_in_range(rng: float):
 			best_d = d
 			best = mob
 	return best
-
-# ---------- MOVIMENTO / COMBATE ----------
-func _physics_process(delta: float) -> void:
-	if dead:
-		return
-	# regen estilo Tibia: mana sempre (lenta), HP so fora de combate
-	_regen_timer += delta
-	if _regen_timer >= 2.0:
-		_regen_timer = 0.0
-		var in_combat = attacking or skill_cd["Q"] > 0.0 or skill_cd["E"] > 0.0 or skill_cd["R"] > 0.0 or skill_cd["G"] > 0.0
-		if GameManager.hp < GameManager.hp_max and not in_combat:
-			GameManager.hp = min(GameManager.hp_max, GameManager.hp + int(GameManager.hp_max * 0.05))
-		if GameManager.mana < GameManager.mana_max:
-			GameManager.mana = min(GameManager.mana_max, GameManager.mana + 1 + int(GameManager.level * 0.2))
-	# cooldowns
-	attack_cooldown = max(0.0, attack_cooldown - delta)
-	for k in skill_cd:
-		if skill_cd[k] > 0.0:
-			skill_cd[k] = max(0.0, skill_cd[k] - delta)
-		else:
-			skill_ready[k] = true
-	# buffs expiram
-	if buff_furia_time > 0.0:
-		buff_furia_time -= delta
-	if buff_bersek_time > 0.0:
-		buff_bersek_time -= delta
-	if buff_grito_time > 0.0:
-		buff_grito_time -= delta
-	if buff_escudo_time > 0.0:
-		buff_escudo_time -= delta
-	# level up check
-	if GameManager.level > _last_level:
-		_last_level = GameManager.level
-		_notify_level_up()
-		AudioManager.play_sfx("level_up")
-	# movimento
-	var dir = target - global_position
-	if moving and dir.length() > 6.0:
-		velocity = dir.normalized() * SPEED
-		move_and_slide()
-		_update_facing(dir)
-		if not attacking:
-			_play("walk")
-	else:
-		moving = false
-		if not attacking:
-			_play("idle")
-	# ataque automatico no alvo (estilo Rucoy: anda ate e ataca)
-	if attacking and target != Vector2.ZERO:
-		var tdir = target - global_position
-		var w = EQUIPS.WEAPONS[weapon]
-		if tdir.length() <= w["alcance"]:
-			if attack_cooldown <= 0.0:
-				_attack(_mob_in_range(w["alcance"]))
-				attack_cooldown = w["cd"]
-			if not moving:
-				_play("idle")
-		else:
-			velocity = tdir.normalized() * SPEED
-			move_and_slide()
-			_play("walk")
 
 func _update_facing(dir: Vector2) -> void:
 	if abs(dir.x) > abs(dir.y):
@@ -446,60 +444,66 @@ func _attack(mob) -> void:
 	else:
 		AudioManager.play_sfx("shoot" if weapon == "bow" else "cast")
 	_update_facing(mob.global_position - global_position)
-	_play("attack")
 	attacking = true
-	if w["tipo"] == "melee":
-		# dano com buff de furia/bersek/grito/duplo
-		var dmg = w["dano"]
-		if buff_furia_time > 0.0:
-			dmg = int(dmg * 1.8)
-		if buff_bersek_time > 0.0:
-			dmg = int(dmg * 2.5)
-		if buff_grito_time > 0.0:
-			dmg = int(dmg * 1.5)
-		var hits = 1
-		if buff_duplo > 0:
-			hits = 2
-			buff_duplo -= 1
-		var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
-		if crit:
-			dmg *= 2
-			_spawn_crit_text(mob.global_position)
-		for i in hits:
-			mob.take_damage(dmg)
-		# buff golpe: proximos 3 ataques x2
-		if buff_golpe > 0:
-			buff_golpe -= 1
-			mob.take_damage(dmg)
+	attack_cooldown = w["cooldown"]
+	_play("attack")
+	var dmg: int = w["dano"] + randi() % 5 - 2
+	if buff_furia_time > 0.0:
+		dmg = int(dmg * 1.8)
+	if buff_bersek_time > 0.0:
+		dmg = int(dmg * 2.5)
+	if buff_grito_time > 0.0:
+		dmg = int(dmg * 1.5)
+	if buff_perfurante and weapon == "bow":
+		dmg *= 4
+		buff_perfurante = false
+	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
+	var crit := false
+	if buff_certeiro and weapon == "bow":
+		crit = true
+		buff_certeiro = false
+	elif buff_precisao > 0 and weapon == "bow":
+		crit = true
+		buff_precisao -= 1
 	else:
-		# projeteis: flecha ou magia
-		var proj = preload("res://scripts/entities/projectile.gd").new()
-		var dmg = w["dano"]
-		if buff_furia_time > 0.0:
-			dmg = int(dmg * 1.8)
-		if buff_bersek_time > 0.0:
-			dmg = int(dmg * 2.5)
-		if buff_grito_time > 0.0:
-			dmg = int(dmg * 1.5)
-		if buff_certeiro:
-			dmg *= 3
-			buff_certeiro = false
-		if buff_perfurante:
-			dmg *= 4
-			buff_perfurante = false
-		var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
-		if crit:
-			dmg *= 2
-			_spawn_crit_text(mob.global_position)
-		proj.setup(global_position, mob.global_position, dmg, "bow" if weapon == "bow" else "staff", crit)
-		get_parent().add_child(proj)
-	# skill xp sobe com o uso (estilo Tibia)
-	GameManager.add_skill_xp(w["skill"], 2)
-	# volta pro idle depois do swing
-	var t = get_tree().create_timer(0.25)
-	t.timeout.connect(func():
-		if is_instance_valid(self) and not dead:
-			attacking = false)
+		crit = randf() < SKILLS.crit_chance(skill_lv)
+	if buff_golpe > 0:
+		dmg *= buff_golpe
+		buff_golpe = 0
+	if crit:
+		dmg *= 2
+	var hits := 1
+	if buff_duplo > 0 and w["tipo"] == "melee":
+		hits = 2
+		buff_duplo -= 1
+	for h in range(hits):
+		if w["tipo"] == "melee":
+			await get_tree().create_timer(0.3).timeout
+			if dead:
+				return
+			if is_instance_valid(mob) and not mob.dead:
+				GameManager.add_skill_xp(w["skill"], 4)
+				mob.take_damage(dmg)
+				if crit:
+					_spawn_crit_text(mob.global_position)
+		else:
+			await get_tree().create_timer(0.25).timeout
+			if dead:
+				return
+			var tgt = mob.global_position if is_instance_valid(mob) else global_position
+			var proj = preload("res://scripts/entities/projectile.gd").new()
+			proj.setup(global_position, tgt, dmg, "bow" if weapon == "bow" else "staff", crit)
+			get_parent().add_child(proj)
+			GameManager.add_skill_xp(w["skill"], 4)
+			# tiro multiplo: explosao em area ao redor do alvo
+			if _multi_target != null and is_instance_valid(_multi_target) and not _multi_target.dead:
+				for m2 in get_tree().get_nodes_in_group("mobs"):
+					if m2 != _multi_target and not m2.dead and m2.global_position.distance_to(_multi_target.global_position) < 150.0:
+						m2.take_damage(int(dmg * 0.6))
+			_multi_target = null
+
+func _show_feedback(msg: String) -> void:
+	feedback.emit(msg)
 
 func take_damage(amount: int) -> void:
 	if dead:
@@ -518,6 +522,3 @@ func die() -> void:
 	_play("death")
 	AudioManager.play_sfx("player_death")
 	print("player morreu")
-
-func _show_feedback(msg: String) -> void:
-	feedback.emit(msg)
