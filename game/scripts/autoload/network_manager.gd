@@ -247,7 +247,7 @@ func net_mob_take_damage(mob: Node, dmg: int, from_id: int) -> void:
 	var attacker = players.get(from_id, {}).get("pos", Vector2.INF)
 	if attacker != Vector2.INF and attacker.distance_to(mob.global_position) > 400.0:
 		return
-	mob.take_damage(dmg)
+	mob.take_damage(dmg, from_id)
 
 @rpc("authority", "call_remote", "unreliable_ordered")
 func _rpc_mob_state(id: int, data: Dictionary) -> void:

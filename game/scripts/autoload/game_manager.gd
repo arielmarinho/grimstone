@@ -79,7 +79,7 @@ const BESTIARY_INFO := {
 	"bat": {"nome": "Morcego Sanguíneo", "onde": "Bueiro e Floresta",
 		"desc": "Voa rápido e errado. Difícil de acertar com flecha, fácil de subestimar."},
 	"spider": {"nome": "Aranha da Floresta", "onde": "Floresta (sul da vila)",
-		"desc": "Tecete teias entre as árvores. Venenosa, rápida e não gosta de visitantes."},
+		"desc": "Tece teias entre as árvores. Venenosa, rápida e não gosta de visitantes."},
 	"wolf": {"nome": "Lobo Cinzento", "onde": "Floresta (sul da vila)",
 		"desc": "Caçador nato da floresta. Morde forte e persegue longe. Leve poção antes de encarar."},
 	"goblin": {"nome": "Goblin Saqueador", "onde": "Floresta (sul da vila)",
@@ -92,11 +92,14 @@ const BESTIARY_INFO := {
 
 
 func quest_available(id: String) -> bool:
-	if quests.has(id) and quests[id].get("done", false):
-		return false  # aceita/entregue: nao aparece de novo
 	var q: Dictionary = QUESTS.get(id, {})
 	var req: String = q.get("req", "")
-	return req == "" or (quests.has(req) and quests[req].get("claimed", false))
+	if req != "" and not (quests.has(req) and quests[req].get("claimed", false)):
+		return false
+	# done mas NAO entregue: continua disponivel pra ENTREGAR no NPC (so some apos claim)
+	if quests.has(id) and quests[id].get("claimed", false):
+		return false
+	return true
 
 func quest_on_kill(mob_type: String) -> void:
 	for id in QUESTS:
