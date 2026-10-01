@@ -14,12 +14,15 @@ const ITEMS = {
 }
 
 static func draw_icon(id: String, size: int = 24) -> Texture2D:
-	# 1) PNG real (assets_override > assets/icons)
+	# 1) PNG real (assets_override > assets/icons) — com strip de magenta
 	for base in ["res://assets_override/icons/", "res://assets/icons/"]:
 		var path = base + id + ".png"
 		if ResourceLoader.exists(path):
 			var tex = load(path)
 			if tex != null:
+				var img = tex.get_image()
+				if img != null:
+					return ImageTexture.create_from_image(_strip_magenta(img))
 				return tex
 	# 2) PNG embutido (base64 da arte pixel real)
 	var embedded = preload("res://scripts/autoload/icons_embedded.gd")
@@ -27,7 +30,7 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 	if png_bytes.size() > 0:
 		var img = Image.new()
 		if img.load_png_from_buffer(png_bytes) == OK:
-			return ImageTexture.create_from_image(img)
+			return ImageTexture.create_from_image(_strip_magenta(img))
 	# 3) fallback: desenha por codigo
 	var img2 = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img2.fill(Color(0, 0, 0, 0))
@@ -55,6 +58,15 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 			var eq = preload("res://scripts/autoload/equips.gd")
 			eq.draw_weapon(img2, wid, int(size * 0.2), 4, 0, false)
 	return ImageTexture.create_from_image(img2)
+
+static func _strip_magenta(img: Image) -> Image:
+	img.convert(Image.FORMAT_RGBA8)
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			var c = img.get_pixel(x, y)
+			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+	return img
 
 static func _ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, c: Color) -> void:
 	for j in range(int(cy - ry) - 1, int(cy + ry) + 2):

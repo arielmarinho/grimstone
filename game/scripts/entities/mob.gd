@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, loot
-## Timers como FILHOS do mob: se o mob for liberado (troca de mapa),
-## o timer morre junto — zero erros de instancia liberada
+## Timers como FILHOS do mob (morrem com ele — sem await solto)
+## Strip de magenta em runtime: fundo rosa nunca aparece
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const LOOT = preload("res://scripts/entities/loot_table.gd")
@@ -34,7 +34,6 @@ func _ready() -> void:
 	wander_target = global_position
 	max_hp = max_hp + randi() % 5 - 2
 	hp = max_hp
-	# timers filhos (morrem com o mob — sem await solto)
 	var atk := Timer.new()
 	atk.one_shot = true
 	atk.name = "AtkTimer"
@@ -65,10 +64,22 @@ func _build_frames() -> void:
 		sf.set_animation_speed(anim, 8.0)
 		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
 		for t in texs:
-			sf.add_frame(anim, t)
+			sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
 	sprite.play("idle")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+func _strip_tex(t: Texture2D) -> Texture2D:
+	var im = t.get_image()
+	if im == null:
+		return t
+	im.convert(Image.FORMAT_RGBA8)
+	for y in range(im.get_height()):
+		for x in range(im.get_width()):
+			var c = im.get_pixel(x, y)
+			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+				im.set_pixel(x, y, Color(0, 0, 0, 0))
+	return ImageTexture.create_from_image(im)
 
 func _physics_process(delta: float) -> void:
 	if dying or dead:
@@ -142,7 +153,6 @@ func die() -> void:
 	sprite.play("death")
 	GameManager.add_xp(xp_reward)
 	LOOT.roll_drop(global_position, get_parent())
-	print("rato morreu, respawn em ", respawn_time, "s")
 	$RespawnTimer.start(respawn_time)
 
 func _do_respawn() -> void:

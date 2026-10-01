@@ -42,10 +42,22 @@ func _build_frames() -> void:
 		sf.set_animation_speed(anim, 8.0)
 		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
 		for t in texs:
-			sf.add_frame(anim, t)
+			sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
 	sprite.play("idle")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+func _strip_tex(t: Texture2D) -> Texture2D:
+	var im = t.get_image()
+	if im == null:
+		return t
+	im.convert(Image.FORMAT_RGBA8)
+	for y in range(im.get_height()):
+		for x in range(im.get_width()):
+			var c = im.get_pixel(x, y)
+			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+				im.set_pixel(x, y, Color(0, 0, 0, 0))
+	return ImageTexture.create_from_image(im)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if dead:
@@ -144,7 +156,6 @@ func _attack(mob) -> void:
 		if not dead and is_instance_valid(mob) and not mob.dead:
 			GameManager.add_skill_xp(w["skill"], 4)
 			mob.take_damage(dano)
-			_spawn_damage_number(mob.global_position, dano)
 	else:
 		await get_tree().create_timer(0.25).timeout
 		if dead:
@@ -153,20 +164,6 @@ func _attack(mob) -> void:
 		proj.setup(global_position, mob.global_position, dano, "bow" if weapon == "bow" else "staff")
 		get_parent().add_child(proj)
 		GameManager.add_skill_xp(w["skill"], 4)
-
-func _spawn_damage_number(pos: Vector2, amount: int) -> void:
-	var lbl = Label.new()
-	lbl.text = str(amount)
-	lbl.position = pos + Vector2(-8, -50)
-	lbl.add_theme_font_size_override("font_size", 18)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	lbl.add_theme_constant_override("outline_size", 3)
-	get_parent().add_child(lbl)
-	var tw = lbl.create_tween()
-	tw.tween_property(lbl, "position:y", lbl.position.y - 30, 0.6)
-	tw.parallel().tween_property(lbl, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(lbl.queue_free)
 
 func take_damage(amount: int) -> void:
 	if dead:

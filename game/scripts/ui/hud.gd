@@ -203,23 +203,8 @@ func _use_bag_item(id: String) -> void:
 	if it["tipo"] == "arma":
 		player_ref.weapon = it["arma"]
 		player_ref._build_frames()
-		_float_center("Equipou: " + it["nome"])
 	elif it["tipo"] == "uso":
-		if GameManager.use_item(id):
-			_float_center("Usou: " + it["nome"])
-
-func _float_center(txt: String) -> void:
-	var lbl = Label.new()
-	lbl.text = txt
-	lbl.position = Vector2(560, 200)
-	lbl.add_theme_font_size_override("font_size", 16)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.6))
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	lbl.add_theme_constant_override("outline_size", 3)
-	add_child(lbl)
-	var tw = lbl.create_tween()
-	tw.tween_property(lbl, "modulate:a", 0.0, 1.2)
-	tw.tween_callback(lbl.queue_free)
+		GameManager.use_item(id)
 
 # ---------- TELA DE MORTE ----------
 func _build_death_screen() -> void:

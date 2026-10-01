@@ -35,24 +35,7 @@ func _pickup() -> void:
 		return
 	if it["tipo"] == "moeda":
 		GameManager.coins += qty
-		_float_text("+%d moeda%s" % [qty, "s" if qty > 1 else ""])
 	else:
 		if not GameManager.add_item(item_id, qty):
-			_float_text("Mochila cheia!")
 			return
-		_float_text("+%d %s" % [qty, it["nome"]])
 	queue_free()
-
-func _float_text(txt: String) -> void:
-	var lbl = Label.new()
-	lbl.text = txt
-	lbl.position = global_position + Vector2(-30, -46)
-	lbl.add_theme_font_size_override("font_size", 13)
-	lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.6))
-	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	lbl.add_theme_constant_override("outline_size", 3)
-	get_parent().add_child(lbl)
-	var tw = lbl.create_tween()
-	tw.tween_property(lbl, "position:y", lbl.position.y - 24, 0.8)
-	tw.parallel().tween_property(lbl, "modulate:a", 0.0, 0.8)
-	tw.tween_callback(lbl.queue_free)
