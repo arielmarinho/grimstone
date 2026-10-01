@@ -15,7 +15,7 @@ class FakeGM:
 	func quest_state(id: String) -> Dictionary:
 		return quests.get(id, {"progress": 0, "done": false, "claimed": false})
 	func quest_available(id: String) -> bool:
-		if quests.has(id) and quests[id].get("done", false):
+		if quests.has(id) and quests[id].get("claimed", false):
 			return false
 		var q: Dictionary = QUESTS.get(id, {})
 		var req: String = q.get("req", "")
