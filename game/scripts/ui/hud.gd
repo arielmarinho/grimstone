@@ -1,150 +1,148 @@
 extends CanvasLayer
-## HUD: barras, hotbar (1-4), SKILLS Q/E com botões (estilo Rucoy), flechas,
-## mochila (B), roupas+calça (C), tela de skills (K), morte
+## HUD — barras hp/mana/xp, hotbar armas 1-4, skills Q/E/R/G, mochila (B),
+## roupas (C), skills (K), loja (E na cidade), tela de morte, feedback central
 
-const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
-const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 const SKILLS = preload("res://scripts/autoload/skills_db.gd")
-
-var hp_bar: ProgressBar
-var mana_bar: ProgressBar
-var xp_bar: ProgressBar
-var hp_num: Label
-var mana_num: Label
-var xp_num: Label
-var map_label: Label
-var class_label: Label
-var skills_label: Label
-var coins_label: Label
-var arrows_label: Label
-var bag_panel: Control
-var bag_grid: GridContainer
-var death_screen: Control
-var cloth_panel: Control
-var skills_panel: Control
-var preview: TextureRect
-var player_ref: Node = null
-var hotbar_slots: Array = []
-var skill_btns := {}
-var _bag_sig: String = ""
-var feedback_label: Label
-var _feedback_tween: Tween
+const EQUIPS = preload("res://scripts/autoload/equips.gd")
 
 const WEAPON_KEYS = ["sword", "axe", "bow", "staff"]
 
+var player_ref = null
+var hotbar_slots: Array = []
+var skill_btns := {}
+var bag_panel: Panel
+var cloth_panel: Panel
+var skills_panel: Panel
+var bag_grid: GridContainer
+var cloth_grid: GridContainer
+var skills_grid: GridContainer
+var bag_sig := ""
+var feedback_label: Label
+var feedback_time: float = 0.0
+var death_screen: Control
+var hp_bar: ProgressBar
+var mana_bar: ProgressBar
+var xp_bar: ProgressBar
+var lvl_label: Label
+var coins_label: Label
+var hint_label: Label
+
+callable _dummy_guard
+
 func _ready() -> void:
-	hp_bar = _make_bar(Color(0.85, 0.2, 0.2), Vector2(20, 16))
-	mana_bar = _make_bar(Color(0.25, 0.45, 0.9), Vector2(20, 40))
-	xp_bar = _make_bar(Color(0.95, 0.6, 0.15), Vector2(20, 64))
-	hp_num = _make_label(Vector2(310, 16), 12, Color(1, 1, 1))
-	mana_num = _make_label(Vector2(310, 40), 12, Color(1, 1, 1))
-	xp_num = _make_label(Vector2(310, 64), 12, Color(1, 1, 1))
-	map_label = _make_label(Vector2(20, 92), 15, Color(1, 1, 1))
-	class_label = _make_label(Vector2(20, 114), 14, Color(1.0, 0.85, 0.4))
-	skills_label = _make_label(Vector2(20, 136), 12, Color(0.8, 0.9, 1.0))
-	coins_label = _make_label(Vector2(20, 158), 14, Color(0.95, 0.8, 0.25))
-	arrows_label = _make_label(Vector2(20, 180), 14, Color(0.8, 0.7, 0.5))
+	build_bars()
 	_build_hotbar()
 	_build_skill_buttons()
-	_build_bag()
-	_build_death_screen()
-	_build_cloth_panel()
-	_build_skills_panel()
-	_build_feedback()
+	build_bag()
+	build_cloth_panel()
+	build_skills_panel()
+	build_death_screen()
+	build_feedback()
+	build_hint()
 
-func _build_feedback() -> void:
-	feedback_label = _make_label(Vector2(0, 590), 16, Color(1.0, 0.75, 0.3))
-	feedback_label.size = Vector2(1280, 30)
-	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	feedback_label.visible = false
-	add_child(feedback_label)
-
-func show_feedback(msg: String) -> void:
-	feedback_label.text = msg
-	feedback_label.visible = true
-	feedback_label.modulate.a = 1.0
-	if _feedback_tween != null and _feedback_tween.is_valid():
-		_feedback_tween.kill()
-	_feedback_tween = create_tween()
-	_feedback_tween.tween_interval(2.0)
-	_feedback_tween.tween_property(feedback_label, "modulate:a", 0.0, 0.6)
-	_feedback_tween.tween_callback(func(): feedback_label.visible = false)
-
-func _make_label(pos: Vector2, size: int, color: Color) -> Label:
-	var l = Label.new()
-	l.position = pos
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	l.add_theme_constant_override("outline_size", 3)
-	return l
-
-func set_player(p: Node) -> void:
+func set_player(p) -> void:
 	player_ref = p
-	if p != null and not p.feedback.is_connected(show_feedback):
-		p.feedback.connect(show_feedback)
+	if p != null:
+		p.feedback.connect(_on_feedback)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if player_ref == null:
+		return
 	hp_bar.value = float(GameManager.hp) / float(GameManager.hp_max) * 100.0
 	mana_bar.value = float(GameManager.mana) / float(GameManager.mana_max) * 100.0
-	var prev_xp = GameManager.xp_for_level(GameManager.level)
-	var next_xp = GameManager.xp_for_level(GameManager.level + 1)
-	xp_bar.value = float(GameManager.xp - prev_xp) / float(next_xp - prev_xp) * 100.0
-	hp_num.text = "%d / %d" % [GameManager.hp, GameManager.hp_max]
-	mana_num.text = "%d / %d" % [GameManager.mana, GameManager.mana_max]
-	xp_num.text = "%d XP" % (GameManager.xp - prev_xp)
-	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
-	arrows_label.text = "Flechas: %d" % GameManager.arrows
-	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
-	if player_ref != null:
-		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills]" % [w["classe"], w["nome"]]
-		var parts = []
-		for skill in GameManager.skills:
-			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
-		skills_label.text = " | ".join(parts)
-		_process_hotbar_highlight()
-		_process_skill_buttons()
-		if player_ref.dead and not death_screen.visible:
-			death_screen.visible = true
-		elif not player_ref.dead and death_screen.visible:
-			death_screen.visible = false
-	coins_label.text = "Moedas: %d" % GameManager.coins
+	xp_bar.value = float(GameManager.xp) / float(GameManager.xp_next) * 100.0
+	lvl_label.text = "Nv %d" % GameManager.level
+	coins_label.text = "%d moedas" % GameManager.coins
+	_process_skill_buttons()
+	# feedback central some depois de 2s
+	if feedback_time > 0.0:
+		feedback_time -= delta
+		if feedback_time <= 0.0:
+			feedback_label.visible = false
+	# refresh da mochila so quando o conteudo muda (assinatura id:qty)
 	if bag_panel.visible:
-		_refresh_bag()
+		var sig := ""
+		for id in GameManager.bag:
+			if GameManager.bag[id] > 0:
+				sig += "%s:%d," % [id, GameManager.bag[id]]
+		if sig != bag_sig:
+			bag_sig = sig
+			refresh_bag()
 
-func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
-	var bar = ProgressBar.new()
-	bar.position = pos
-	bar.size = Vector2(280, 20)
-	bar.max_value = 100.0
-	bar.show_percentage = false
+func build_bars() -> void:
+	# painel de barras topo-esquerda
+	var panel = Panel.new()
+	panel.position = Vector2(10, 10)
+	panel.size = Vector2(240, 92)
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.08, 0.07, 0.1, 0.85)
+	st.set_corner_radius_all(8)
+	panel.add_theme_stylebox_override("panel", st)
+	add_child(panel)
+	hp_bar = _bar(panel, Color(0.75, 0.2, 0.2), Vector2(10, 8))
+	mana_bar = _bar(panel, Color(0.25, 0.4, 0.85), Vector2(10, 32))
+	xp_bar = _bar(panel, Color(0.2, 0.7, 0.3), Vector2(10, 56))
+	lvl_label = _make_label("Nv 1", 16)
+	lvl_label.position = Vector2(190, 8)
+	panel.add_child(lvl_label)
+	coins_label = _make_label("0 moedas", 12)
+	coins_label.position = Vector2(190, 34)
+	panel.add_child(coins_label)
+
+func _bar(parent: Control, color: Color, pos: Vector2) -> ProgressBar:
+	var b = ProgressBar.new()
+	b.position = pos
+	b.size = Vector2(170, 18)
+	b.min_value = 0
+	b.max_value = 100
+	b.value = 100
+	b.show_percentage = false
 	var bg = StyleBoxFlat.new()
-	bg.bg_color = Color(0.1, 0.1, 0.12, 0.9)
+	bg.bg_color = Color(0.1, 0.1, 0.12)
 	bg.set_corner_radius_all(4)
 	var fg = StyleBoxFlat.new()
 	fg.bg_color = color
 	fg.set_corner_radius_all(4)
-	bar.add_theme_stylebox_override("background", bg)
-	bar.add_theme_stylebox_override("fill", fg)
-	add_child(bar)
-	return bar
+	b.add_theme_stylebox_override("background", bg)
+	b.add_theme_stylebox_override("fill", fg)
+	parent.add_child(b)
+	return b
+
+func _make_label(txt: String, fsize: int) -> Label:
+	var l = Label.new()
+	l.text = txt
+	l.add_theme_font_size_override("font_size", fsize)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_constant_override("outline_size", 4)
+	return l
 
 # ---------- HOTBAR DE ARMAS (1-4) ----------
 func _build_hotbar() -> void:
 	for i in range(4):
 		var slot = Button.new()
-		slot.position = Vector2(560 + i * 46, 640)
-		slot.size = Vector2(42, 42)
-		var icon = TextureRect.new()
-		icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
-		icon.position = Vector2(7, 7)
-		icon.custom_minimum_size = Vector2(28, 28)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(icon)
+		slot.position = Vector2(10 + i * 58, 560)
+		slot.size = Vector2(52, 52)
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.12, 0.11, 0.14, 0.9)
+		st.set_corner_radius_all(8)
+		st.set_border_width_all(2)
+		st.border_color = Color(0.4, 0.35, 0.25)
+		slot.add_theme_stylebox_override("normal", st)
+		var sth = st.duplicate()
+		sth.border_color = Color(0.9, 0.75, 0.3)
+		slot.add_theme_stylebox_override("hover", sth)
+		slot.add_theme_stylebox_override("pressed", sth)
+		slot.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		var ic = TextureRect.new()
+		ic.name = "Icon"
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.position = Vector2(8, 8)
+		ic.size = Vector2(36, 36)
+		ic.texture = ITEMS_DB.get_icon(WEAPON_KEYS[i])
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(ic)
 		var num = Label.new()
 		num.text = str(i + 1)
 		num.position = Vector2(3, 2)
@@ -161,42 +159,51 @@ func _select_weapon(wid: String) -> void:
 		player_ref.weapon = wid
 		player_ref._build_frames()
 
-func _process_hotbar_highlight() -> void:
-	for i in range(4):
-		var slot = hotbar_slots[i]
-		var stn = StyleBoxFlat.new()
-		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
-		stn.set_corner_radius_all(8)
-		stn.set_border_width_all(2)
-		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
-		slot.add_theme_stylebox_override("normal", stn)
-
-# ---------- BOTÕES DE SKILL (Q/E, estilo Rucoy) ----------
+# ---------- SKILLS Q/E/R/G ----------
 func _build_skill_buttons() -> void:
 	var slots = ["Q", "E", "R", "G"]
 	for i in range(slots.size()):
-		var slot: String = slots[i]
 		var btn = Button.new()
-		btn.position = Vector2(710 + i * 50, 640)
-		btn.size = Vector2(46, 46)
-		var key_l = Label.new()
-		key_l.text = slot
-		key_l.position = Vector2(4, 2)
-		key_l.add_theme_font_size_override("font_size", 13)
-		key_l.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-		key_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		btn.add_child(key_l)
+		btn.position = Vector2(10 + i * 58, 620)
+		btn.size = Vector2(52, 52)
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.12, 0.11, 0.14, 0.92)
+		st.set_corner_radius_all(8)
+		st.set_border_width_all(2)
+		st.border_color = Color(0.35, 0.4, 0.55)
+		btn.add_theme_stylebox_override("normal", st)
+		var sth = st.duplicate()
+		sth.border_color = Color(0.6, 0.7, 1.0)
+		btn.add_theme_stylebox_override("hover", sth)
+		btn.add_theme_stylebox_override("pressed", sth)
+		btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		var name_l = Label.new()
 		name_l.name = "SkillName"
-		name_l.position = Vector2(2, 26)
-		name_l.add_theme_font_size_override("font_size", 8)
-		name_l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
+		name_l.text = "???"
+		name_l.position = Vector2(2, 4)
+		name_l.size = Vector2(48, 20)
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		name_l.add_theme_font_size_override("font_size", 9)
+		name_l.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(name_l)
+		var key_l = Label.new()
+		key_l.name = "KeyLabel"
+		key_l.text = slots[i]
+		key_l.position = Vector2(2, 22)
+		key_l.size = Vector2(48, 18)
+		key_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		key_l.add_theme_font_size_override("font_size", 12)
+		key_l.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0))
+		key_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(key_l)
 		var cd_l = Label.new()
 		cd_l.name = "CdLabel"
-		cd_l.position = Vector2(14, 12)
-		cd_l.add_theme_font_size_override("font_size", 14)
+		cd_l.text = ""
+		cd_l.position = Vector2(2, 14)
+		cd_l.size = Vector2(48, 24)
+		cd_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cd_l.add_theme_font_size_override("font_size", 16)
 		cd_l.add_theme_color_override("font_color", Color(1, 1, 1))
 		cd_l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 		cd_l.add_theme_constant_override("outline_size", 4)
@@ -238,59 +245,65 @@ func _process_skill_buttons() -> void:
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
 		stn.set_corner_radius_all(8)
 		stn.set_border_width_all(2)
-		if not sk.is_empty() and not SKILLS.skill_unlocked(sk):
-			stn.border_color = Color(0.45, 0.45, 0.5)
+		if sk.is_empty() or not SKILLS.skill_unlocked(sk):
+			stn.border_color = Color(0.3, 0.3, 0.3)
 		else:
-			stn.border_color = Color(0.4, 0.8, 0.4) if player_ref.skill_ready[slot] else Color(0.6, 0.2, 0.2)
+			stn.border_color = Color(0.35, 0.4, 0.55)
 		btn.add_theme_stylebox_override("normal", stn)
 
-# ---------- MOCHILA (tecla B) ----------
-func _build_bag() -> void:
-	bag_panel = Control.new()
+# ---------- MOCHILA (B) ----------
+func build_bag() -> void:
+	bag_panel = Panel.new()
+	bag_panel.position = Vector2(340, 100)
+	bag_panel.size = Vector2(280, 320)
 	bag_panel.visible = false
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.1, 0.09, 0.12, 0.95)
+	st.set_corner_radius_all(10)
+	st.set_border_width_all(2)
+	st.border_color = Color(0.45, 0.38, 0.22)
+	bag_panel.add_theme_stylebox_override("panel", st)
 	add_child(bag_panel)
-	var bg = ColorRect.new()
-	bg.position = Vector2(495, 130)
-	bg.size = Vector2(290, 380)
-	bg.color = Color(0.1, 0.09, 0.12, 0.95)
-	bag_panel.add_child(bg)
-	var title = _make_label(Vector2(510, 140), 18, Color(1, 1, 1))
-	title.text = "MOCHILA"
+	var title = _make_label("MOCHILA (B)", 16)
+	title.position = Vector2(12, 8)
 	bag_panel.add_child(title)
 	bag_grid = GridContainer.new()
 	bag_grid.columns = 5
-	bag_grid.position = Vector2(510, 175)
-	bag_grid.add_theme_constant_override("h_separation", 6)
-	bag_grid.add_theme_constant_override("v_separation", 6)
+	bag_grid.position = Vector2(12, 40)
 	bag_panel.add_child(bag_grid)
 
-func _refresh_bag() -> void:
-	var sig = str(GameManager.bag)
-	if sig == _bag_sig:
-		return
-	_bag_sig = sig
+func refresh_bag() -> void:
 	for c in bag_grid.get_children():
 		c.queue_free()
-	var ids = GameManager.bag.keys()
-	for id in ids:
+	for id in GameManager.bag:
 		var qty: int = GameManager.bag[id]
+		if qty <= 0:
+			continue
 		var slot = Button.new()
-		slot.custom_minimum_size = Vector2(48, 48)
-		var icon = TextureRect.new()
-		icon.texture = ITEMS_DB.draw_icon(id, 32)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(icon)
-		var q = Label.new()
-		q.text = "x%d" % qty
-		q.position = Vector2(2, 2)
-		q.add_theme_font_size_override("font_size", 10)
-		q.add_theme_color_override("font_color", Color(1, 1, 1))
-		q.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-		q.add_theme_constant_override("outline_size", 3)
-		q.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(q)
+		slot.custom_minimum_size = Vector2(46, 46)
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.16, 0.14, 0.18, 0.95)
+		st.set_corner_radius_all(6)
+		slot.add_theme_stylebox_override("normal", st)
+		slot.add_theme_stylebox_override("hover", st.duplicate())
+		slot.add_theme_stylebox_override("pressed", st.duplicate())
+		slot.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		var ic = TextureRect.new()
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.position = Vector2(5, 5)
+		ic.size = Vector2(36, 36)
+		ic.texture = ITEMS_DB.draw_icon(id)
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(ic)
+		var qty = Label.new()
+		qty.text = str(GameManager.bag[id])
+		qty.position = Vector2(30, 28)
+		qty.add_theme_font_size_override("font_size", 11)
+		qty.add_theme_color_override("font_color", Color(1, 1, 0.8))
+		qty.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(qty)
+		slot.tooltip_text = ITEMS_DB.ITEMS[id]["nome"]
 		slot.pressed.connect(_use_bag_item.bind(id))
 		bag_grid.add_child(slot)
 
@@ -311,156 +324,254 @@ func _use_bag_item(id: String) -> void:
 func _build_death_screen() -> void:
 	death_screen = Control.new()
 	death_screen.visible = false
-	add_child(death_screen)
+	death_screen.set_anchors_preset(Control.PRESET_FULL_RECT)
 	var dim = ColorRect.new()
-	dim.color = Color(0.3, 0.0, 0.0, 0.6)
+	dim.color = Color(0.4, 0.05, 0.05, 0.55)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	death_screen.add_child(dim)
-	var txt = Label.new()
-	txt.text = "VOCE MORREU"
-	txt.position = Vector2(0, 280)
-	txt.size = Vector2(1280, 60)
-	txt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	txt.add_theme_font_size_override("font_size", 48)
-	txt.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2))
-	txt.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	txt.add_theme_constant_override("outline_size", 8)
-	death_screen.add_child(txt)
-	var hint = Label.new()
-	hint.text = "Renascendo na cidade..."
-	hint.position = Vector2(0, 350)
-	hint.size = Vector2(1280, 30)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 16)
-	hint.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	death_screen.add_child(hint)
+	var msg = _make_label("VOCE MORREU", 42)
+	msg.position = Vector2(440, 260)
+	msg.add_theme_color_override("font_color", Color(0.95, 0.25, 0.2))
+	death_screen.add_child(msg)
+	var btn = Button.new()
+	btn.text = "RENASCER NA CIDADE"
+	btn.position = Vector2(540, 360)
+	btn.size = Vector2(200, 50)
+	btn.pressed.connect(_respawn)
+	death_screen.add_child(btn)
+	add_child(death_screen)
 
-# ---------- ROUPAS (tecla C) ----------
-func _build_cloth_panel() -> void:
-	cloth_panel = Control.new()
+func _respawn() -> void:
+	death_screen.visible = false
+	if player_ref != null:
+		GameManager.hp = GameManager.hp_max
+		GameManager.mana = GameManager.mana_max
+		player_ref.dead = false
+		player_ref._play("idle")
+		get_parent().switch_map("city1")
+
+# ---------- ROUPAS (C) ----------
+func build_cloth_panel() -> void:
+	cloth_panel = Panel.new()
+	cloth_panel.position = Vector2(340, 100)
+	cloth_panel.size = Vector2(280, 380)
 	cloth_panel.visible = false
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.1, 0.09, 0.12, 0.95)
+	st.set_corner_radius_all(10)
+	st.set_border_width_all(2)
+	st.border_color = Color(0.3, 0.4, 0.55)
+	cloth_panel.add_theme_stylebox_override("panel", st)
 	add_child(cloth_panel)
-	var bg = ColorRect.new()
-	bg.position = Vector2(820, 130)
-	bg.size = Vector2(300, 420)
-	bg.color = Color(0.1, 0.09, 0.12, 0.95)
-	cloth_panel.add_child(bg)
-	var title = _make_label(Vector2(835, 140), 18, Color(1, 1, 1))
-	title.text = "ROUPAS"
+	var title = _make_label("APARENCIA (C)", 16)
+	title.position = Vector2(12, 8)
 	cloth_panel.add_child(title)
-	# preview do personagem
-	preview = TextureRect.new()
-	preview.position = Vector2(920, 170)
-	preview.custom_minimum_size = Vector2(96, 96)
-	preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	preview.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	cloth_panel.add_child(preview)
-	var y := 280.0
-	var t_label = _make_label(Vector2(835, y), 13, Color(1.0, 0.85, 0.4))
-	t_label.text = "TUNICA (T):"
+	# preview do knight com as cores atuais
+	var prev = TextureRect.new()
+	prev.name = "Preview"
+	prev.position = Vector2(90, 40)
+	prev.size = Vector2(96, 96)
+	prev.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	prev.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	cloth_panel.add_child(prev)
+	var t_label = _make_label("Tunica (T):", 12)
+	t_label.position = Vector2(12, 150)
 	cloth_panel.add_child(t_label)
-	y += 24
-	for c_name in EQUIPS.CLOTHES_COLORS.keys():
-		var sw = Button.new()
-		sw.text = c_name
-		sw.position = Vector2(835, y)
-		sw.size = Vector2(130, 26)
-		sw.add_theme_font_size_override("font_size", 11)
-		sw.pressed.connect(_set_tunic.bind(c_name))
-		cloth_panel.add_child(sw)
-		y += 30
-	var h_label = _make_label(Vector2(835, y), 13, Color(1.0, 0.85, 0.4))
-	h_label.text = "CABELO (Y):"
+	cloth_grid = GridContainer.new()
+	cloth_grid.columns = 4
+	cloth_grid.position = Vector2(12, 172)
+	cloth_panel.add_child(cloth_grid)
+	var h_label = _make_label("Cabelo (Y):", 12)
+	h_label.position = Vector2(12, 240)
 	cloth_panel.add_child(h_label)
-	y += 24
-	for c_name in EQUIPS.CLOTHES_COLORS.keys():
-		var sw2 = Button.new()
-		sw2.text = c_name
-		sw2.position = Vector2(835, y)
-		sw2.size = Vector2(130, 26)
-		sw2.add_theme_font_size_override("font_size", 11)
-		sw2.pressed.connect(_set_hair.bind(c_name))
-		cloth_panel.add_child(sw2)
-		y += 30
-	var p_label = _make_label(Vector2(835, y), 13, Color(1.0, 0.85, 0.4))
-	p_label.text = "CALCA (U):"
+	var hair_grid = GridContainer.new()
+	hair_grid.name = "HairGrid"
+	hair_grid.columns = 4
+	hair_grid.position = Vector2(12, 262)
+	cloth_panel.add_child(hair_grid)
+	var p_label = _make_label("Calca (U):", 12)
+	p_label.position = Vector2(12, 310)
 	cloth_panel.add_child(p_label)
-	y += 24
-	for p_name in EQUIPS.PANTS_COLORS.keys():
+	var pants_grid = GridContainer.new()
+	pants_grid.name = "PantsGrid"
+	pants_grid.columns = 4
+	pants_grid.position = Vector2(12, 332)
+	cloth_panel.add_child(pants_grid)
+	refresh_cloth()
+
+func refresh_cloth() -> void:
+	# preview: knight com as cores atuais
+	var prev: TextureRect = cloth_panel.get_node("Preview")
+	var texs = TEXHELPER.load_sheet_custom("res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png", player_ref.weapon if player_ref else "sword", player_ref.hair_color if player_ref else "castanho", player_ref.tunic_color if player_ref else "castanho", player_ref.pants_color if player_ref else "marrom")
+	if texs.size() > 0:
+		prev.texture = texs[0]
+	for c in cloth_grid.get_children():
+		c.queue_free()
+	for c in cloth_panel.get_node("HairGrid").get_children():
+		c.queue_free()
+	for c in cloth_panel.get_node("PantsGrid").get_children():
+		c.queue_free()
+	for c_name in EQUIPS.CLOTHES_COLORS:
+		var sw = Button.new()
+		sw.custom_minimum_size = Vector2(40, 30)
+		sw.text = c_name.substr(0, 4)
+		var col: Color = EQUIPS.CLOTHES_COLORS[c_name]
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(col.r, col.g, col.b, 0.9)
+		st.set_corner_radius_all(5)
+		sw.add_theme_stylebox_override("normal", st)
+		sw.add_theme_stylebox_override("hover", st.duplicate())
+		sw.add_theme_stylebox_override("pressed", st.duplicate())
+		sw.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		sw.pressed.connect(_set_tunic.bind(c_name))
+		cloth_grid.add_child(sw)
+	for c_name in EQUIPS.CLOTHES_COLORS:
+		var sw2 = Button.new()
+		sw2.custom_minimum_size = Vector2(40, 30)
+		sw2.text = c_name.substr(0, 4)
+		var col2: Color = EQUIPS.CLOTHES_COLORS[c_name]
+		var st2 = StyleBoxFlat.new()
+		st2.bg_color = Color(col2.r, col2.g, col2.b, 0.9)
+		st2.set_corner_radius_all(5)
+		sw2.add_theme_stylebox_override("normal", st2)
+		sw2.add_theme_stylebox_override("hover", st2.duplicate())
+		sw2.add_theme_stylebox_override("pressed", st2.duplicate())
+		sw2.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		sw2.pressed.connect(_set_hair.bind(c_name))
+		cloth_panel.get_node("HairGrid").add_child(sw2)
+	for p_name in EQUIPS.PANTS_COLORS:
 		var sw3 = Button.new()
-		sw3.text = p_name
-		sw3.position = Vector2(835, y)
-		sw3.size = Vector2(130, 26)
-		sw3.add_theme_font_size_override("font_size", 11)
+		sw3.custom_minimum_size = Vector2(40, 30)
+		sw3.text = p_name.substr(0, 4)
+		var col3: Color = EQUIPS.PANTS_COLORS[p_name]
+		var st3 = StyleBoxFlat.new()
+		st3.bg_color = Color(col3.r, col3.g, col3.b, 0.9)
+		st3.set_corner_radius_all(5)
+		sw3.add_theme_stylebox_override("normal", st3)
+		sw3.add_theme_stylebox_override("hover", st3.duplicate())
+		sw3.add_theme_stylebox_override("pressed", st3.duplicate())
+		sw3.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		sw3.pressed.connect(_set_pants.bind(p_name))
-		cloth_panel.add_child(sw3)
-		y += 30
+		cloth_panel.get_node("PantsGrid").add_child(sw3)
 
 func _set_tunic(c_name: String) -> void:
 	if player_ref != null:
 		player_ref.tunic_color = c_name
 		player_ref._build_frames()
+		refresh_cloth()
 
 func _set_hair(c_name: String) -> void:
 	if player_ref != null:
 		player_ref.hair_color = c_name
 		player_ref._build_frames()
+		refresh_cloth()
 
 func _set_pants(p_name: String) -> void:
 	if player_ref != null:
 		player_ref.pants_color = p_name
 		player_ref._build_frames()
+		refresh_cloth()
 
-# ---------- TELA DE SKILLS (tecla K) ----------
-func _build_skills_panel() -> void:
-	skills_panel = Control.new()
+# ---------- SKILLS (K) ----------
+func build_skills_panel() -> void:
+	skills_panel = Panel.new()
+	skills_panel.position = Vector2(340, 100)
+	skills_panel.size = Vector2(320, 400)
 	skills_panel.visible = false
+	var st = StyleBoxFlat.new()
+	st.bg_color = Color(0.1, 0.09, 0.12, 0.95)
+	st.set_corner_radius_all(10)
+	st.set_border_width_all(2)
+	st.border_color = Color(0.55, 0.45, 0.2)
+	skills_panel.add_theme_stylebox_override("panel", st)
 	add_child(skills_panel)
-	var bg = ColorRect.new()
-	bg.position = Vector2(240, 100)
-	bg.size = Vector2(800, 480)
-	bg.color = Color(0.08, 0.08, 0.11, 0.97)
-	skills_panel.add_child(bg)
-	var title = _make_label(Vector2(260, 115), 22, Color(1.0, 0.85, 0.4))
-	title.text = "SKILLS (por arma)"
+	var title = _make_label("SKILLS (K)", 16)
+	title.position = Vector2(12, 8)
 	skills_panel.add_child(title)
-	var hint = _make_label(Vector2(260, 145), 13, Color(0.7, 0.7, 0.75))
-	hint.text = "Q/E basicas em toda arma | R/G avancadas desbloqueiam na VILA (city2)"
-	skills_panel.add_child(hint)
-	var body = _make_label(Vector2(260, 175), 13, Color(0.9, 0.9, 0.9))
-	body.name = "SkillsBody"
-	body.size = Vector2(760, 380)
-	skills_panel.add_child(body)
+	skills_grid = GridContainer.new()
+	skills_grid.columns = 2
+	skills_grid.position = Vector2(12, 40)
+	skills_panel.add_child(skills_grid)
+	refresh_skills_panel()
 
-func _toggle_panels() -> void:
-	if Input.is_key_pressed(KEY_B):
-		bag_panel.visible = not bag_panel.visible
-		if bag_panel.visible:
-			cloth_panel.visible = false
-			skills_panel.visible = false
-	if Input.is_key_pressed(KEY_C):
-		cloth_panel.visible = not cloth_panel.visible
-		if cloth_panel.visible:
-			bag_panel.visible = false
-			skills_panel.visible = false
-	if Input.is_key_pressed(KEY_K):
-		skills_panel.visible = not skills_panel.visible
-		if skills_panel.visible:
-			bag_panel.visible = false
-			cloth_panel.visible = false
-			var body = skills_panel.get_node("SkillsBody")
-			var lines = []
-			for wname in SKILLS.SKILLS.keys():
-				var w = EQUIPS.WEAPONS[wname]
-				lines.append("== %s ==" % w["nome"])
-				for sk in SKILLS.SKILLS[wname]:
-					if SKILLS.skill_unlocked(sk):
-						lines.append("  [%s] %s — %s (mana %d, cd %.0fs)" % [sk["tecla"], sk["nome"], sk["desc"], sk["mana"], sk["cd"]])
-					else:
-						lines.append("  [%s] ??? — desbloqueia na VILA" % sk["tecla"])
-			body.text = "\n".join(lines)
+func refresh_skills_panel() -> void:
+	for c in skills_grid.get_children():
+		c.queue_free()
+	if player_ref == null:
+		return
+	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
+	for sk in list:
+		var unlocked = SKILLS.skill_unlocked(sk)
+		var l = _make_label("")
+		l.add_theme_font_size_override("font_size", 12)
+		if unlocked:
+			l.text = "%s [%s] — %s" % [sk["nome"], sk["tecla"], sk["desc"]]
+			l.add_theme_color_override("font_color", Color(0.85, 0.85, 0.7))
+		else:
+			l.text = "??? [%s] — desbloqueia na VILA" % sk["tecla"]
+			l.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		skills_grid.add_child(l)
+
+# ---------- FEEDBACK CENTRAL ----------
+func build_feedback() -> void:
+	feedback_label = _make_label("", 15)
+	feedback_label.position = Vector2(400, 500)
+	feedback_label.size = Vector2(480, 30)
+	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	feedback_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
+	feedback_label.visible = false
+	add_child(feedback_label)
+
+func _on_feedback(msg: String) -> void:
+	feedback_label.text = msg
+	feedback_label.visible = true
+	feedback_time = 2.0
+
+# ---------- DICA DE OBJETIVO ----------
+func build_hint() -> void:
+	hint_label = _make_label("", 12)
+	hint_label.position = Vector2(400, 680)
+	hint_label.size = Vector2(480, 24)
+	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
+	add_child(hint_label)
+
+func set_hint(txt: String) -> void:
+	hint_label.text = txt
+
+# ---------- TOGGLES (exclusivos + centralizados) ----------
+func toggle_bag() -> void:
+	var opening = not bag_panel.visible
+	cloth_panel.visible = false
+	skills_panel.visible = false
+	bag_panel.visible = opening
+	if opening:
+		refresh_bag()
+
+func toggle_cloth_panel() -> void:
+	var opening = not cloth_panel.visible
+	bag_panel.visible = false
+	skills_panel.visible = false
+	cloth_panel.visible = opening
+	if opening:
+		refresh_cloth()
+
+func toggle_skills_panel() -> void:
+	var opening = not skills_panel.visible
+	bag_panel.visible = false
+	cloth_panel.visible = false
+	skills_panel.visible = opening
+	if opening:
+		refresh_skills_panel()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		_toggle_panels()
+		if event.keycode == KEY_C:
+			AudioManager.play_sfx("ui_click")
+			toggle_cloth_panel()
+		elif event.keycode == KEY_B:
+			AudioManager.play_sfx("ui_click")
+			toggle_bag()
+		elif event.keycode == KEY_K:
+			AudioManager.play_sfx("ui_click")
+			toggle_skills_panel()
