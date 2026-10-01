@@ -509,6 +509,8 @@ static func _map_city() -> Texture2D:
 		var sy = 190 + randi() % 140
 		img.set_pixel(sx, sy, Color(0.74, 0.64, 0.44))
 	for x in range(175, 406, 22):
+		if x > 260 and x < 320:
+			continue # PORTAO da cerca (mundo x 530-630) — sem poste no vao
 		_draw_rect(img, x, 176, 5, 12, Color(0.5, 0.36, 0.2))
 		_draw_rect(img, x, 330, 5, 12, Color(0.5, 0.36, 0.2))
 	for y in range(185, 336, 22):
