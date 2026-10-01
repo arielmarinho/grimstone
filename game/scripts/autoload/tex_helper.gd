@@ -340,7 +340,9 @@ static func load_map(path: String) -> Texture2D:
 		return _map_forest()
 	return _map_city()
 
-# ---------- CIDADE 1 (muralha, fonte, lojas, lago, portao sul, bueiro) ----------
+# ---------- CIDADE 1 (fiel à referência do usuário: lago com cachoeira+ponte à
+# esquerda, área de treino com bonecos de palha no alto-esquerda, fonte multinível,
+# loja de armas azul, loja de poções roxa = LOJA [F], casa marrom, torres nos portões) ----------
 static func _map_city() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -357,78 +359,168 @@ static func _map_city() -> Texture2D:
 		_draw_ellipse(img, x, y, 2 + randf() * 3, 1.5 + randf() * 2, Color(0.38, 0.58, 0.28, 0.5))
 	var dirt := Color(0.78, 0.66, 0.48)
 	var dirt_d := Color(0.7, 0.58, 0.42)
-	for y in range(180, 920):
-		var wobble = sin(y * 0.05) * 6
-		for x in range(W / 2 - 26 + wobble, W / 2 + 26 + wobble):
-			var c = dirt if (x + y) % 7 != 0 else dirt_d
-			img.set_pixel(x, y, c)
+	# caminho LESTE-OESTE (cruza o lago pela ponte de madeira)
 	for x in range(180, 920):
 		var wobble = cos(x * 0.05) * 6
 		for y in range(H / 2 - 26 + wobble, H / 2 + 26 + wobble):
 			var c = dirt if (x + y) % 7 != 0 else dirt_d
 			img.set_pixel(x, y, c)
+	# caminho NORTE (da fonte pra muralha norte)
+	for y in range(180, 440):
+		var wobble = sin(y * 0.05) * 6
+		for x in range(W / 2 - 26 + wobble, W / 2 + 26 + wobble):
+			var c = dirt if (x + y) % 7 != 0 else dirt_d
+			img.set_pixel(x, y, c)
+	# caminho SUL: da fonte pro bueiro e desce ATÉ a borda (portao sul, fiel ao cenario)
+	for y in range(580, 1024):
+		var wobble = sin(y * 0.05) * 6
+		for x in range(W / 2 - 26 + wobble, W / 2 + 26 + wobble):
+			var c = dirt if (x + y) % 7 != 0 else dirt_d
+			img.set_pixel(x, y, c)
+	# ---- LAGO à esquerda (referência): margem de areia, agua, brilhos, vitorias-regias ----
+	var pond_cx := 230.0
+	var pond_cy := 480.0
+	_draw_ellipse(img, pond_cx, pond_cy, 110, 150, Color(0.76, 0.68, 0.5))
+	_draw_ellipse(img, pond_cx, pond_cy, 100, 140, Color(0.25, 0.45, 0.75))
+	_draw_ellipse(img, pond_cx, pond_cy, 92, 132, Color(0.3, 0.52, 0.82))
+	for i in range(30):
+		var ang = randf() * TAU
+		var rr = randf() * 0.8
+		var px = pond_cx + cos(ang) * 100.0 * rr
+		var py = pond_cy + sin(ang) * 140.0 * rr
+		_draw_ellipse(img, px, py, 3 + randf() * 4, 1.2, Color(0.55, 0.75, 0.95, 0.6))
+	for pos in [[180, 420], [270, 545], [200, 565], [290, 405]]:
+		_draw_circle(img, pos[0], pos[1], 7, Color(0.3, 0.62, 0.32))
+		_draw_circle(img, pos[0], pos[1], 4, Color(0.42, 0.74, 0.4))
+	for pos in [[142, 505], [322, 460], [252, 612]]:
+		_draw_circle(img, pos[0], pos[1], 6, Color(0.55, 0.53, 0.5))
+	# ---- CACHOEira no topo do lago: rochas + filetes de agua caindo ----
+	_draw_rect(img, 180, 320, 92, 26, Color(0.52, 0.5, 0.47))
+	_draw_rect(img, 188, 312, 76, 10, Color(0.6, 0.58, 0.55))
+	for i in range(5):
+		var wx := 192 + i * 17
+		_draw_rect(img, wx, 340, 6, 26, Color(0.75, 0.88, 1.0, 0.85))
+		_draw_rect(img, wx + 1, 366, 4, 14, Color(0.6, 0.8, 0.98, 0.6))
+	# ---- PONTE de madeira sobre o lago (o caminho leste-oeste passa por ela) ----
+	for x in range(120, 340):
+		for y in range(H / 2 - 26, H / 2 + 26):
+			var plank = Color(0.55, 0.4, 0.24) if (x % 8) < 6 else Color(0.48, 0.34, 0.2)
+			img.set_pixel(x, y, plank)
+	_draw_rect(img, 118, H / 2 - 31, 224, 4, Color(0.42, 0.3, 0.18))
+	_draw_rect(img, 118, H / 2 + 27, 224, 4, Color(0.42, 0.3, 0.18))
+	# ---- PRAÇA e FONTE multinivel no centro (referência) ----
 	_draw_circle(img, W / 2, H / 2, 105, Color(0.63, 0.61, 0.57))
 	for i in range(400):
-		var ang = randf() * TAU
-		var r = randf() * 100
-		var px = W / 2 + cos(ang) * r
-		var py = H / 2 + sin(ang) * r
-		img.set_pixel(px, py, Color(0.58, 0.56, 0.52))
-	_draw_circle(img, W / 2, H / 2, 45, Color(0.58, 0.56, 0.53))
-	_draw_circle(img, W / 2, H / 2, 34, Color(0.3, 0.55, 0.85))
-	_draw_circle(img, W / 2, H / 2, 30, Color(0.35, 0.62, 0.9))
-	_draw_circle(img, W / 2, H / 2, 12, Color(0.62, 0.6, 0.56))
-	_draw_circle(img, W / 2, H / 2, 6, Color(0.7, 0.68, 0.64))
+		var ang2 = randf() * TAU
+		var r2 = randf() * 100
+		var px2 = W / 2 + cos(ang2) * r2
+		var py2 = H / 2 + sin(ang2) * r2
+		img.set_pixel(px2, py2, Color(0.58, 0.56, 0.52))
+	# base larga com agua
+	_draw_circle(img, W / 2, H / 2, 52, Color(0.58, 0.56, 0.53))
+	_draw_circle(img, W / 2, H / 2, 46, Color(0.3, 0.55, 0.85))
+	_draw_circle(img, W / 2, H / 2, 42, Color(0.35, 0.62, 0.9))
+	# tier medio
+	_draw_circle(img, W / 2, H / 2, 26, Color(0.62, 0.6, 0.56))
+	_draw_circle(img, W / 2, H / 2, 21, Color(0.35, 0.62, 0.9))
+	# tier topo
+	_draw_circle(img, W / 2, H / 2, 10, Color(0.66, 0.64, 0.6))
+	_draw_circle(img, W / 2, H / 2, 5, Color(0.72, 0.7, 0.66))
+	# jorros d'agua
 	for i in range(3):
-		_draw_ellipse(img, W / 2 + 18 - i * 8, H / 2 + 10 - i * 12, 6 - i, 2 - i * 0.5, Color(0.5, 0.72, 0.95, 0.6))
+		_draw_ellipse(img, W / 2 + 24 - i * 10, H / 2 + 8 - i * 14, 6.0 - i, 2.0 - i * 0.5, Color(0.5, 0.72, 0.95, 0.6))
+	# ---- MURALHA (alinhada aos colisores: portao LESTE arte y 466-578,
+	# portao SUL arte x 466-578 — o caminho do bueiro desce livre até a borda) ----
 	var wall := Color(0.6, 0.58, 0.54)
 	var wall_d := Color(0.5, 0.48, 0.45)
+	# topo (contínua)
 	for i in range(0, W, 2):
 		var wv = sin(i * 0.08) * 2
 		_draw_ellipse(img, i, 143 + wv, 2.2, 14, wall)
 		if i % 8 == 0:
 			_draw_ellipse(img, i + 1, 143 + wv, 1.8, 14, wall_d)
-		_draw_ellipse(img, i, 881 + wv, 2.2, 14, wall)
+	# esquerda (contínua, y 150-861)
+	for j in range(150, 861, 2):
+		var wv2 = cos(j * 0.08) * 2
+		_draw_ellipse(img, 143 + wv2, j, 14, 2.2, wall)
+		if j % 8 == 0:
+			_draw_ellipse(img, 143 + wv2, j + 1, 14, 1.8, wall_d)
+	# direita com PORTAO LESTE (abertura y 466-578)
+	for j in range(150, 861, 2):
+		if j > 460 and j < 584:
+			continue
+		var wv3 = cos(j * 0.08) * 2
+		_draw_ellipse(img, 881 + wv3, j, 14, 2.2, wall)
+		if j % 8 == 0:
+			_draw_ellipse(img, 881 + wv3, j + 1, 14, 1.8, wall_d)
+	# baixo com PORTAO SUL (abertura x 466-578 = o caminho do bueiro)
+	for i in range(100, 926, 2):
+		if i > 460 and i < 584:
+			continue
+		var wv4 = sin(i * 0.08) * 2
+		_draw_ellipse(img, i, 881 + wv4, 2.2, 14, wall)
 		if i % 8 == 0:
-			_draw_ellipse(img, i + 1, 881 + wv, 1.8, 14, wall_d)
-	for j in range(143, 895, 2):
-		var wv = cos(j * 0.08) * 2
-		_draw_ellipse(img, 143 + wv, j, 14, 2.2, wall)
-		if j % 8 == 0:
-			_draw_ellipse(img, 143 + wv, j + 1, 14, 1.8, wall_d)
-		_draw_ellipse(img, 881 + wv, j, 14, 2.2, wall)
-		if j % 8 == 0:
-			_draw_ellipse(img, 881 + wv, j + 1, 14, 1.8, wall_d)
+			_draw_ellipse(img, i + 1, 881 + wv4, 1.8, 14, wall_d)
+	# ameias nas muralhas
 	for i in range(150, 860, 42):
 		_draw_circle(img, i, 124, 8, wall)
 		_draw_circle(img, i, 900, 8, wall)
 	for j in range(150, 860, 42):
 		_draw_circle(img, 124, j, 8, wall)
 		_draw_circle(img, 900, j, 8, wall)
+	# torres de esquina
 	for pos in [[143, 143], [881, 143], [143, 881], [881, 881]]:
 		_draw_circle(img, pos[0], pos[1], 22, Color(0.66, 0.64, 0.6))
 		_draw_circle(img, pos[0], pos[1], 14, Color(0.72, 0.7, 0.66))
 		_draw_circle(img, pos[0], pos[1], 5, Color(0.35, 0.33, 0.3))
-	for y in range(881, 1024):
-		for x in range(W / 2 - 46, W / 2 + 46):
-			img.set_pixel(x, y, dirt)
-	_draw_rect(img, W / 2 - 52, 860, 14, 70, Color(0.45, 0.3, 0.18))
-	_draw_rect(img, W / 2 + 38, 860, 14, 70, Color(0.45, 0.3, 0.18))
-	_draw_circle(img, W / 2 - 45, 855, 10, Color(0.5, 0.34, 0.2))
-	_draw_circle(img, W / 2 + 45, 855, 10, Color(0.5, 0.34, 0.2))
-	_draw_building(img, 210, 220, 160, 115, Color(0.3, 0.45, 0.8))
-	_draw_building(img, 640, 220, 160, 115, Color(0.6, 0.35, 0.75))
-	_draw_building(img, 210, 640, 160, 115, Color(0.88, 0.72, 0.3))
-	_draw_ellipse(img, 745, 715, 100, 85, Color(0.28, 0.5, 0.8))
-	_draw_ellipse(img, 745, 715, 92, 77, Color(0.33, 0.56, 0.85))
-	_draw_ellipse(img, 760, 700, 40, 30, Color(0.4, 0.62, 0.9, 0.5))
-	for pos in [[700, 750], [780, 680], [730, 660]]:
-		_draw_circle(img, pos[0], pos[1], 7, Color(0.35, 0.65, 0.35))
-		_draw_circle(img, pos[0], pos[1], 3, Color(0.45, 0.75, 0.45))
-	for i in range(5):
-		_draw_rect(img, 610 + i * 22, 695, 16, 26, Color(0.52, 0.38, 0.22))
-		_draw_rect(img, 610 + i * 22, 695, 16, 5, Color(0.62, 0.46, 0.28))
-	for pos in [[360, 320], [560, 320], [360, 560], [170, 430], [850, 430], [500, 770], [920, 580], [100, 580]]:
+	# ---- TORRES com bandeira nas esquinas dos portoes (referência) ----
+	for pos in [[881, 452], [881, 592], [452, 881], [592, 881]]:
+		_draw_circle(img, pos[0], pos[1], 20, Color(0.66, 0.64, 0.6))
+		_draw_circle(img, pos[0], pos[1], 14, Color(0.72, 0.7, 0.66))
+		_draw_circle(img, pos[0], pos[1], 5, Color(0.35, 0.33, 0.3))
+		_draw_rect(img, pos[0] - 1, pos[1] - 46, 3, 32, Color(0.35, 0.24, 0.14))
+		_draw_rect(img, pos[0] + 2, pos[1] - 46, 14, 9, Color(0.8, 0.25, 0.2))
+	# ---- LOJA DE ARMAS (teto azul, placa com espadas cruzadas) ----
+	_draw_building(img, 640, 220, 160, 115, Color(0.3, 0.45, 0.8))
+	_draw_rect(img, 700, 178, 40, 26, Color(0.45, 0.3, 0.18))
+	_draw_rect(img, 700, 178, 40, 4, Color(0.55, 0.4, 0.24))
+	for i in range(14):
+		img.set_pixel(708 + i, 184 + i, Color(0.8, 0.82, 0.85))
+		img.set_pixel(721 - i, 184 + i, Color(0.8, 0.82, 0.85))
+	for i in range(3):
+		_draw_rect(img, 620 + i * 24, 330, 18, 26, Color(0.52, 0.38, 0.22))
+		_draw_rect(img, 620 + i * 24, 330, 18, 5, Color(0.62, 0.46, 0.28))
+	# ---- LOJA DE POÇÕES (teto roxo, placa com frasco — esta é a LOJA [F]) ----
+	_draw_building(img, 210, 640, 160, 115, Color(0.6, 0.35, 0.75))
+	_draw_rect(img, 250, 596, 40, 26, Color(0.45, 0.3, 0.18))
+	_draw_rect(img, 250, 596, 40, 4, Color(0.55, 0.4, 0.24))
+	_draw_rect(img, 267, 602, 6, 5, Color(0.75, 0.78, 0.82))
+	_draw_circle(img, 270, 613, 6, Color(0.85, 0.25, 0.3))
+	for i in range(3):
+		_draw_rect(img, 230 + i * 22, 750, 12, 18, Color(0.5, 0.36, 0.5))
+		_draw_rect(img, 233 + i * 22, 746, 6, 5, Color(0.6, 0.5, 0.6))
+	# ---- CASA MARROM com chamine (canto sudeste, referência) ----
+	_draw_building(img, 800, 760, 140, 100, Color(0.55, 0.38, 0.22))
+	_draw_rect(img, 880, 726, 16, 26, Color(0.5, 0.36, 0.3))
+	# ---- ÁREA DE TREINO (alto-esquerda, referência): areia, cerca, bonecos de palha ----
+	_draw_rect(img, 175, 185, 230, 150, Color(0.82, 0.72, 0.5))
+	for i in range(300):
+		var sx = 180 + randi() % 220
+		var sy = 190 + randi() % 140
+		img.set_pixel(sx, sy, Color(0.74, 0.64, 0.44))
+	for x in range(175, 406, 22):
+		_draw_rect(img, x, 176, 5, 12, Color(0.5, 0.36, 0.2))
+		_draw_rect(img, x, 330, 5, 12, Color(0.5, 0.36, 0.2))
+	for y in range(185, 336, 22):
+		_draw_rect(img, 168, y, 12, 5, Color(0.5, 0.36, 0.2))
+		_draw_rect(img, 398, y, 12, 5, Color(0.5, 0.36, 0.2))
+	for pos in [[250, 255], [340, 255]]:
+		_draw_rect(img, pos[0] - 3, pos[1] + 12, 6, 24, Color(0.45, 0.32, 0.18))
+		_draw_ellipse(img, pos[0], pos[1], 14, 18, Color(0.85, 0.72, 0.4))
+		_draw_rect(img, pos[0] - 14, pos[1] - 4, 28, 4, Color(0.6, 0.45, 0.2))
+		_draw_circle(img, pos[0], pos[1] - 22, 8, Color(0.85, 0.72, 0.4))
+	# ---- árvores reposicionadas (fora do lago/caminhos/prédios) ----
+	for pos in [[450, 330], [880, 320], [930, 700], [430, 860], [160, 770], [880, 180]]:
 		_draw_tree(img, pos[0], pos[1])
 	for i in range(40):
 		var fx = 20 + randi() % (W - 40)
@@ -436,7 +528,7 @@ static func _map_city() -> Texture2D:
 		if img.get_pixel(fx, fy).g > 0.5:
 			var fc = [Color(0.9, 0.8, 0.3), Color(0.9, 0.5, 0.6), Color(0.8, 0.8, 0.95)][randi() % 3]
 			_draw_circle(img, fx, fy, 1.5, fc)
-	# bueiro com escada (saida sul pro bueiro/caverna)
+	# bueiro com escada (saida sul pro bueiro/caverna) — no caminho sul
 	var bx := W / 2
 	var by := 800
 	_draw_circle(img, bx, by, 30, Color(0.32, 0.32, 0.35))
@@ -453,10 +545,11 @@ static func _map_city() -> Texture2D:
 	_draw_rect(img, bx - 2, by - 38, 4, 24, Color(0.4, 0.28, 0.16))
 	for i in range(7):
 		_draw_rect(img, bx - 32 + i * 10, by - 52, 6, 10, Color(0.85, 0.8, 0.7))
-	# portao LESTE (saida pra floresta)
+	# estrada de terra no PORTAO LESTE (saida pra city2)
 	for y in range(H / 2 - 46, H / 2 + 46):
 		for x in range(W - 130, W):
-			img.set_pixel(x, y, dirt)
+			var c2 = dirt if (x + y) % 7 != 0 else dirt_d
+			img.set_pixel(x, y, c2)
 	_draw_rect(img, W - 90, H / 2 - 52, 70, 14, Color(0.45, 0.3, 0.18))
 	_draw_rect(img, W - 90, H / 2 + 38, 70, 14, Color(0.45, 0.3, 0.18))
 	return ImageTexture.create_from_image(img)
