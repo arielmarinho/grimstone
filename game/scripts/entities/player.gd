@@ -160,6 +160,8 @@ func _spawn_damage_number(pos: Vector2, amount: int) -> void:
 	lbl.position = pos + Vector2(-8, -50)
 	lbl.add_theme_font_size_override("font_size", 18)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+	lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	lbl.add_theme_constant_override("outline_size", 3)
 	get_parent().add_child(lbl)
 	var tw = lbl.create_tween()
 	tw.tween_property(lbl, "position:y", lbl.position.y - 30, 0.6)
