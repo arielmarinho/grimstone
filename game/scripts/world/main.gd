@@ -68,6 +68,10 @@ func _ready() -> void:
 			var nt = load("res://scripts/tests/net_test.gd").new()
 			nt.name = "NetTest"
 			add_child(nt)
+		# lag artificial (regra gs-netcode): --netlag=200 = 200ms de delay nos snapshots
+		if a.begins_with("--netlag="):
+			NetworkManager.net_lag_ms = int(a.get_slice("=", 1))
+		if a.begins_with("--nettest=") or a.begins_with("--netlag="):
 			break
 	GameManager.load_game()
 	_create_player()

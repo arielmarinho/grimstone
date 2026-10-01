@@ -54,6 +54,8 @@ const NET_SEND_HZ := 10.0
 var _net_map: String = ""      # mapa atual (preenchido pelo spawner no servidor)
 var _net_target_pos: Vector2 = Vector2.ZERO
 var _net_anim: String = "idle:down"
+var _net_buf: Array = []       # buffer de snapshots [{t, p, a}] p/ interpolação c/ lag
+const NET_BUF_MS := 120        # interpola ~120ms no passado (cobre jitter de rede)
 var _last_hit_by: int = 0      # peer id do ultimo atacante (servidor, pra xp/loot)
 var _net_target = null         # alvo virtual (servidor dedicado, sem player local)
 
@@ -356,6 +358,10 @@ func apply_net_state(data: Dictionary) -> void:
 	if net_authority:
 		return
 	_net_target_pos = data["p"]
+	_net_buf.append({"t": Time.get_ticks_msec(), "p": data["p"], "a": data.get("a", "idle:down")})
+	# buffer enxuto: ~1.5s de snapshots a 10Hz
+	while _net_buf.size() > 16:
+		_net_buf.pop_front()
 	if data.get("m", "") != "":
 		_net_map = data["m"]
 	_net_anim = data.get("a", "idle:down")
@@ -388,16 +394,37 @@ func _on_net_removed(id: int) -> void:
 func _net_mirror_physics(_delta: float) -> void:
 	if dead or dying:
 		return  # cadaver nao desliza
-	# interpola pro ultimo snapshot (como RemotePlayer)
-	var dist = global_position.distance_to(_net_target_pos)
+	# interpolação por BUFFER (gs-netcode): mira o estado de ~120ms atrás,
+	# cobre jitter/lag sem rubber-banding; fallback = lerp pro último snapshot
+	var goal := _net_target_pos
+	var anim := _net_anim
+	if _net_buf.size() >= 2:
+		var now := Time.get_ticks_msec()
+		var past := now - NET_BUF_MS
+		var a = _net_buf[0]
+		for i in range(1, _net_buf.size()):
+			var b = _net_buf[i]
+			if int(b["t"]) >= past:
+				# segmento [a, b] contém o instante "past" — interpola dentro dele
+				var span := float(int(b["t"]) - int(a["t"]))
+				var f := 0.0 if span <= 0.0 else clampf((float(past) - float(int(a["t"]))) / span, 0.0, 1.0)
+				goal = a["p"].lerp(b["p"], f)
+				anim = str(b["a"])
+				break
+			a = b
+		# snapshot mais novo que "past" (rede rápida): usa o mais novo disponível
+		if int(_net_buf[-1]["t"]) < past:
+			goal = _net_buf[-1]["p"]
+			anim = str(_net_buf[-1]["a"])
+	var dist = global_position.distance_to(goal)
 	if dist > 300.0:
-		global_position = _net_target_pos
+		global_position = goal
 	elif dist > 2.0:
-		global_position = global_position.lerp(_net_target_pos, 0.25)
-		var parts = _net_anim.split(":")
+		global_position = global_position.lerp(goal, 0.25)
+		var parts = anim.split(":")
 		facing = parts[1] if parts.size() > 1 else "down"
 		_play_dir("walk")
 	elif not dead and not dying:
-		var parts2 = _net_anim.split(":")
+		var parts2 = anim.split(":")
 		facing = parts2[1] if parts2.size() > 1 else "down"
-		_play_dir("idle" if _net_anim.begins_with("idle") else _net_anim.get_slice(":", 0))
+		_play_dir("idle" if anim.begins_with("idle") else anim.get_slice(":", 0))
