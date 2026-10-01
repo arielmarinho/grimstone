@@ -17,7 +17,7 @@
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
-| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO implementadas ciclos 18-19 (v0.6.0/v0.6.1) — aguarda usuario |
+| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO+ESTIMATIVAS implementadas ciclos 18-20 (v0.6.0/v0.6.1/v0.6.2) — aguarda usuario |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -119,4 +119,10 @@
 - UI no painel da mochila (B): grid de fusao com borda na cor da raridade, tooltip com o resultado, feedback + som ao fundir
 - Arma equipada fundida = re-equipa a base automaticamente
 - Teste unitario headless tests/test_fusion.gd PASSOU (FUSION_TEST_OK); projeto 0 erros de script
+- Pendente: teste no Mac do usuario
+
+## Ciclo 20 (05:50, 01/10) — Area 11: ESTIMATIVAS DE TEMPO na tela K (v0.6.2)
+- Tela K agora mostra quanto falta pra cada skill subir ("up em ~Xmin") e pro proximo level ("~Ymin") — taxas medidas no jogo (skill 240 xp/min, defesa 60 xp/min, level 450 xp/min)
+- FIX: tela K usava formula ERRADA de xp de skill (level*100) em vez da curva real (level^2*5) — mostrava necessidade 2x maior no lvl 10
+- Teste unitario tests/test_estimates.gd PASSOU; headless 0 erros
 - Pendente: teste no Mac do usuario
