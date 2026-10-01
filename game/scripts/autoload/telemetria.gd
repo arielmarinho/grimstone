@@ -1,7 +1,8 @@
 extends Node
-## Telemetria — envia frame do jogo + estado pra debug remoto (F12 ou automático)
+## Telemetria — envia frame do jogo + estado pra debug remoto (tecla P ou automático)
 ## NÃO grava nada no disco: frame fica em memória, vai direto por HTTP.
-## F12 = envia 1 frame agora. --telemetria=N = envia a cada N segundos.
+## P = envia 1 frame agora. --telemetria=N = envia a cada N segundos.
+## (F12 é volume no Mac — tecla trocada pra P)
 
 const WEBHOOK := "https://maestro.adapta.one/webhooks/generic/17b615cef93bd3dacaa1b07ca67dfa9aaa5111c5906f2c836ff10f9499676b14"
 const SECRET := "2219110b7a55954b7673eace1d7f2b37c4836adb3ae5f1bf1fdb3a070ae6da85"
@@ -19,13 +20,11 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--telemetria="):
 			auto_interval = float(arg.get_slice("=", 1))
-	# captura erros de script da sessão
-	get_tree().set_auto_accept_quit(true)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F12:
-			_enviar("F12 manual")
+		if event.keycode == KEY_P:
+			_enviar("tecla P manual")
 
 func _process(delta: float) -> void:
 	if auto_interval <= 0.0 or busy:
