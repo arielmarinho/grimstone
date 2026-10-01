@@ -76,6 +76,7 @@ func _ready() -> void:
 	NetworkManager.player_joined.connect(_on_net_player_joined)
 	NetworkManager.player_left.connect(_on_net_player_left)
 	NetworkManager.player_state.connect(_on_net_player_state)
+	NetworkManager._on_server_lost.connect(_clear_remote_players)
 
 func _on_net_player_joined(id: int, info: Dictionary) -> void:
 	if id == NetworkManager.my_id or remote_players.has(id):
@@ -88,7 +89,7 @@ func _on_net_player_joined(id: int, info: Dictionary) -> void:
 	# so mostra se estiver no MESMO mapa que eu
 	rp.visible = rp.map_name == current
 	if rp.map_name == current:
-		NetworkManager.chat_message.emit(str(info.get("name", "???")), "entrou no jogo.", "join")
+		_net_chat_local(str(info.get("name", "???")), "entrou no jogo.", "join")
 
 func _on_net_player_left(id: int) -> void:
 	if remote_players.has(id):
@@ -117,6 +118,9 @@ func _clear_remote_players() -> void:
 		if is_instance_valid(rp):
 			rp.queue_free()
 	remote_players.clear()
+
+func _net_chat_local(sender: String, text: String, kind: String) -> void:
+	NetworkManager.chat_message.emit(sender, text, kind)
 
 func _net_send_position() -> void:
 	if player == null or player.dead or not NetworkManager.is_online():
@@ -166,7 +170,7 @@ func _physics_process(_delta: float) -> void:
 			return
 	if shop != null and MAPS[current].has("shop"):
 		var near = player.global_position.distance_to(MAPS[current]["shop"]) < 120.0
-		if near and not shop.is_open() and Input.is_key_pressed(KEY_E):
+		if near and not shop.is_open() and Input.is_key_pressed(KEY_F):
 			shop.open()
 		elif not near and shop.is_open():
 			shop.close()
@@ -250,7 +254,7 @@ func switch_map(name: String, arrive_pos = null) -> void:
 		shop.city = current
 		add_child(shop)
 		var sign_l = Label.new()
-		sign_l.text = "LOJA [E]"
+		sign_l.text = "LOJA [F]"
 		sign_l.position = MAPS[current]["shop"] + Vector2(-40, -70)
 		sign_l.add_theme_font_size_override("font_size", 15)
 		sign_l.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))

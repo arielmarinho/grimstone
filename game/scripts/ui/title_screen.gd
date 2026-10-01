@@ -1,7 +1,6 @@
 extends Control
 ## Tela de título — GRIMSTONE, estilo Rucoy/Tibia
 ## JOGAR continua o save (ou comeca novo), NOVO JOGO zera o save
-## ONLINE: HOSPEDAR (listen server) / CONECTAR por IP
 
 var ip_input: LineEdit
 
@@ -21,6 +20,11 @@ func _ready() -> void:
 		var br = 0.4 + randf() * 0.6
 		star.color = Color(br, br, br * 1.05, 0.9)
 		add_child(star)
+	# lua
+	var moon = ColorRect.new()
+	moon.position = Vector2(1050, 90)
+	moon.size = Vector2(90, 90)
+	moon.color = Color(0.92, 0.9, 0.8, 0.95)
 	# lua redonda via estilo
 	var moon_st = StyleBoxFlat.new()
 	moon_st.bg_color = Color(0.92, 0.9, 0.8, 0.95)
@@ -93,7 +97,7 @@ func _ready() -> void:
 	add_child(ip_input)
 	# versao
 	var ver = Label.new()
-	ver.text = "v0.5.0"
+	ver.text = "v0.5.1"
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
@@ -140,6 +144,9 @@ func _new_game() -> void:
 	GameManager.bag = {}
 	GameManager.current_map = "city1"
 	GameManager.arrows = 50
+	GameManager.skills = {"espada": {"level": 10, "xp": 0}, "defesa": {"level": 10, "xp": 0}}
+	GameManager.city2_visited = false
+	GameManager.city2_unlocked = false
 	GameManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
@@ -150,7 +157,7 @@ func _quit() -> void:
 func _host_game() -> void:
 	AudioManager.play_sfx("ui_click")
 	NetworkManager.start_server()
-	# listen server: o host TAMBEM joga (servidor dedicado roda com --server)
+	# servidor dedicado roda headless; aqui o host TAMBEM joga (listen server)
 	_start_game()
 
 func _join_game() -> void:
