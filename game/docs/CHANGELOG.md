@@ -2,6 +2,14 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.4.3 (ciclo 4b: Area 3 Monstros & IA — fixes de combate)
+
+- `cd21605` mob.gd: ataque agendado nao acerta mais player MORTO (checava so no agendamento, nao no hit)
+- `cd21605` mob.gd: hit so acerta se o alvo ainda estiver no alcance (110px) — sem dano fantasma ao fugir
+- `cd21605` mob.gd: leash de perseguição (700px do spawn) — mobs voltam a vagar em vez de perseguir o mapa inteiro
+- `cd21605` mob.gd: dummy de treino simplificado (early return no take_damage, sem ramo morto)
+- Validado Godot headless: 0 erros de script
+
 ## 2026-10-01 — v0.4.2 (ciclo 4: sincronização GitHub↔local completa)
 
 - `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediário reescreveu o arquivo por engano e foi revertido)
@@ -38,7 +46,7 @@ Formato: [data] versão — o que mudou (commit)
 
 ## Fila (proximos ciclos)
 - [ ] Polish: mana regen fora de combate, comida/energia
-- [ ] Auditoria Area 3 (Monstros & IA)
+- [ ] Auditoria Area 3 (Monstros & IA) — CONCLUÍDA no ciclo 4b
 - [ ] Auditoria Area 4 (Mapas & Mundo)
 - [ ] Auditoria Area 5 (Itens & Economia)
 - [ ] Balanceamento geral
