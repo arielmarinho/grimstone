@@ -28,6 +28,7 @@
 | 19 | **Cinto de runas + regressoes** | gs-qa-testing | v0.6.11: CINTO Z/X; REGRESSOES: ITEMS_DB sem preload quebrava main.gd (loot_table/game_manager), _show_feedback inexistente (hud) | OK ciclo 33 — NetTest 3/3 + 7/7 testes + headless 0 erros |
 | 22 | **Portao sul + integridade pos-fix** | gs-level-design + gs-qa-testing | muralha SUL fiel ao cenario (caminho ate a borda), trigger do bueiro, auditoria blob SHA pos-fix | OK ciclo 37b (v0.6.14) — colliders/main byte-exatos, NetTest 3/3, 7/7 testes |
 | 24 | **Player 4 direcoes REAIS** | gs-pixel-art + gs-qa-testing | ANIMS up/side reais no player (bug so-anda-pra-baixo), validacao visual | OK ciclo 39 (v0.6.16) — preview_player 8x4 confirmado, headless 0 erros, 7/7 testes |
+| 25 | **Player 100% ARTE REAL (hibrido up/side)** | gs-pixel-art + gs-qa-testing | UP = arte real editada (rosto vira cabelo), SIDE = arte real com flip_h; preview + check de pixels | OK ciclo 41 (v0.6.17) — preview_hybrid2 validado, headless 0 erros |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -40,6 +41,12 @@
 - Validacao VISUAL: tests/preview_player.gd — folha 8x4 (frente/costas/perfil flip/death) em artifacts/player_dirs_preview.png
 - Sincronizacao: player.gd/tex_helper.gd alinhados ao remoto (blob SHA conferido); mob.gd remoto = canônico (netcode/quests/dummy OK)
 - Validacao: headless 0 erros + 7/7 testes unitarios OK
+### Area 25 — Player 100% ARTE REAL (ciclo 41, v0.6.17) VALIDADA
+- UP = load_sheet_up_real: rosto da arte real substituido por cabelo (costas de verdade) — identidade visual 100% mantida
+- SIDE = arte real de frente + flip_h (estilo Tibia)
+- Validacao: preview_hybrid2.gd + check de pixels de pele (down 380px vs up 12px); headless 0 erros
+- Push MCP: tex_helper saiu truncado na 1a tentativa, reparado com arquivo completo; player.gd byte-exato de primeira
+
 ### Area 22 — Portao sul + integridade pos-fix (ciclo 37b) VALIDADA
 - fix do portao sul (colliders + trigger do bueiro) conferido: muralha SUL agora tem 2 segmentos (x 200-500 e x 1550-1850), caminho do bueiro/estrada desce ate a borda em AMBAS as cidades; trigger do bueiro movido pra y1750 r110 (alcancavel sem bloqueio)
 - Integridade GitHub↔local: colliders.gd/main.gd/preview_rat2 byte-exatos (blob SHA); CHANGELOG/PLANO divergem 1 byte (newline final, conteudo identico — encoding MCP)
@@ -106,7 +113,7 @@
 ### Area 2 — Player & Skills (ciclo 2) implementado
 - skills R/G por classe (8 skills), desbloqueio na city2 (flag persistida), HUD 4 slots Q/E/R/G, dummy de treino
 ### Area 1 — Combate & Feedback (ciclo 1) OK
-- flash de dano no mob, numeros flutuando, morte com fade, level up com anel dourado
+- flash de dano no mob, numeros flutuantes, morte com fade, level up com anel dourado
 
 ### Area 21 — Polish visual de mapas + reparo pos-polish (ciclo 36) OK
 - bordas do mundo em todos os mapas, rato procedural redesenhado (64x44), caverna refeita, casas retangulares, feedback de dano restaurado
@@ -118,3 +125,6 @@
 - FIX ciclo 38c (este ciclo): FX.coin_gain() faltava no fx.gd (coin/drop chamavam funcao inexistente) + corpo do projectile.gd APAGADO no remoto pelo commit de audio f57897d — restaurado byte-exato (b21f2aa0); validado run real 0 erros + 7/7 testes
 - FX autoload (sinais do GameManager): +XP, +moedas, +cura, +mana, SKILL UP flutuantes no player
 - coin/drop chamam FX.coin_gain no pickup; validado headless 0 erros + 7/7 testes
+
+### Area 26 — Housekeeping de versao (ciclo 42, v0.6.18) OK
+- title_screen.gd e export_presets.cfg alinhados a v0.6.17; headless 0 erros; 7/7 testes OK.
