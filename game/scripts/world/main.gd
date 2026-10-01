@@ -1,6 +1,7 @@
 extends Node2D
 ## Main — 4 mapas: city1 (hub), city2 (leste), forest (sul da city2), rat_cave (bueiro)
 ## Lojas nas 2 cidades, mobs por mapa, transicoes por portoes
+## CITY2: ao pisar pela 1a vez desbloqueia as skills avancadas (R/G)
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
@@ -108,11 +109,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and shop != null and shop.is_open():
 			shop.close()
 
+func _unlock_city2() -> void:
+	if GameManager.city2_unlocked:
+		return
+	GameManager.city2_unlocked = true
+	GameManager.save_game()
+	if player != null:
+		var l = Label.new()
+		l.text = "NOVAS SKILLS DESBLOQUEADAS! (teclas R e G — veja na tela K)"
+		l.position = player.global_position + Vector2(-260, -140)
+		l.add_theme_font_size_override("font_size", 17)
+		l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		l.add_theme_constant_override("outline_size", 5)
+		l.z_index = 60
+		add_child(l)
+		var tw = l.create_tween()
+		tw.tween_interval(4.0)
+		tw.tween_property(l, "modulate:a", 0.0, 1.0)
+		tw.tween_callback(l.queue_free)
+	print("CITY2: skills avancadas (R/G) desbloqueadas!")
+
 func switch_map(name: String) -> void:
 	if name == current or not MAPS.has(name):
 		return
 	current = name
 	GameManager.current_map = name
+	if name == "city2":
+		_unlock_city2()
 	for c in map_layer.get_children():
 		c.queue_free()
 	var sprite = Sprite2D.new()
