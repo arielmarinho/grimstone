@@ -96,7 +96,7 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color, pants_color)
+		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -127,10 +127,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		var weapons = ["sword", "axe", "bow", "staff"]
 		if event.keycode >= KEY_1 and event.keycode <= KEY_4:
 			var idx = event.keycode - KEY_1
-			if idx < weapons.size() and weapons[idx] != weapon:
+			var base = GameManager.weapon_base()
+			if idx < weapons.size() and weapons[idx] != base:
+				# troca de arma: perde o tier (tier vem do item dropado, teclas 1-4 = arma comum)
 				weapon = weapons[idx]
+				GameManager.weapon = weapon
 				_build_frames()
-				print("arma: ", EQUIPS.WEAPONS[weapon]["nome"], " (", EQUIPS.WEAPONS[weapon]["classe"], ")")
+				print("arma: ", EQUIPS.WEAPONS[GameManager.weapon_base()]["nome"], " (", EQUIPS.WEAPONS[GameManager.weapon_base()]["classe"], ")")
 		if event.keycode == KEY_T:
 			var cores = EQUIPS.CLOTHES_COLORS.keys()
 			var i = cores.find(tunic_color)
@@ -200,10 +203,10 @@ func _use_skill(slot: String) -> void:
 			buff_furia_time = 8.0
 			print("FURIA! +80% dano por 8s")
 		"atordoar":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				mob.stunned = 3.0
-				mob.take_damage(EQUIPS.WEAPONS[weapon]["dano"] * 2)
+				mob.take_damage(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2)
 				print("ATORDOADO!")
 		"certeiro":
 			buff_certeiro = true
@@ -212,10 +215,10 @@ func _use_skill(slot: String) -> void:
 			GameManager.arrows = max(0, GameManager.arrows - 5)
 			_skill_aoe(1.5)
 		"fogo":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				var proj = preload("res://scripts/entities/projectile.gd").new()
-				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
+				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 3 * (1.0 + GameManager.skills.get("magia", {"level": 10})["level"] * 0.02))
 				proj.setup(global_position, mob.global_position, dmg, "staff", false, true)
 				get_parent().add_child(proj)
 		"cura":
@@ -224,12 +227,12 @@ func _use_skill(slot: String) -> void:
 			print("CURA! +", cura, " HP")
 		# ----- skills avancadas (city2) -----
 		"investida":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"] * 1.5)
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"] * 1.5)
 			if mob != null:
 				var dir = (mob.global_position - global_position).normalized()
 				global_position = mob.global_position - dir * 60.0
 				_update_facing(dir)
-				mob.take_damage(int(EQUIPS.WEAPONS[weapon]["dano"] * 2.5))
+				mob.take_damage(int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5))
 				print("INVESTIDA!")
 			else:
 				print("nenhum alvo para a investida")
@@ -245,7 +248,7 @@ func _use_skill(slot: String) -> void:
 			buff_precisao = 3
 			print("PRECISAO! proximas 3 flechas sao criticas")
 		"tiro_multi":
-			var mob = _mob_in_range(EQUIPS.WEAPONS[weapon]["alcance"])
+			var mob = _mob_in_range(EQUIPS.WEAPONS[GameManager.weapon_base()]["alcance"])
 			if mob != null:
 				if GameManager.arrows < 2:
 					print("sem flechas!")
@@ -255,7 +258,7 @@ func _use_skill(slot: String) -> void:
 					return
 				GameManager.arrows -= 2
 				var proj = preload("res://scripts/entities/projectile.gd").new()
-				var dmg = int(EQUIPS.WEAPONS[weapon]["dano"] * 2.5)
+				var dmg = int(EQUIPS.WEAPONS[GameManager.weapon_base()]["dano"] * GameManager.weapon_dano_mult() * 2.5)
 				proj.setup(global_position, mob.global_position, dmg, "bow", false)
 				get_parent().add_child(proj)
 				# explosao em area no impacto: marca o alvo
@@ -299,13 +302,13 @@ func _use_skill(slot: String) -> void:
 			var cura2 = int(GameManager.hp_max * 0.7)
 			GameManager.hp = min(GameManager.hp_max, GameManager.hp + cura2)
 			print("CURA MAIOR! +", cura2, " HP")
-	GameManager.add_skill_xp(EQUIPS.WEAPONS[weapon]["skill"], 10)
+	GameManager.add_skill_xp(EQUIPS.WEAPONS[GameManager.weapon_base()]["skill"], 10)
 
 var _multi_target = null
 
 func _skill_aoe_stun(mult: float, stun_time: float, dmg_mult: float = 1.0) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	var dmg_base = int(w["dano"] * mult * dmg_mult)
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	var dmg_base = int(w["dano"] * GameManager.weapon_dano_mult() * mult * dmg_mult)
 	var hit_any := false
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if not mob.dead and mob.global_position.distance_to(global_position) < 220.0:
@@ -316,8 +319,8 @@ func _skill_aoe_stun(mult: float, stun_time: float, dmg_mult: float = 1.0) -> vo
 		print("AREA! dano x%.1f + atordoados %.0fs" % [mult * dmg_mult, stun_time])
 
 func _skill_aoe(mult: float) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
-	var dmg_base = int(w["dano"] * mult)
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+	var dmg_base = int(w["dano"] * GameManager.weapon_dano_mult() * mult)
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if not mob.dead and mob.global_position.distance_to(global_position) < 200.0:
 			var crit = randf() < SKILLS.crit_chance(GameManager.skills.get(w["skill"], {"level": 10})["level"])
@@ -381,7 +384,7 @@ func _physics_process(delta: float) -> void:
 			attacking = false
 		return
 
-	var w = EQUIPS.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
 	# touch (Android): joystick virtual define direcao continua (estilo Rucoy)
 	if TouchControls.joy_vec.length() > 0.2:
 		moving = true
@@ -436,9 +439,9 @@ func _play(base: String) -> void:
 		sprite.play(anim)
 
 func _attack(mob) -> void:
-	var w = EQUIPS.WEAPONS[weapon]
+	var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
 	# arco gasta flechas
-	if weapon == "bow":
+	if GameManager.weapon_base() == "bow":
 		if GameManager.arrows <= 0:
 			_show_feedback("Sem flechas! Compre na loja.")
 			return
@@ -446,27 +449,27 @@ func _attack(mob) -> void:
 	if w["tipo"] == "melee":
 		AudioManager.play_sfx("hit")
 	else:
-		AudioManager.play_sfx("shoot" if weapon == "bow" else "cast")
+		AudioManager.play_sfx("shoot" if GameManager.weapon_base() == "bow" else "cast")
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]
 	_play("attack")
-	var dmg: int = w["dano"] + randi() % 5 - 2
+	var dmg: int = int((w["dano"] + randi() % 5 - 2) * GameManager.weapon_dano_mult())
 	if buff_furia_time > 0.0:
 		dmg = int(dmg * 1.8)
 	if buff_bersek_time > 0.0:
 		dmg = int(dmg * 2.5)
 	if buff_grito_time > 0.0:
 		dmg = int(dmg * 1.5)
-	if buff_perfurante and weapon == "bow":
+	if buff_perfurante and GameManager.weapon_base() == "bow":
 		dmg *= 4
 		buff_perfurante = false
 	var skill_lv = GameManager.skills.get(w["skill"], {"level": 10})["level"]
 	var crit := false
-	if buff_certeiro and weapon == "bow":
+	if buff_certeiro and GameManager.weapon_base() == "bow":
 		crit = true
 		buff_certeiro = false
-	elif buff_precisao > 0 and weapon == "bow":
+	elif buff_precisao > 0 and GameManager.weapon_base() == "bow":
 		crit = true
 		buff_precisao -= 1
 	else:
@@ -496,7 +499,7 @@ func _attack(mob) -> void:
 				return
 			var tgt = mob.global_position if is_instance_valid(mob) else global_position
 			var proj = preload("res://scripts/entities/projectile.gd").new()
-			proj.setup(global_position, tgt, dmg, "bow" if weapon == "bow" else "staff", crit)
+			proj.setup(global_position, tgt, dmg, "bow" if GameManager.weapon_base() == "bow" else "staff", crit)
 			get_parent().add_child(proj)
 			GameManager.add_skill_xp(w["skill"], 4)
 			# tiro multiplo: explosao em area ao redor do alvo
