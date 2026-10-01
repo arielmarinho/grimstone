@@ -9,6 +9,7 @@ const PORT := 7777
 const MAX_PLAYERS := 64
 
 var is_server: bool = false
+var dedicated: bool = false  # true só quando iniciado via --server (sem player local)
 var active: bool = false  # true só depois de start_server/start_client OK (offline = false)
 var peer: ENetMultiplayerPeer = null
 var players := {}  # peer_id -> {name, level, map, app{weapon,hair,tunic,pants}}
@@ -19,11 +20,16 @@ signal player_left(id: int)
 signal player_state(id: int, pos: Vector2, map: String, anim: String)
 signal chat_message(sender: String, text: String, kind: String)  # kind: "msg"|"join"|"leave"|"system"
 signal server_lost  # conexão com o servidor caiu (clientes limpam estado remoto)
+# ---------- MOBS AUTORITATIVOS (fase 2) ----------
+signal mob_snapshot(mobs: Array)  # clientes: estado dos mobs a 10Hz
+signal mob_died(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2)
+signal player_hit(dmg: int)  # cliente: o servidor mandou este player tomar dano
 
 func _ready() -> void:
 	# servidor dedicado: godot --headless -- --server
 	var args = OS.get_cmdline_user_args()
 	if "--server" in args:
+		dedicated = true
 		start_server()
 
 func start_server() -> void:
@@ -67,7 +73,6 @@ func _on_connected() -> void:
 	print("[CLIENT] Conectado! meu id: ", my_id)
 	# registra meu personagem no servidor (com aparência pra renderizar o avatar)
 	rpc_id(1, "_rpc_register", GameManager.player_name, GameManager.level, GameManager.current_map, _my_appearance())
-
 func _on_failed() -> void:
 	print("[CLIENT] Falha na conexao — jogando offline")
 	multiplayer.multiplayer_peer = null
@@ -121,7 +126,7 @@ func _broadcast_player_left(id: int) -> void:
 
 # ---------- POSIÇÃO (15 Hz, unreliable) ----------
 func send_position(pos: Vector2, map: String, anim: String) -> void:
-	if not active or multiplayer.multiplayer_peer == null or is_server:
+	if multiplayer.multiplayer_peer == null or is_server:
 		return
 	_rpc_position.rpc_id(1, pos, map, anim)
 
@@ -144,7 +149,7 @@ func _relay_position(id: int, pos: Vector2, map: String, anim: String) -> void:
 
 # ---------- CHAT ----------
 func send_chat(text: String) -> void:
-	if not active or multiplayer.multiplayer_peer == null:
+	if multiplayer.multiplayer_peer == null:
 		# offline: eco local
 		chat_message.emit(GameManager.player_name, text, "msg")
 		return
@@ -167,6 +172,65 @@ func _rpc_chat(text: String) -> void:
 func _relay_chat(sender: String, text: String) -> void:
 	chat_message.emit(sender, text, "msg")
 
+# ---------- MOBS AUTORITATIVOS (fase 2) ----------
+# Server: IA roda nele, replica snapshot 10Hz. Clientes: só renderizam/interpola.
+# "Último golpe leva" (Rucoy): server registra quem deu o último hit.
+
+const MOB_SNAP_HZ := 10.0
+
+# server chama a 10Hz com o estado de TODOS os mobs de TODOS os mapas
+func broadcast_mobs(mobs: Array) -> void:
+	if not is_online() or not is_server:
+		return
+	_rpc_mob_snapshot.rpc(mobs)
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _rpc_mob_snapshot(mobs: Array) -> void:
+	mob_snapshot.emit(mobs)
+
+# cliente pede pra atacar um mob (intenção); server valida alcance e aplica
+func request_hit(net_id: int, dmg: int, my_pos: Vector2, my_map: String) -> void:
+	if not is_online() or is_server:
+		return
+	_rpc_hit_mob.rpc_id(1, net_id, dmg, my_pos, my_map)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_hit_mob(net_id: int, dmg: int, my_pos: Vector2, my_map: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var sender = multiplayer.get_remote_sender_id()
+	var m = MobAuthority.get_by_id(net_id)
+	if m == null or m.dead or m.dying:
+		return
+	# valida: cliente precisa estar no mesmo mapa e a < 220px do mob
+	if m.map_name != my_map or m.global_position.distance_to(my_pos) > 220.0:
+		return
+	m.take_damage_net(dmg, sender)
+
+# server avisa todos: mob morreu, quem matou, xp e loot
+func broadcast_mob_death(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2, map: String) -> void:
+	if not is_online() or not is_server:
+		return
+	_rpc_mob_death.rpc(net_id, killer_peer, xp, mob_type, pos, map)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_mob_death(net_id: int, killer_peer: int, xp: int, mob_type: String, pos: Vector2, map: String) -> void:
+	mob_died.emit(net_id, killer_peer, xp, mob_type, pos, map)
+
+# server aplica dano num player (mob acertou) — roteado pro peer certo
+func send_player_hit(target_peer: int, dmg: int) -> void:
+	if not is_online() or not is_server:
+		return
+	if target_peer == 1:
+		# server é também o "player 1" no modo hospedado (não no dedicado)
+		player_hit.emit(dmg)
+	else:
+		_rpc_player_hit.rpc_id(target_peer, dmg)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_player_hit(dmg: int) -> void:
+	player_hit.emit(dmg)
+
 # ---------- HELPERS ----------
 func is_online() -> bool:
 	return active and multiplayer.multiplayer_peer != null \
@@ -174,3 +238,93 @@ func is_online() -> bool:
 
 func online_count() -> int:
 	return players.size() if is_online() else 1
+
+# ---------- MOBS AUTORITATIVOS (fase 2) ----------
+# O servidor roda a IA dos mobs (wander/chase/attack) e transmite o estado;
+# clientes so renderizam (NetMob) e pedem dano via RPC.
+# id do mob = get_instance_id() no servidor (estavel durante a sessao).
+
+var mobs := {}  # mob_id -> {t, p, m, a, hp, mhp, d}
+
+signal mob_state(id: int, data: Dictionary)      # snapshot de um mob (clientes)
+signal mob_removed(id: int)                      # mob saiu (troca de mapa/respawn)
+
+func net_register_mob(mob: Node) -> void:
+	if not is_server:
+		return
+	mobs[mob.get_instance_id()] = {"t": mob.mob_type, "p": mob.global_position, "m": "", "a": "idle:down", "hp": mob.hp, "mhp": mob.max_hp, "d": false}
+
+func net_unregister_mob(mob: Node) -> void:
+	if not is_server:
+		return
+	var mid = mob.get_instance_id()
+	if mobs.has(mid):
+		mobs.erase(mid)
+		_rpc_mob_removed.rpc(mid)
+
+func net_send_mob_state(mob: Node, map: String, anim: String) -> void:
+	# chamado pelo mob a 10Hz no servidor
+	if not is_server:
+		return
+	var mid = mob.get_instance_id()
+	var d = {"t": mob.mob_type, "p": mob.global_position, "m": map, "a": anim, "hp": mob.hp, "mhp": mob.max_hp, "d": mob.dead}
+	mobs[mid] = d
+	_rpc_mob_state.rpc(mid, d)
+
+func net_mob_take_damage(mob: Node, dmg: int, from_id: int) -> void:
+	# servidor valida (vivo + range do atacante) e aplica
+	if not is_server:
+		return
+	if not is_instance_valid(mob) or mob.dead or mob.dying:
+		return
+	var attacker = players.get(from_id, {}).get("pos", Vector2.INF)
+	if attacker != Vector2.INF and attacker.distance_to(mob.global_position) > 400.0:
+		return
+	mob.take_damage(dmg)
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _rpc_mob_state(id: int, data: Dictionary) -> void:
+	if is_server:
+		return
+	mobs[id] = data
+	mob_state.emit(id, data)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_mob_removed(id: int) -> void:
+	if is_server:
+		return
+	mobs.erase(id)
+	mob_removed.emit(id)
+
+@rpc("any_peer", "call_remote", "reliable")
+func _rpc_mob_damage(mob_id: int, dmg: int) -> void:
+	if not is_server:
+		return
+	var sender = multiplayer.get_remote_sender_id()
+	if not mobs.has(mob_id):
+		return
+	for m in get_tree().get_nodes_in_group("mobs"):
+		if m.get_instance_id() == mob_id:
+			net_mob_take_damage(m, dmg, sender)
+			return
+
+signal damage_local_player(dmg: int)   # servidor manda dano pro player local (cliente)
+signal mob_reward(xp: int, loot: Array, pos: Vector2)  # xp/loot do mob que EU matei
+
+func request_mob_damage(mob_id: int, dmg: int) -> void:
+	# cliente pede pro servidor aplicar dano num mob autoritativo
+	if multiplayer.multiplayer_peer == null or is_server:
+		return
+	_rpc_mob_damage.rpc_id(1, mob_id, dmg)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_damage_player(dmg: int) -> void:
+	if is_server:
+		return
+	damage_local_player.emit(dmg)
+
+@rpc("authority", "call_remote", "reliable")
+func _rpc_mob_reward(xp: int, loot: Array, pos: Vector2) -> void:
+	if is_server:
+		return
+	mob_reward.emit(xp, loot, pos)
