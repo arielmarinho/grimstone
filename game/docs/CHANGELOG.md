@@ -1,3 +1,15 @@
+## 2026-10-01 — v0.5.4 (ciclo 14: fase 2 online — MOBS AUTORITATIVOS)
+
+- SERVIDOR roda a IA dos mobs (wander/chase/attack) e replica snapshot 10Hz; clientes so RENDERIZAM (regra gs-netcode #1/#3)
+- MobAuthority autoload (server): registro de mobs com net_id estavel (get_instance_id), snapshot compacto, lookup por id
+- mob.gd: modo ESPELHO no cliente (NetMob) — interpola snapshot, IA local desligada; take_damage(dmg, from_peer) registra o ULTIMO golpe (Rucoy: ultimo leva XP/loot)
+- Dano do cliente via RPC validado NO SERVIDOR (anti-cheat: mob vivo + mesmo mapa + range 220px); loot/xp enviados por RPC pro peer que matou (loot_table.roll_loot_list)
+- Servidor DEDICADO (sem player local): NetTarget — alvo virtual do player online mais proximo; dano do mob roteado por RPC pro cliente (signal damage_local_player)
+- main.gd: server dedicado spawna TODOS os mapas; espelhos de mob criados/removidos por snapshot; troca de mapa limpa espelhos
+- NetTest fase MOBS PASSOU: server + cliente A + cliente B — espelhos chegaram, cliente teleportou pra beira do mob, pediu dano, servidor validou e aplicou (RESULT OK nos 3 roles)
+- Validado Godot headless: 0 erros de script
+- Proximo: interpolacao de mobs no cliente + lag 200ms (gs-netcode) OU teste no Mac do usuario
+
 ## 2026-10-01 — v0.5.3 (ciclo 13: Area 11 NetTest — teste multiplayer PASSOU de verdade)
 
 - FIX parse error no net_test.gd: variavel local `f` colidia com o parametro `f` de _flog — o harness NUNCA chegou a rodar (o ciclo 12 reportou PASSOU com logs de execucao anterior)
@@ -32,6 +44,14 @@
 - Validado Godot headless 4.6 alpine: --import + --quit = 0 erros de script
 - Pendente (proximo ciclo): mobs autoritativos no server, teste 2 clientes + 1 server no localhost, servidor dedicado real
 
+## 2026-10-01 — v0.4.9 (ciclo 10: auditoria Area 8 Audio — gap de skills corrigido)
+
+- Auditoria do AudioManager: 17 pontos de audio conferidos um a um (combate, morte, loot, pocao, loja, portao, titulo, musicas com crossfade) — todos OK
+- GAP encontrado: skills (Q/E/R/G) NAO tocavam som — so o ataque basico tocava. Fix: play_sfx("cast") no _use_skill (player.gd)
+- GAP encontrado: teclas C/B/K (mochila/roupas/skills) nao tocavam ui_click — so os botoes da tela de titulo tocavam. Fix: ui_click nos toggles do HUD
+- Validado Godot headless: 0 erros de script
+- Proximo: Area 9 Multiplayer (gs-netcode) ou polish extra conforme fila
+
 ## v0.4.8 — Audio (Area 8)
 - AudioManager autoload (audio_manager.gd): audio 100% procedural, sintetizado em GDScript no startup — zero arquivos binarios
 - 12 SFX (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door) com pool de 8 players e pitch variavel
@@ -47,7 +67,7 @@
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
 - Titulo: v0.4.5 + ESC sai
 
@@ -55,15 +75,7 @@
 
 Formato: [data] versão — o que mudou (commit)
 
-## 2026-10-01 — v0.4.9 (ciclo 10: auditoria Area 8 Audio — gap de skills corrigido)
-
-- Auditoria do AudioManager: 17 pontos de audio conferidos um a um (combate, morte, loot, pocao, loja, portao, titulo, musicas com crossfade) — todos OK
-- GAP encontrado: skills (Q/E/R/G) NAO tocavam som — so o ataque basico tocava. Fix: play_sfx("cast") no _use_skill (player.gd)
-- GAP encontrado: teclas C/B/K (mochila/roupas/skills) nao tocavam ui_click — so os botoes da tela de titulo tocavam. Fix: ui_click nos toggles do HUD
-- Validado Godot headless: 0 erros de script
-- Proximo: Area 9 Multiplayer (gs-netcode) ou polish extra conforme fila
-
-## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
+## v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
 
 - Simulacao de balanceamento antes de mexer (scripts/area5_sim.py, regra 5: nunca balancear no escuro)
 - `ad12a3e`/`4d59f15` equips.gd: arco 10->14 dano / 0.9->0.8s CD, cajado 18->19 — TTK das 4 armas equalizado (regra 1: 5-10s no mapa atual; DPS 16.9-18.8, dentro de 2% entre si)
