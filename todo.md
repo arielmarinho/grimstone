@@ -1,20 +1,19 @@
 # Todo
 
-## Fase 1 — MVP ✅ (polir abaixo)
-- [x] Player + combate + XP/skills
-- [x] Ratos com IA/HP/respawn
-- [x] Cidade 1 + caverna com transição pelo bueiro
-- [x] HUD + save/load JSON
-- [ ] Subir sprites reais como .b64 (aguardando fluxo de payload)
-- [ ] Colisão real (paredes, água, props)
-- [ ] Direções up/left (right = espelho)
-- [ ] Loot + moedas
+## Fase 1 — MVP ✅
+- [x] Player click-to-move + classes por arma (4 armas/4 classes)
+- [x] Ratos com IA/HP/respawn/loot
+- [x] Cidade + caverna com transição pelo bueiro
+- [x] HUD (hp/mana/xp/skills/moedas) + painel de roupas
+- [x] Save/load JSON completo (inclui arma e roupas)
+- [x] Sprites reais das referências no repo (.b64 runtime)
+- [ ] Animações walk/attack nas direções up/left (right = espelho)
+- [ ] Colisão real (paredes, água)
 
 ## Fase 2 — Polish
 - [ ] Áudio (SFX + música)
 - [ ] Minimapa circular, hotbar 8 slots, inventário
-- [ ] Customização cabelo/túnica (5 cores)
-- [ ] Tela título + settings
+- [ ] Mapas reais no repo (hoje: procedural orgânico)
 
 ## Fase 3 — Mobile
 - [ ] Export Android, ícone, splash
