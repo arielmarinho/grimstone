@@ -60,6 +60,7 @@ func _ready() -> void:
 	_build_bestiary_panel()
 	_build_feedback()
 	_build_chat()
+	add_to_group("hud")
 	GameManager.quest_ready.connect(_on_quest_ready)
 
 # quest concluida (falta entregar): aviso fixo no HUD
@@ -131,11 +132,14 @@ func _append_chat(kind: String, bbcode: String) -> void:
 
 func toggle_chat() -> void:
 	chat_open = not chat_open
-	chat_panel.visible = chat_open
 	if chat_open:
+		close_all_panels()
+		chat_open = true
+		chat_panel.visible = true
 		AudioManager.play_sfx("ui_click")
 		chat_input.grab_focus()
 	else:
+		chat_panel.visible = false
 		chat_input.release_focus()
 		chat_input.text = ""
 
@@ -167,6 +171,22 @@ func _show_feedback(msg: String) -> void:
 	_feedback_tween.tween_interval(2.0)
 	_feedback_tween.tween_property(feedback_label, "modulate:a", 0.0, 0.6)
 	_feedback_tween.tween_callback(func(): feedback_label.visible = false)
+
+## Painéis EXCLUSIVOS (regra gs-ui-ux): abrir um fecha TODOS os outros
+## (mochila, roupas, skills, bestiário, chat, loja, banco, missões).
+func close_all_panels() -> void:
+	bag_panel.visible = false
+	cloth_panel.visible = false
+	skills_panel.visible = false
+	bestiary_panel.visible = false
+	if chat_open:
+		chat_open = false
+		chat_panel.visible = false
+		chat_input.release_focus()
+		chat_input.text = ""
+	for npc in get_tree().get_nodes_in_group("npc_panel"):
+		if npc.has_method("close"):
+			npc.close()
 
 func _make_label(pos: Vector2, size: int, color: Color) -> Label:
 	var l = Label.new()
@@ -202,7 +222,7 @@ func _process(_delta: float) -> void:
 		fed_label.visible = false
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[player_ref.weapon]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | F loja | Enter chat]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | Z/X runas | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | F loja | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -825,9 +845,9 @@ func _build_skills_panel() -> void:
 func toggle_skills_panel() -> void:
 	skills_panel.visible = not skills_panel.visible
 	if skills_panel.visible:
+		close_all_panels()
+		skills_panel.visible = true
 		_refresh_skills_panel()
-		bag_panel.visible = false
-		cloth_panel.visible = false
 
 func _refresh_skills_panel() -> void:
 	for c in skills_panel.get_children():
@@ -901,10 +921,9 @@ func _build_bestiary_panel() -> void:
 func toggle_bestiary_panel() -> void:
 	bestiary_panel.visible = not bestiary_panel.visible
 	if bestiary_panel.visible:
+		close_all_panels()
+		bestiary_panel.visible = true
 		_refresh_bestiary_panel()
-		bag_panel.visible = false
-		cloth_panel.visible = false
-		skills_panel.visible = false
 
 func _refresh_bestiary_panel() -> void:
 	for c in bestiary_panel.get_children():
@@ -941,15 +960,15 @@ func _refresh_bestiary_panel() -> void:
 func toggle_cloth_panel() -> void:
 	cloth_panel.visible = not cloth_panel.visible
 	if cloth_panel.visible:
+		close_all_panels()
+		cloth_panel.visible = true
 		_update_preview()
-		bag_panel.visible = false
-		skills_panel.visible = false
 
 func toggle_bag() -> void:
 	bag_panel.visible = not bag_panel.visible
 	if bag_panel.visible:
-		cloth_panel.visible = false
-		skills_panel.visible = false
+		close_all_panels()
+		bag_panel.visible = true
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
