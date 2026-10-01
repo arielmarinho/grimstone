@@ -2,6 +2,14 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.5 (ciclo 23: BANCO/DEPOSITO — estilo Tibia)
+
+- NOVO scripts/world/bank.gd: NPC banco nas 2 cidades (tecla T) — depositar/sacar itens da mochila (libera os 20 slots), tier de raridade preservado ("espada#2" deposita como raro e volta raro)
+- GameManager.bank persistido no save ("bank"); NOVO JOGO zera; save antigo compativel
+- HUD: dica de teclas atualizada (T banco)
+- Teste unitario tests/test_bank.gd PASSOU (BANK_TEST_OK — depositar/sacar, tier preservado, item inexistente); headless 0 erros
+- Proximo: bestiario OU teste no Mac do usuario
+
 ## 2026-10-01 — v0.6.4 (ciclo 22: polish de quests + comida)
 - HUD: tecla J agora funciona em QUALQUER lugar — perto do NPC abre o painel; longe, mostra "Procure o MESTRE DAS MISSOES" (NPC entrou no grupo quest_npc)
 - HUD: aviso "MISSAO PRONTA: ..." aparece quando uma quest completa (signal quest_ready no GameManager) — lembra de entregar no NPC
