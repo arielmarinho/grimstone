@@ -45,16 +45,14 @@
 - Spawns fora do alcance de aggro (280px) do spawn do player em todos os mapas
 - Validado: Godot headless --import + --quit = 0 erros de script
 
-### Area 5 — Itens & Economia (03:28-03:38) implementado
+### Area 5 — Itens & Economia (03:28-03:38) OK
 - Auditoria com SIMULACAO numerica (regra 5 da skill: nunca balancear no escuro)
 - Regra 1 (TTK 5-10s): arco/cajado tinham DPS 40% abaixo da espada — arco 10->14 dano / 0.9->0.8s CD, cajado 18->19; TTK de todas as 4 armas agora dentro de 2% entre si em todos os 8 mobs
 - Regra 2 (player aguenta 8+ hits): dano de mobs endgame cortado — spider 14->12, goblin 16->12, wolf 20->13, skeleton 24->14, orc 30->16; player base agora aguenta 8-16 hits em qualquer mapa (lvl 5: 10-23)
 - Regra 3 (loot/min >= 2 pocoes do mapa): loot de moedas +30% nos mobs de farm — goblin 15-30->20-40, skeleton 25-50->35-70, wolf 20-40->28-55, orc 30-60->40-80, spider 12-25->14-28; economia fechada: 130-193 moedas/min endgame vs pocao M=60
 - Regra 4 (skill up ~2min no inicio): curva de skill XP mudou de linear (level*100) pra QUADRATICA estilo Tibia (lvl^2*5) — lvl 10->11 em ~1.7min de combate, lvl 30 em ~15min por nivel
-- Validado: Godot headless --import + --quit = 0 erros de script
-
 - Complemento (ciclo 6b, e91d1d2/cce7084): dano de mob com VARIANCIA ±10% (estilo Tibia); pocoes G agora dropam (orc/skeleton 10%) — antes so na loja; goblin dropa pocao M (12%)
-- Validado Godot headless: 0 erros
+- Validado: Godot headless --import + --quit = 0 erros de script
 
 ### Area 6 — UI/UX (ciclo 7, 03:33-03:45) implementada
 - BUG 1 (grave): _make_label adicionava o label ao ROOT do HUD — labels de titulo/hint dos paineis mochila/roupas/skills ficavam SEMPRE visiveis sobre o jogo e se ACUMULAVAM a cada refresh da tela K. Fix: _make_label so cria; quem adiciona e o painel
