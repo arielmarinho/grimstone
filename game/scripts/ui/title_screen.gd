@@ -102,7 +102,7 @@ func _ready() -> void:
 	add_child(ip_input)
 	# versao
 	var ver = Label.new()
-	ver.text = "v0.4.5"
+	ver.text = "v0.6.15"
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
