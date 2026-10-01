@@ -113,17 +113,14 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 	var pants := Color(0.28, 0.23, 0.19)
 	var boots := Color(0.38, 0.26, 0.15)
 	if is_death:
-		# deitado (igual em todas as direcoes)
 		_draw_ellipse(img, cx + 2, 84, 16, 5, tunic)
 		_draw_circle(img, cx - 18, 84, 6, skin)
 		_draw_ellipse(img, cx - 20, 82, 6, 3, hair)
 		_draw_ellipse(img, cx + 18, 86, 8, 3, pants)
 		_draw_rect(img, cx + 14, 90, 14, 2, Color(0.8, 0.82, 0.86))
 		return
-	# sombra
 	_draw_ellipse(img, cx, 88, 11, 3.5, Color(0, 0, 0, 0.25))
 	if dir == "up":
-		# ===== COSTAS: cabelo cobre a cabeca, arma na mao esquerda =====
 		_draw_ellipse(img, cx - 5, 70 + leg_l, 3.5, 8, pants)
 		_draw_ellipse(img, cx + 5, 70 + leg_r, 3.5, 8, pants)
 		_draw_ellipse(img, cx - 5, 80 + leg_l, 4, 3, boots)
@@ -132,43 +129,33 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		_draw_ellipse(img, cx - 4, 56 + bob, 7, 9, tunic_d)
 		_draw_rect(img, cx - 10, 62 + bob, 20, 3, Color(0.25, 0.17, 0.1))
 		_draw_circle(img, cx, 63.5 + bob, 1.5, Color(0.8, 0.65, 0.3))
-		# braco direito (visivel de tras)
 		_draw_ellipse(img, cx + 11, 50 + bob, 3, 7, tunic)
 		_draw_circle(img, cx + 11, 58 + bob, 2.5, skin)
-		# arma na mao esquerda
 		if Equips.WEAPONS.has(weapon):
 			Equips.draw_weapon(img, weapon, cx - 11, 52 + bob, f, is_attack)
-		# cabeca de costas: so cabelo
 		_draw_circle(img, cx, 32 + bob, 8.5, skin)
 		_draw_ellipse(img, cx, 30 + bob, 8.5, 7, hair)
 		_draw_ellipse(img, cx - 7, 34 + bob, 3, 5, hair)
 		_draw_ellipse(img, cx + 7, 34 + bob, 3, 5, hair)
 	elif dir == "side":
-		# ===== PERFIL olhando pra DIREITA (flip_h cobre esquerda) =====
 		var step := 0
 		if is_walk:
 			step = [4, 0, -4, 0][f]
-		# pernas tesoura horizontal
 		_draw_ellipse(img, cx - 3 + step, 72, 3.5, 8, pants)
 		_draw_ellipse(img, cx + 3 - step, 72, 3.5, 8, pants)
 		_draw_ellipse(img, cx - 3 + step, 81, 4, 3, boots)
 		_draw_ellipse(img, cx + 3 - step, 81, 4, 3, boots)
-		# tronco
 		_draw_ellipse(img, cx, 52 + bob, 10, 12, tunic)
 		_draw_ellipse(img, cx + 2, 56 + bob, 6, 8, tunic_d)
 		_draw_rect(img, cx - 8, 62 + bob, 16, 3, Color(0.25, 0.17, 0.1))
-		# braco de tras
 		_draw_ellipse(img, cx - 6, 52 + bob, 3, 6, tunic)
-		# cabeca de perfil
 		_draw_circle(img, cx + 2, 32 + bob, 8, skin)
 		_draw_ellipse(img, cx + 9, 34 + bob, 3, 2.5, skin)
 		_draw_ellipse(img, cx - 2, 28 + bob, 7, 5, hair)
 		_draw_ellipse(img, cx + 4, 26 + bob, 6, 4, hair)
 		_draw_circle(img, cx + 6, 32 + bob, 1.3, Color(0.12, 0.1, 0.14))
-		# braco da frente estendido
 		_draw_ellipse(img, cx + 8, 50 + bob, 6, 3, tunic)
 		_draw_circle(img, cx + 14, 50 + bob, 2.5, skin)
-		# arma HORIZONTAL na frente (por classe)
 		var w = Equips.WEAPONS.get(weapon, null)
 		if w != null:
 			var steel: Color = w.get("cor", Color(0.8, 0.82, 0.86))
@@ -195,7 +182,6 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 				if weapon == "axe":
 					_draw_ellipse(img, cx + 21 + reach, by, 4, 5, steel)
 	else:
-		# ===== FRENTE (down) =====
 		_draw_ellipse(img, cx - 5, 70 + leg_l, 3.5, 8, pants)
 		_draw_ellipse(img, cx + 5, 70 + leg_r, 3.5, 8, pants)
 		_draw_ellipse(img, cx - 5, 80 + leg_l, 4, 3, boots)
@@ -218,7 +204,7 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		if Equips.WEAPONS.has(weapon):
 			Equips.draw_weapon(img, weapon, cx + 11, 52 + bob, f, is_attack)
 
-# ---------- RATO (down + flip_h cobre os lados) ----------
+# ---------- RATO ----------
 static func _draw_rat(img: Image, f: int, is_attack: bool, is_death: bool, is_walk: bool) -> void:
 	var cx := 44
 	var fur := Color(0.48, 0.34, 0.19)
@@ -272,6 +258,14 @@ static func _draw_ellipse(img: Image, cx: float, cy: float, rx: float, ry: float
 
 static func _draw_circle(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
 	_draw_ellipse(img, cx, cy, r, r, c)
+
+static func _draw_circle_ring(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
+	for a in range(72):
+		var ang = a * TAU / 72.0
+		var px = cx + cos(ang) * r
+		var py = cy + sin(ang) * r
+		if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height():
+			img.set_pixel(px, py, c)
 
 static func _draw_rect(img: Image, x: int, y: int, w: int, h: int, c: Color) -> void:
 	for j in range(h):
@@ -388,27 +382,15 @@ static func _map_city() -> Texture2D:
 	# ===== BUEIRO COM ESCADA (entrada da caverna) =====
 	var bx := W / 2
 	var by := 800
-	# buraco escuro
 	_draw_circle(img, bx, by, 30, Color(0.32, 0.32, 0.35))
 	_draw_circle(img, bx, by, 25, Color(0.06, 0.06, 0.08))
-	# escada de pedra descendo pro buraco (3 degraus visiveis)
 	_draw_rect(img, bx - 18, by - 2, 36, 5, Color(0.42, 0.4, 0.38))
 	_draw_rect(img, bx - 14, by + 4, 28, 5, Color(0.34, 0.32, 0.3))
 	_draw_rect(img, bx - 10, by + 10, 20, 5, Color(0.26, 0.24, 0.22))
-	# grade de ferro ABERTA (dobrada pro lado)
 	_draw_rect(img, bx - 34, by - 8, 3, 20, Color(0.45, 0.45, 0.5))
 	_draw_rect(img, bx + 31, by - 8, 3, 20, Color(0.45, 0.45, 0.5))
-	# aro de pedra
-	_draw_circle(img, bx, by, 30, Color(0.5, 0.48, 0.45), true)
+	_draw_circle_ring(img, bx, by, 30, Color(0.5, 0.48, 0.45))
 	return ImageTexture.create_from_image(img)
-
-static func _draw_circle_ring(img: Image, cx: float, cy: float, r: float, c: Color) -> void:
-	for a in range(72):
-		var ang = a * TAU / 72.0
-		var px = cx + cos(ang) * r
-		var py = cy + sin(ang) * r
-		if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height():
-			img.set_pixel(px, py, c)
 
 static func _draw_building(img: Image, x: int, y: int, w: int, h: int, roof: Color) -> void:
 	var roof_d := roof.darkened(0.25)
@@ -466,7 +448,6 @@ static func _map_cave() -> Texture2D:
 	var sy := 95
 	_draw_circle(img, sx, sy, 30, Color(0.32, 0.32, 0.35))
 	_draw_circle(img, sx, sy, 24, Color(0.55, 0.75, 0.95))
-	# escada de madeira subindo (2 trilhos + degraus)
 	_draw_rect(img, sx - 12, sy - 14, 3, 30, Color(0.52, 0.38, 0.22))
 	_draw_rect(img, sx + 9, sy - 14, 3, 30, Color(0.52, 0.38, 0.22))
 	for i in range(5):
