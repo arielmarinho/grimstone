@@ -21,6 +21,8 @@ var coins_label: Label
 var arrows_label: Label
 var bag_panel: Control
 var bag_grid: GridContainer
+var fuse_grid: GridContainer
+var _fuse_sig: String = ""
 var death_screen: Control
 var cloth_panel: Control
 var skills_panel: Control
@@ -169,9 +171,9 @@ func _process(_delta: float) -> void:
 	xp_num.text = "%d XP" % (GameManager.xp - prev_xp)
 	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
 	arrows_label.text = "Flechas: %d" % GameManager.arrows
-	arrows_label.visible = player_ref != null and GameManager.weapon_base() == "bow"
+	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
 	if player_ref != null:
-		var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
+		var w = EQUIPS.WEAPONS[player_ref.weapon]
 		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | B mochila | C roupas | K skills | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
@@ -188,6 +190,66 @@ func _process(_delta: float) -> void:
 		map_label.text = "Nivel %d  |  %s  |  [ONLINE %d]" % [GameManager.level, GameManager.current_map, NetworkManager.online_count()]
 	if bag_panel.visible:
 		_refresh_bag()
+		_refresh_fuse()
+
+# ---------- FUSAO (v0.6.1): 3 iguais do mesmo tier -> 1 do tier seguinte ----------
+func _refresh_fuse() -> void:
+	# so reconstrói quando as opcoes de fusao mudam
+	var sig := "%d|" % GameManager.coins
+	for id in GameManager.bag.keys():
+		if GameManager.bag[id] >= 3:
+			sig += "%s:%d," % [id, GameManager.bag[id]]
+	if sig == _fuse_sig:
+		return
+	_fuse_sig = sig
+	for c in fuse_grid.get_children():
+		c.queue_free()
+	for id in GameManager.bag.keys():
+		if not GameManager.can_fuse(id):
+			continue
+		var tier := RARITY.tier_of(id)
+		var slot = Button.new()
+		slot.custom_minimum_size = Vector2(46, 46)
+		var st = StyleBoxFlat.new()
+		st.bg_color = Color(0.16, 0.15, 0.18, 0.9)
+		st.set_corner_radius_all(6)
+		st.set_border_width_all(2)
+		st.border_color = RARITY.cor(tier)
+		slot.add_theme_stylebox_override("normal", st)
+		var icon = TextureRect.new()
+		icon.texture = ITEMS_DB.draw_icon(id, 32)
+		icon.custom_minimum_size = Vector2(32, 32)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(icon)
+		var qty = Label.new()
+		qty.text = "x%d" % GameManager.bag[id]
+		qty.position = Vector2(24, 28)
+		qty.add_theme_font_size_override("font_size", 10)
+		qty.add_theme_color_override("font_color", Color(1, 1, 0.8))
+		qty.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(qty)
+		slot.tooltip_text = "%s -> %s (50 moedas)" % [_item_display_name(id), _item_display_name(RARITY.key_with_tier(id.split("#")[0], tier + 1))]
+		slot.pressed.connect(_fuse_click.bind(id))
+		fuse_grid.add_child(slot)
+
+func _fuse_click(id: String) -> void:
+	if player_ref == null or player_ref.dead:
+		return
+	var nome_antes := _item_display_name(id)
+	var tier := RARITY.tier_of(id)
+	if not GameManager.fuse_item(id):
+		return
+	AudioManager.play_sfx("level_up")
+	var novo_id := RARITY.key_with_tier(id.split("#")[0], tier + 1)
+	_show_feedback("FUSAO! %s -> %s!" % [nome_antes, _item_display_name(novo_id)])
+	# se a arma equipada era uma das fundidas e sumiu, re-equipa a base
+	if not GameManager.EQUIPS_OK(GameManager.weapon):
+		GameManager.weapon = GameManager.weapon_base()
+		if player_ref != null:
+			player_ref.weapon = GameManager.weapon
+			player_ref._build_frames()
 
 func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
 	var bar = ProgressBar.new()
@@ -210,26 +272,26 @@ func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
 func _build_hotbar() -> void:
 	for i in range(4):
 		var slot = Button.new()
-		slot.position = Vector2(560 + i * 46, 640)
-		slot.size = Vector2(42, 42)
-		var icon = TextureRect.new()
-		icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
-		icon.position = Vector2(7, 7)
-		icon.custom_minimum_size = Vector2(28, 28)
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(icon)
-		var num = Label.new()
-		num.text = str(i + 1)
-		num.position = Vector2(3, 2)
-		num.add_theme_font_size_override("font_size", 10)
-		num.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		slot.add_child(num)
-		slot.pressed.connect(_select_weapon.bind(WEAPON_KEYS[i]))
-		add_child(slot)
-		hotbar_slots.append(slot)
+	slot.position = Vector2(560 + i * 46, 640)
+	slot.size = Vector2(42, 42)
+	var icon = TextureRect.new()
+	icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
+	icon.position = Vector2(7, 7)
+	icon.custom_minimum_size = Vector2(28, 28)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(icon)
+	var num = Label.new()
+	num.text = str(i + 1)
+	num.position = Vector2(3, 2)
+	num.add_theme_font_size_override("font_size", 10)
+	num.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+	num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(num)
+	slot.pressed.connect(_select_weapon.bind(WEAPON_KEYS[i]))
+	add_child(slot)
+	hotbar_slots.append(slot)
 
 func _select_weapon(wid: String) -> void:
 	if player_ref != null and not player_ref.dead:
@@ -287,7 +349,7 @@ func _press_skill(slot: String) -> void:
 		player_ref._use_skill(slot)
 
 func _process_skill_buttons() -> void:
-	var list = SKILLS.SKILLS.get(GameManager.weapon_base(), [])
+	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
 	var slots = ["Q", "E", "R", "G"]
 	for i in range(slots.size()):
 		var slot: String = slots[i]
@@ -342,6 +404,22 @@ func _build_bag() -> void:
 	var hint = _make_label(Vector2(510, 480), 12, Color(0.7, 0.7, 0.75))
 	hint.text = "Clique para usar/equipar | B fecha"
 	bag_panel.add_child(hint)
+	# --- secao de FUSAO (3 iguais do mesmo tier -> 1 do tier seguinte, 50 moedas) ---
+	var ftitle = _make_label(Vector2(800, 140), 16, Color(1.0, 0.82, 0.25))
+	ftitle.text = "FUSAO DE ITENS"
+	bag_panel.add_child(ftitle)
+	var fdesc = _make_label(Vector2(800, 162), 11, Color(0.75, 0.75, 0.8))
+	fdesc.text = "3 iguais do mesmo tier + 50 moedas\n= 1 do tier seguinte (Lendario nao funde)"
+	bag_panel.add_child(fdesc)
+	fuse_grid = GridContainer.new()
+	fuse_grid.columns = 4
+	fuse_grid.position = Vector2(800, 200)
+	fuse_grid.add_theme_constant_override("h_separation", 6)
+	fuse_grid.add_theme_constant_override("v_separation", 6)
+	bag_panel.add_child(fuse_grid)
+	var fhint = _make_label(Vector2(800, 480), 12, Color(0.7, 0.7, 0.75))
+	fhint.text = "Clique para fundir"
+	bag_panel.add_child(fhint)
 func _refresh_bag() -> void:
 	# so reconstrói quando o conteudo da mochila muda (antes: a cada frame = 20 botoes novos por frame)
 	var ids = GameManager.bag.keys()
@@ -514,7 +592,7 @@ func _build_cloth_panel() -> void:
 		sw3.position = Vector2(430 + i * 34, 456)
 		sw3.size = Vector2(30, 30)
 		var st3 = StyleBoxFlat.new()
-		st3.bg_color = EQUIPS.PANTS_COLORS[p_name]
+		st3.bg_color = EQUIPS.PANTS_COLORS[c_name]
 		st3.set_corner_radius_all(6)
 		sw3.add_theme_stylebox_override("normal", st3)
 		sw3.pressed.connect(_set_pants.bind(p_name))
@@ -542,12 +620,12 @@ func _set_pants(c: String) -> void:
 	_update_preview()
 
 func _update_preview() -> void:
-	# preview do knight com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado
+	# preview do knight com as cores atuais (idle down, base, frame 0) — antes NUNCA era renderizado
 	if player_ref == null:
 		return
 	var texs = TEXHELPER.load_sheet_custom(
 		"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-		GameManager.weapon_base(), player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+		player_ref.weapon, player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
 	if not texs.is_empty():
 		preview.texture = texs[0]
 
@@ -592,10 +670,10 @@ func _refresh_skills_panel() -> void:
 	y += 10
 	if player_ref != null:
 		var st = _make_label(Vector2(370, y), 16, Color(0.6, 0.9, 1.0))
-		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[GameManager.weapon_base()]["classe"]
+		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
 		skills_panel.add_child(st)
 		y += 30
-		var list = SKILLS.SKILLS.get(GameManager.weapon_base(), [])
+		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
 		for i in range(list.size()):
 			var sk = list[i]
 			if not SKILLS.skill_unlocked(sk):
@@ -610,7 +688,7 @@ func _refresh_skills_panel() -> void:
 			skills_panel.add_child(l)
 			y += 24
 		y += 10
-		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[GameManager.weapon_base()]["skill"], {"level": 10})["level"]
+		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[player_ref.weapon]["skill"], {"level": 10})["level"]
 		var lc = _make_label(Vector2(370, y), 14, Color(1.0, 0.85, 0.3))
 		lc.text = "Chance de critico: %.1f%% (dano x2)" % (SKILLS.crit_chance(crit_lv) * 100.0)
 		skills_panel.add_child(lc)
