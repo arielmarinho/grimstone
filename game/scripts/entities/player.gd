@@ -6,6 +6,8 @@ const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const SKILLS = preload("res://scripts/autoload/skills_db.gd")
 
+signal feedback(msg: String)
+
 const SPEED = 260.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
@@ -179,10 +181,10 @@ func _use_skill(slot: String) -> void:
 	if sk.is_empty():
 		return
 	if not SKILLS.skill_unlocked(sk):
-		print(sk["nome"], " desbloqueia ao chegar na VILA (city2)!")
+		_show_feedback("%s desbloqueia ao chegar na VILA (city2)!" % sk["nome"])
 		return
 	if GameManager.mana < sk["mana"]:
-		print("mana insuficiente para ", sk["nome"])
+		_show_feedback("Mana insuficiente para %s (%d)" % [sk["nome"], sk["mana"]])
 		return
 	GameManager.mana -= sk["mana"]
 	skill_ready[slot] = false
@@ -430,7 +432,7 @@ func _attack(mob) -> void:
 	# arco gasta flechas
 	if weapon == "bow":
 		if GameManager.arrows <= 0:
-			print("sem flechas! compre na loja")
+			_show_feedback("Sem flechas! Compre na loja.")
 			return
 		GameManager.arrows -= 1
 	_update_facing(mob.global_position - global_position)
@@ -491,6 +493,9 @@ func _attack(mob) -> void:
 					if m2 != _multi_target and not m2.dead and m2.global_position.distance_to(_multi_target.global_position) < 150.0:
 						m2.take_damage(int(dmg * 0.6))
 			_multi_target = null
+
+func _show_feedback(msg: String) -> void:
+	feedback.emit(msg)
 
 func take_damage(amount: int) -> void:
 	if dead:
