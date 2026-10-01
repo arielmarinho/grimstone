@@ -154,6 +154,7 @@ func _new_game() -> void:
 	GameManager.city2_unlocked = false
 	GameManager.quests = {}
 	GameManager.well_fed_time = 0.0
+	GameManager.bank = {}
 	GameManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
