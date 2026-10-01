@@ -1,6 +1,6 @@
 extends Object
-## TexHelper — carrega sprite real do disco (PNG ou .b64); se nao existir, gera grafico procedural
-## Assim o jogo roda 100% so com o clone, e sprites reais entram depois
+## TexHelper — carrega sprite real do disco; se nao existir, gera grafico procedural
+## (assim o jogo roda 100% so com o clone, e sprites reais entram depois)
 
 static func load_sheet(path: String, frame_count: int = 4) -> Array[Texture2D]:
 	var img := _load_image(path)
@@ -82,11 +82,11 @@ static func load_map(path: String) -> Texture2D:
 	var img := _load_image(path)
 	if img != null:
 		return img
-	var img = Image.create(512, 512, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0.35, 0.6, 0.3))
+	var img2 = Image.create(512, 512, false, Image.FORMAT_RGBA8)
+	img2.fill(Color(0.35, 0.6, 0.3))
 	for x in range(230, 280):
 		for y in range(512):
-			img.set_pixel(x, y, Color(0.75, 0.65, 0.5))
+			img2.set_pixel(x, y, Color(0.75, 0.65, 0.5))
 	for i in range(512):
-		_draw_rect(img, i, 60, 1, 10, Color(0.5, 0.5, 0.52))
-	return ImageTexture.create_from_image(img)
+		_draw_rect(img2, i, 60, 1, 10, Color(0.5, 0.5, 0.52))
+	return ImageTexture.create_from_image(img2)
