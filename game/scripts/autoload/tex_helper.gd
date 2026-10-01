@@ -244,7 +244,7 @@ static func load_map(path: String) -> Texture2D:
 		return _map_forest()
 	return _map_city()
 
-# ---------- CIDADE 1 (muralha, fonte, lojas, lago, portao sul + portao LESTE) ----------
+# ---------- CIDADE 1 (muralha, fonte, lojas, lago, portao sul, bueiro) ----------
 static func _map_city() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -340,7 +340,7 @@ static func _map_city() -> Texture2D:
 		if img.get_pixel(fx, fy).g > 0.5:
 			var fc = [Color(0.9, 0.8, 0.3), Color(0.9, 0.5, 0.6), Color(0.8, 0.8, 0.95)][randi() % 3]
 			_draw_circle(img, fx, fy, 1.5, fc)
-	# bueiro com escada
+	# bueiro com escada (saida sul pro bueiro/caverna)
 	var bx := W / 2
 	var by := 800
 	_draw_circle(img, bx, by, 30, Color(0.32, 0.32, 0.35))
@@ -351,7 +351,7 @@ static func _map_city() -> Texture2D:
 	_draw_rect(img, bx - 34, by - 8, 3, 20, Color(0.45, 0.45, 0.5))
 	_draw_rect(img, bx + 31, by - 8, 3, 20, Color(0.45, 0.45, 0.5))
 	_draw_circle_ring(img, bx, by, 30, Color(0.5, 0.48, 0.45))
-	# portao LESTE (saida pra city2)
+	# portao LESTE (saida pra floresta)
 	for y in range(H / 2 - 46, H / 2 + 46):
 		for x in range(W - 130, W):
 			img.set_pixel(x, y, dirt)
@@ -359,7 +359,7 @@ static func _map_city() -> Texture2D:
 	_draw_rect(img, W - 90, H / 2 + 38, 70, 14, Color(0.45, 0.3, 0.18))
 	return ImageTexture.create_from_image(img)
 
-# ---------- CIDADE 2 (vila de pedra estilo anao, portao OESTE + SUL) ----------
+# ---------- CIDADE 2 (portao LESTE da city1 — vila de pedra, estilo anao) ----------
 static func _map_city2() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -370,6 +370,7 @@ static func _map_city2() -> Texture2D:
 		var y = randi() % H
 		var shade = 0.42 + randf() * 0.12
 		img.set_pixel(x, y, Color(shade + 0.05, shade + 0.08, shade * 0.6))
+	# estradas de pedra (cruz central + anel)
 	var stone := Color(0.55, 0.53, 0.5)
 	var stone_d := Color(0.48, 0.46, 0.44)
 	for y in range(160, 940):
@@ -380,10 +381,12 @@ static func _map_city2() -> Texture2D:
 		for y in range(H / 2 - 30, H / 2 + 30):
 			var c = stone if (x + y) % 9 != 0 else stone_d
 			img.set_pixel(x, y, c)
+	# praca central com estatua
 	_draw_circle(img, W / 2, H / 2, 90, Color(0.6, 0.58, 0.55))
 	_draw_circle(img, W / 2, H / 2 - 10, 16, Color(0.7, 0.68, 0.64))
 	_draw_rect(img, W / 2 - 6, H / 2 - 10, 12, 40, Color(0.65, 0.63, 0.6))
 	_draw_circle(img, W / 2, H / 2 + 34, 22, Color(0.62, 0.6, 0.57))
+	# muralha de pedra com portao OESTE (volta pra city1) e SUL (floresta)
 	var wall := Color(0.52, 0.5, 0.47)
 	var wall_d := Color(0.42, 0.4, 0.38)
 	for i in range(0, W, 3):
@@ -394,13 +397,16 @@ static func _map_city2() -> Texture2D:
 		_draw_rect(img, 890, j, 16, 3, wall if j % 12 != 0 else wall_d)
 	for pos in [[140, 140], [890, 140], [140, 890], [890, 890]]:
 		_draw_circle(img, pos[0], pos[1], 20, Color(0.58, 0.56, 0.53))
+	# portao oeste
 	for y in range(H / 2 - 46, H / 2 + 46):
 		for x in range(0, 130):
 			img.set_pixel(x, y, stone)
+	# casas de pedra (estilo anao, telhados de cobre)
 	_draw_building(img, 220, 230, 150, 110, Color(0.72, 0.45, 0.2))
 	_draw_building(img, 630, 230, 150, 110, Color(0.72, 0.45, 0.2))
 	_draw_building(img, 220, 640, 150, 110, Color(0.6, 0.5, 0.25))
 	_draw_building(img, 630, 640, 150, 110, Color(0.72, 0.45, 0.2))
+	# forja acesa (canto sudeste)
 	_draw_circle(img, 780, 780, 26, Color(0.35, 0.33, 0.3))
 	_draw_circle(img, 780, 780, 18, Color(0.95, 0.45, 0.1))
 	_draw_circle(img, 780, 780, 10, Color(1.0, 0.75, 0.25))
@@ -408,15 +414,17 @@ static func _map_city2() -> Texture2D:
 		var fx = 770 + randi() % 20
 		var fy = 750 + randi() % 20
 		_draw_circle(img, fx, fy, 2, Color(1.0, 0.85, 0.4, 0.7))
+	# arvores esparsas
 	for pos in [[90, 300], [930, 320], [90, 700], [500, 100], [500, 950]]:
 		_draw_tree(img, pos[0], pos[1])
+	# portao sul (saida pra floresta)
 	var dirt := Color(0.6, 0.52, 0.4)
 	for y in range(890, H):
 		for x in range(W / 2 - 46, W / 2 + 46):
 			img.set_pixel(x, y, dirt)
 	return ImageTexture.create_from_image(img)
 
-# ---------- FLORESTA (sul da city2 — densa, clareira central, lago) ----------
+# ---------- FLORESTA (sul da city2 — lobos, aranhas, goblins) ----------
 static func _map_forest() -> Texture2D:
 	var W := 1024
 	var H := 1024
@@ -427,32 +435,42 @@ static func _map_forest() -> Texture2D:
 		var y = randi() % H
 		var shade = 0.18 + randf() * 0.14
 		img.set_pixel(x, y, Color(shade * 0.8, shade + 0.2, shade * 0.7))
+	# clareira central (spawn)
 	_draw_ellipse(img, W / 2, H / 2, 130, 100, Color(0.4, 0.58, 0.28))
 	_draw_ellipse(img, W / 2, H / 2, 110, 82, Color(0.45, 0.62, 0.3))
+	# trilha norte (entrada da city2)
 	var dirt := Color(0.6, 0.52, 0.38)
 	for y in range(0, H / 2):
 		var wobble = sin(y * 0.06) * 10
 		for x in range(W / 2 - 22 + wobble, W / 2 + 22 + wobble):
 			var c = dirt if (x + y) % 7 != 0 else dirt.darkened(0.1)
 			img.set_pixel(x, y, c)
+	# lago pequeno
 	_draw_ellipse(img, 250, 700, 80, 60, Color(0.25, 0.45, 0.7))
 	_draw_ellipse(img, 250, 700, 70, 52, Color(0.3, 0.52, 0.78))
+	# FLORESTA DENSA: muitas arvores em anel, deixando corredores
+	var tree_positions := []
 	for i in range(46):
 		var ang = randf() * TAU
 		var r = 180 + randf() * 300
 		var tx = W / 2 + cos(ang) * r
 		var ty = H / 2 + sin(ang) * r * 0.9
 		if tx > 60 and tx < W - 60 and ty > 80 and ty < H - 60:
-			_draw_tree(img, int(tx), int(ty))
+			tree_positions.append([int(tx), int(ty)])
+	for pos in tree_positions:
+		_draw_tree(img, pos[0], pos[1])
+	# cogumelos e flores
 	for i in range(30):
 		var fx = 100 + randi() % (W - 200)
 		var fy = 100 + randi() % (H - 200)
 		var fc = [Color(0.9, 0.3, 0.3), Color(0.9, 0.8, 0.3), Color(0.8, 0.6, 0.95)][randi() % 3]
 		_draw_circle(img, fx, fy, 2.5, fc)
 		_draw_circle(img, fx, fy + 3, 1.5, Color(0.95, 0.92, 0.85))
+	# pedras
 	for pos in [[150, 250], [850, 300], [800, 800], [400, 900]]:
 		_draw_circle(img, pos[0], pos[1], 14, Color(0.5, 0.48, 0.45))
 		_draw_circle(img, pos[0] - 3, pos[1] - 4, 8, Color(0.6, 0.58, 0.55))
+	# entrada norte (trilha continua)
 	for y in range(0, 40):
 		for x in range(W / 2 - 30, W / 2 + 30):
 			img.set_pixel(x, y, dirt)
