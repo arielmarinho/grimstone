@@ -147,11 +147,17 @@ func _physics_process(delta: float) -> void:
 			if player.dead:
 				state = "wander"
 				return
+			if global_position.distance_to(home) > 700.0:
+				state = "wander"  # leash: nao persegue pra longe do spawn
+				return
 			_move(player.global_position, cspeed)
 		"attack":
+			if player.dead:
+				state = "wander"
+				return
 			velocity = Vector2.ZERO
 			attack_cooldown -= delta
-			if attack_cooldown <= 0.0 and not player.dead:
+			if attack_cooldown <= 0.0:
 				attack_cooldown = 1.2
 				_play_dir("attack")
 				$AtkTimer.start(0.3)
@@ -163,7 +169,9 @@ func _do_attack_hit() -> void:
 		return
 	var player = _get_player()
 	if player != null and not player.dead:
-		player.take_damage(damage)
+		# so acerta se o alvo ainda estiver no alcance do golpe
+		if global_position.distance_to(player.global_position) <= 110.0:
+			player.take_damage(damage)
 
 func _move(dest: Vector2, speed: float) -> void:
 	var dir = (dest - global_position).normalized()
@@ -204,10 +212,8 @@ func take_damage(amount: int) -> void:
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
 	_flash_damage()
 	_spawn_damage_number(amount)
-	if hp <= 0 and mob_type != "dummy":
+	if hp <= 0:
 		die()
-	elif mob_type == "dummy":
-		hp = max_hp  # dummy de treino: HP sempre cheio, nunca morre
 
 # ---------- FEEDBACK VISUAL DE DANO ----------
 func _flash_damage() -> void:
