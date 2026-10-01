@@ -2,6 +2,13 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.4.4 (ciclo 5: Area 4 Mapas & Mundo)
+
+- `c80be47`/`5cdc34f` colliders.gd: portoes das muralhas casam com a arte (abertura 224px y 932-1156), predios/casas/arvores do anel denso com colisores (player nao atravessa mais), bordas da floresta com abertura norte correta
+- `8316011`/`2bdc21e` player.gd: REGEN estilo Tibia — mana regenera sempre (lenta, escala com level), HP regenera so FORA de combate
+- Validado Godot headless: 0 erros de script
+- Proximo: Area 5 Itens & Economia (auditoria gs-combat-balance)
+
 ## 2026-10-01 — v0.4.3 (ciclo 4b: Area 3 Monstros & IA — fixes de combate)
 
 - `cd21605` mob.gd: ataque agendado nao acerta mais player MORTO (checava so no agendamento, nao no hit)
@@ -13,7 +20,7 @@ Formato: [data] versão — o que mudou (commit)
 ## 2026-10-01 — v0.4.2 (ciclo 4: sincronização GitHub↔local completa)
 
 - `98204b1` hud.gd = copia EXATA do local (fix preview declarado + `ready: bool` tipado; o d7655ae intermediário reescreveu o arquivo por engano e foi revertido)
-- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das árvores correta (tree_positions coletadas antes de desenhar — árvores não sobrepõem cogumelos/pedras)
+- `4340ba6` tex_helper.gd = copia exata do local: floresta densa com ordem de desenho das árvores correta (tree_positions coletadas antes de desenhar)
 - player.gd remoto JÁ contém os handlers R/G (diff restante é cosmético); equips.gd e icons_embedded.gd idênticos local/remoto
 - Validação: Godot headless `--import` + `--quit` = 0 erros de script
 - LIÇÃO registrada: pushar sempre o conteúdo lido do arquivo local, nunca reconstruir de diff
@@ -27,10 +34,10 @@ Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.4 (ciclo 2: City2 libera mais ataques)
 
-- Skills avancadas R/G por classe (8 novas): sword Investida+Terremoto (stun em area), axe Golpe Duplo+Bersek, bow Precisao (3 criticos)+Tiro Multiplo (explosao em area), staff Escudo Arcano (-50% dano)+Nevasca (stun+dano)
-- Desbloqueio ao PISAR na city2 (flag city2_unlocked salva no savegame) + aviso na tela
-- HUD: 4 botoes de skill (Q/E/R/G), skills bloqueadas aparecem como "???" (cinza) na tela K e nos botoes
-- Player: buffs bersek (x2.5 dano), escudo arcano (metade do dano recebido), precisao, golpe duplo (2 hits)
+- `este` Skills avancadas R/G por classe (8 novas): sword Investida+Terremoto (stun em area), axe Golpe Duplo+Bersek, bow Precisao (3 criticos)+Tiro Multiplo (explosao em area), staff Escudo Arcano (-50% dano)+Nevasca (stun+dano)
+- `este` Desbloqueio ao PISAR na city2 (flag city2_unlocked salva no savegame) + aviso na tela
+- `este` HUD: 4 botoes de skill (Q/E/R/G), skills bloqueadas aparecem como "???" (cinza) na tela K e nos botoes
+- `este` Player: buffs bersek (x2.5 dano), escudo arcano (metade do dano recebido), precisao, golpe duplo (2 hits)
 
 ## 2026-10-01 — v0.3 → v0.4 (madrugada de trabalho autonomo)
 
@@ -45,10 +52,7 @@ Formato: [data] versão — o que mudou (commit)
 - `9e89392` Area 1 (Combate & Feedback): flash de dano, numeros flutuantes, morte com fade, level up com anel dourado
 
 ## Fila (proximos ciclos)
-- [ ] Polish: mana regen fora de combate, comida/energia
-- [ ] Auditoria Area 3 (Monstros & IA) — CONCLUÍDA no ciclo 4b
-- [ ] Auditoria Area 4 (Mapas & Mundo)
-- [ ] Auditoria Area 5 (Itens & Economia)
+- [ ] Auditoria Area 5 (Itens & Economia) — PROXIMO CICLO
 - [ ] Balanceamento geral
 - [ ] Multiplayer: mobs autoritativos, raridade, fusao, trade/party, contas
 - [ ] Build Android
