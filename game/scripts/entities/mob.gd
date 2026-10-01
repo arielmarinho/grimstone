@@ -1,7 +1,8 @@
 extends CharacterBody2D
-## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, drop de moedas
+## Mob base — IA wander/aggro/attack, HP bar flutuante, respawn, loot
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
+const LOOT = preload("res://scripts/entities/loot_table.gd")
 
 const WANDER_RADIUS = 120.0
 const AGGRO_RANGE = 140.0
@@ -122,17 +123,10 @@ func die() -> void:
 	hp_bar.value = 0
 	sprite.play("death")
 	GameManager.add_xp(xp_reward)
-	_drop_coins()
+	LOOT.roll_drop(global_position, get_parent())
 	print("rato morreu, respawn em ", respawn_time, "s")
 	await get_tree().create_timer(respawn_time).timeout
 	respawn()
-
-func _drop_coins() -> void:
-	var n = 1 + randi() % 3
-	for i in range(n):
-		var coin = preload("res://scripts/entities/coin.gd").new()
-		coin.position = global_position + Vector2(randf() * 30 - 15, randf() * 30 - 15)
-		get_parent().add_child(coin)
 
 func respawn() -> void:
 	if not is_inside_tree():

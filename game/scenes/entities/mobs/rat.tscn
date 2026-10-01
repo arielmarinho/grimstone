@@ -1,4 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0rat00000002"]
+[gd_scene load_steps=3 format=3 uid="uid://b0rat00000002"]
+
+[sub_resource type="CircleShape2D" id="shape_r"]
+radius = 10.0
 
 [ext_resource type="Script" path="res://scripts/entities/mob.gd" id="1_mob"]
 
@@ -8,6 +11,7 @@ script = ExtResource("1_mob")
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 
 [node name="Collision" type="CollisionShape2D" parent="."]
+shape = SubResource("shape_r")
 
 [node name="HpBar" type="ProgressBar" parent="."]
 offset_left = -20.0
