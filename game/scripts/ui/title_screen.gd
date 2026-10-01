@@ -67,11 +67,16 @@ func _ready() -> void:
 	add_child(btn_quit)
 	# versao
 	var ver = Label.new()
-	ver.text = "v0.3"
+	ver.text = "v0.4.5"
 	ver.position = Vector2(1220, 690)
 	ver.add_theme_font_size_override("font_size", 12)
 	ver.add_theme_color_override("font_color", Color(0.4, 0.4, 0.45))
 	add_child(ver)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			get_tree().quit()
 
 func _make_button(text: String, pos: Vector2) -> Button:
 	var btn = Button.new()
