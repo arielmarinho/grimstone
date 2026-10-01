@@ -2,6 +2,16 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.3 (ciclo 21: QUESTS COM NPC — estilo Tibia/Rucoy)
+
+- NOVO scripts/world/quest_npc.gd: NPC "Mestre das Missões" nas 2 cidades (tecla J perto dele) — sprite procedural (mestre de túnica azul com pergaminho), painel no estilo da loja
+- 6 missões de caça em CADEIA (GameManager.QUESTS): ratos 5x (40 moedas/100xp) -> slimes 5x (60/180) -> aranhas 5x (100/350) -> goblins 5x (140/500) -> orcs 4x (250/900) -> esqueletos 4x (250/900); city1 tem as 2 primeiras, city2 as 4 seguintes
+- Cada quest só aparece depois da anterior ENTREGUE (req); painel mostra ACEITAR / progresso X/Y / ENTREGAR com recompensa
+- mob.gd: kill conta pra quest (offline); online: _rpc_mob_reward agora carrega o mob_type e o cliente conta o kill (servidor autoritativo mantém XP/loot)
+- Persistido no save ("quests": progress/done/claimed); NOVO JOGO zera; save antigo compatível (sem quests = vazio)
+- Teste unitário tests/test_quests.gd PASSOU (QUEST_TEST_OK — cadeia, progresso, entrega dupla bloqueada, recompensa); headless 0 erros
+- Próximo: teste no Mac do usuário OU comida/energia OU banco/depósito
+
 ## 2026-10-01 — v0.6.2 (ciclo 20: ESTIMATIVAS DE TEMPO na tela K — estilo Tibia)
 
 - game_manager.gd: skill_xp_need(skill) (lvl^2*5), skill_time_left(skill) e level_time_left() — taxas medidas: skill 240 xp/min, defesa 60 xp/min, level 450 xp/min (~1 kill a cada 8s)
@@ -75,7 +85,7 @@ Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
-- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam remote players ao cair)
+- FIX CRITICO main.gd: `NetworkManager._on_server_lost.connect(...)` conectava um METODO como se fosse sinal — criado sinal proprio `server_lost` no NetworkManager (clientes limpam estado remoto ao cair)
 - FIX network_manager.gd: `is_online()` exige `active` + CONNECTION_CONNECTED; send_position/send_chat so agem com active=true — modo offline nao tenta mais RPC (fim do spam "RPC on yourself")
 - NetTest (scripts/tests/net_test.gd): harness automatizado 1 server + 2 clientes no localhost via `--nettest=server|clientA|clientB` (main.gd injeta o harness na cena main.tscn). Logs em /tmp/nettest_<role>.log com flush imediato (stdout morre com o processo quando timeout mata)
 - TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
