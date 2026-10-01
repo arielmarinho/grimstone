@@ -42,6 +42,7 @@ const TABLES = {
 		{"id": "moeda", "chance": 1.0, "min": 20, "max": 40},
 		{"id": "pocao_vida_p", "chance": 0.3, "min": 1, "max": 1},
 		{"id": "pocao_vida_m", "chance": 0.12, "min": 1, "max": 1},
+		{"id": "arco", "chance": 0.06, "min": 1, "max": 1},
 		{"id": "runa_trovoada", "chance": 0.05, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.35, "min": 2, "max": 5},
 		{"id": "espada", "chance": 0.06, "min": 1, "max": 1},

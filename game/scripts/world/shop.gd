@@ -9,6 +9,7 @@ const CATALOG_CITY1 = {
 	"pocao_mana_p": 18,
 	"carne": 8,
 	"queijo": 5,
+	"peixe": 10,
 	"flecha": 2,
 	"runa_cura": 40,
 	"espada": 50,
@@ -17,10 +18,10 @@ const CATALOG_CITY1 = {
 	"cajado": 180,
 }
 const CATALOG_CITY2 = {
-	"pocao_vida_m": 60,
-	"pocao_vida_g": 110,
-	"pocao_mana_m": 70,
-	"pocao_mana_g": 130,
+	"pocao_vida_m": 45,
+	"pocao_vida_g": 90,
+	"pocao_mana_m": 55,
+	"pocao_mana_g": 110,
 	"carne": 6,
 	"queijo": 4,
 	"peixe": 8,
@@ -29,9 +30,10 @@ const CATALOG_CITY2 = {
 	"runa_gelo": 45,
 	"runa_trovoada": 60,
 	"runa_cura": 35,
-	"machado": 100,
-	"arco": 130,
-	"cajado": 160,
+	# armas: MESMOS precos da city1 (progresso = catalogo maior, nao desconto)
+	"machado": 120,
+	"arco": 150,
+	"cajado": 180,
 }
 
 var city: String = "city1"
@@ -120,7 +122,8 @@ func refresh() -> void:
 		name_l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(name_l)
 		var price = Label.new()
-		price.text = "%d moedas" % _catalog()[id]
+		# label honesto: o botao vende 10 flechas por vez
+		price.text = ("%d moedas (x10)" % _catalog()[id]) if id == "flecha" else ("%d moedas" % _catalog()[id])
 		price.position = Vector2(6, 68)
 		price.add_theme_font_size_override("font_size", 11)
 		price.add_theme_color_override("font_color", Color(0.95, 0.8, 0.25))
