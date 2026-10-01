@@ -18,11 +18,11 @@ const TYPES = {
 	"rat": {"hp": 40, "dano": 8, "xp": 20, "vel": 1.0},
 	"slime": {"hp": 60, "dano": 10, "xp": 30, "vel": 0.7},
 	"bat": {"hp": 30, "dano": 6, "xp": 25, "vel": 1.6},
-	"spider": {"hp": 90, "dano": 14, "xp": 55, "vel": 1.2},
-	"wolf": {"hp": 130, "dano": 20, "xp": 90, "vel": 1.4},
-	"goblin": {"hp": 110, "dano": 16, "xp": 70, "vel": 1.3},
-	"orc": {"hp": 220, "dano": 30, "xp": 150, "vel": 1.0},
-	"skeleton": {"hp": 160, "dano": 24, "xp": 120, "vel": 1.1},
+	"spider": {"hp": 90, "dano": 12, "xp": 55, "vel": 1.2},
+	"wolf": {"hp": 130, "dano": 13, "xp": 90, "vel": 1.4},
+	"goblin": {"hp": 110, "dano": 12, "xp": 70, "vel": 1.3},
+	"orc": {"hp": 200, "dano": 16, "xp": 150, "vel": 1.0},
+	"skeleton": {"hp": 160, "dano": 14, "xp": 120, "vel": 1.1},
 	"dummy": {"hp": 9999, "dano": 0, "xp": 0, "vel": 0.0},  # alvo de treino: nunca morre, nao revida
 }
 
@@ -171,7 +171,9 @@ func _do_attack_hit() -> void:
 	if player != null and not player.dead:
 		# so acerta se o alvo ainda estiver no alcance do golpe
 		if global_position.distance_to(player.global_position) <= 110.0:
-			player.take_damage(damage)
+			# variancia estilo Tibia: dano ±10% (minimo 1)
+			var dmg = max(1, damage + randi() % max(1, int(damage * 0.2) + 1) - int(damage * 0.1))
+			player.take_damage(dmg)
 
 func _move(dest: Vector2, speed: float) -> void:
 	var dir = (dest - global_position).normalized()

@@ -43,11 +43,12 @@ func add_skill_xp(skill: String, amount: int) -> void:
 	if not skills.has(skill):
 		skills[skill] = {"level": 10, "xp": 0}
 	skills[skill]["xp"] += amount
-	var need = skills[skill]["level"] * 100
+	# curva Tibia: custo cresce com o nivel (lvl^2 * 5) — skill up rapido no inicio, lento no fim
+	var need = skills[skill]["level"] * skills[skill]["level"] * 5
 	while skills[skill]["xp"] >= need:
 		skills[skill]["xp"] -= need
 		skills[skill]["level"] += 1
-		need = skills[skill]["level"] * 100
+		need = skills[skill]["level"] * skills[skill]["level"] * 5
 		print("SKILL UP: ", skill, " nivel ", skills[skill]["level"])
 
 func add_item(id: String, qty: int = 1) -> bool:
