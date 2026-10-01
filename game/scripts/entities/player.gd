@@ -100,16 +100,20 @@ func _build_frames() -> void:
 	sf.remove_animation("default")
 	for anim in ANIMS:
 		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
-		# art com rosto/expressao); up/side usam o PROCEDURAL alinhado as cores reais
-		# (os PNGs up/side nao existem). Nunca mais "so anda pra baixo".
+		# art com rosto/expressao); up usa a ARTE REAL editada (rosto vira cabelo =
+		# costas de verdade); side usa o PERFIL DE VERDADE (orelha/olho/tronco
+		# estreito/espada na frente, cores exatas da arte real). Flip da arte de
+		# frente pro lado é PROIBIDO (silhueta larga = boneco feio).
 		var texs: Array
 		if "_down" in anim or anim == "death":
 			# down/death: ARTE REAL (a aprovada — pixel art com rosto/expressao)
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		elif "_up" in anim:
+			# up: ARTE REAL editada (rosto vira cabelo = costas de verdade, mesma arte)
+			texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
 		else:
-			# up/side: procedural REFEITO com as cores exatas da arte real
-			# (up = costas com cabelo espinhado/cinto/espada atras; side = perfil com
-			# rosto de lado/orelha/espada na frente) — estilo Rucoy/Tibia de verdade
+			# side: PERFIL DE VERDADE (orelha/olho/tronco estreito/espada na frente,
+			# cores exatas da arte real) — flip da arte de frente é proibido
 			texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
