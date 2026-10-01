@@ -134,6 +134,7 @@ func quest_claim(id: String) -> bool:
 	return true
 
 const RARITY = preload("res://scripts/autoload/rarity.gd")
+const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 
 const FUSION_COST := 50
 
