@@ -155,7 +155,7 @@ func _rpc_chat(text: String) -> void:
 		return
 	var sender = multiplayer.get_remote_sender_id()
 	var name = players.get(sender, {}).get("name", "???")
-	chat_message.emit(GameManager.player_name, text, "msg")  # eco pro autor
+	# eco do autor chega via _relay_chat (broadcast) — NAO emitir aqui com nome errado
 	_relay_chat.rpc(name, text)
 
 @rpc("authority", "call_remote", "reliable")

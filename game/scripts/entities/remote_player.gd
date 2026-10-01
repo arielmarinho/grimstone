@@ -16,7 +16,7 @@ var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
 
-@onready var sprite: AnimatedSprite2D = $Sprite
+var sprite: AnimatedSprite2D
 
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
@@ -29,6 +29,13 @@ const ANIMS = {
 	"attack_up": "res://assets/sprites/animation/player/knight/attack/up/knight_attack_up_base.png",
 	"attack_side": "res://assets/sprites/animation/player/knight/attack/side/knight_attack_side_base.png",
 }
+
+func _ready() -> void:
+	# RemotePlayer e criado POR CODIGO (nao tem .tscn) — o Sprite precisa existir antes de _build_frames
+	sprite = AnimatedSprite2D.new()
+	add_child(sprite)
+	_build_frames()
+	_build_name_label()
 
 func setup(id: int, info: Dictionary) -> void:
 	peer_id = id
