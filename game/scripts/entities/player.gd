@@ -344,6 +344,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if GameManager.level > _last_level:
 		_last_level = GameManager.level
+		AudioManager.play_sfx("level_up")
 		_notify_level_up()
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	for slot in skill_cd:
@@ -437,6 +438,10 @@ func _attack(mob) -> void:
 			_show_feedback("Sem flechas! Compre na loja.")
 			return
 		GameManager.arrows -= 1
+	if w["tipo"] == "melee":
+		AudioManager.play_sfx("hit")
+	else:
+		AudioManager.play_sfx("shoot" if weapon == "bow" else "cast")
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]
@@ -505,6 +510,7 @@ func take_damage(amount: int) -> void:
 	if buff_escudo_time > 0.0:
 		amount = int(amount * 0.5)
 	GameManager.hp = max(0, GameManager.hp - amount)
+	AudioManager.play_sfx("player_hurt")
 	GameManager.add_skill_xp("defesa", 2)
 	if GameManager.hp <= 0:
 		die()
@@ -513,4 +519,5 @@ func die() -> void:
 	dead = true
 	velocity = Vector2.ZERO
 	_play("death")
+	AudioManager.play_sfx("player_death")
 	print("player morreu")

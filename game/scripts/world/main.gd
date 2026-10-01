@@ -135,6 +135,8 @@ func _unlock_city2() -> void:
 func switch_map(name: String, arrive_pos = null) -> void:
 	if name == current or not MAPS.has(name):
 		return
+	AudioManager.play_sfx("door")
+	AudioManager.play_music("city" if name in ["city1", "city2"] else "cave")
 	current = name
 	GameManager.current_map = name
 	if name == "city2":
