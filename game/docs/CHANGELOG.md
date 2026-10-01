@@ -1,3 +1,10 @@
+## v0.6.32 — Re-auditoria Area 7 Balanceamento (ciclo 59b, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Re-simulacao da economia com quests/runas/fusao no jogo: TTK alvo OK, sustentabilidade fecha em todos os maps (pior caso slime: 95/min de pocao vs 135/min ganhos = positivo), XP/skill curves OK
+- Quests sao one-time (cadeia), runas e fusao sao SINKS de moedas — nenhum exploit de economia
+- VEREDITO: sem mudancas de codigo necessarias
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.31 — Auditoria Area 3 Monstros & IA online (ciclo 59, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - 3 BUGS de recompensa no modo ONLINE corrigidos em mob.gd/network_manager.gd:
