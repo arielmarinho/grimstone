@@ -2,6 +2,30 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.4.6 (ciclo 7: Area 6 UI/UX)
+
+- hud.gd: FIX grave — labels de titulo/hint dos paineis (mochila/roupas/skills) ficavam SEMPRE visiveis sobre o jogo e ACUMULAVAM a cada refresh da tela K (eram adicionados ao root do HUD); agora pertencem ao painel
+- hud.gd: mochila reconstruia os 20 botoes A CADA FRAME aberta — agora rebuild so quando o conteudo muda (assinatura id:qty)
+- hud.gd: dim da tela de morte tinha tamanho ZERO (vermelho nunca aparecia); preview do painel de roupas NUNCA era renderizado — ambos corrigidos
+- hud.gd: cooldown NUMERICO nos botoes Q/E/R/G (segundos restantes, estilo MMO)
+- hud.gd + player.gd: barra de feedback central — mana insuficiente, skill bloqueada (VILA), sem flechas aparecem NA TELA (antes so print no console)
+- shop.gd: titulo correto por cidade (era fixado antes do city ser setado) + feedback colorido de compra (verde ok / vermelho erro)
+- title_screen.gd: versao v0.4.5 (estava v0.3) + ESC sai
+- Validado Godot headless: 0 erros de script
+- Proximo: Area 7 Balanceamento (gs-combat-balance)
+
+## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
+
+- Simulacao de balanceamento antes de mexer (scripts/area5_sim.py, regra 5: nunca balancear no escuro)
+- `ad12a3e`/`4d59f15` equips.gd: arco 10->14 dano / 0.9->0.8s CD, cajado 18->19 — TTK das 4 armas equalizado (regra 1: 5-10s no mapa atual; DPS 16.9-18.8, dentro de 2% entre si)
+- `4d59f15` mob.gd: dano de mobs endgame cortado (spider 12, goblin 12, wolf 13, skeleton 14, orc 16) — player aguenta 8+ hits (regra 2)
+- `4d59f15` mob.gd: dano de mob com VARIANCIA ±10% (estilo Tibia — hits nao sao mais todos identicos)
+- `ad12a3e` loot_table.gd: moedas +30% em goblin/skeleton/wolf/orc/spider — economia fecha (regra 3: loot/min >= 2 pocoes do mapa)
+- `cce7084` loot_table.gd: orc dropa pocao_vida_g (10%), skeleton dropa pocao_mana_g (10%) — antes as pocoes G so existiam na loja; goblin dropa pocao_vida_m (12%)
+- `4d59f15` game_manager.gd: curva de skill XP QUADRATICA estilo Tibia (lvl^2*5) — skill up ~1.7min no inicio, ~15min no lvl 30 (regra 4)
+- Validado Godot headless: 0 erros de script
+- Proximo: Area 6 UI/UX (gs-ui-ux)
+
 ## 2026-10-01 — v0.4.4 (ciclo 5: Area 4 Mapas & Mundo)
 
 - `c80be47`/`5cdc34f` colliders.gd: portoes das muralhas casam com a arte (abertura 224px y 932-1156), predios/casas/arvores do anel denso com colisores (player nao atravessa mais), bordas da floresta com abertura norte correta
@@ -34,10 +58,10 @@ Formato: [data] versão — o que mudou (commit)
 
 ## 2026-10-01 — v0.4 (ciclo 2: City2 libera mais ataques)
 
-- `este` Skills avancadas R/G por classe (8 novas): sword Investida+Terremoto (stun em area), axe Golpe Duplo+Bersek, bow Precisao (3 criticos)+Tiro Multiplo (explosao em area), staff Escudo Arcano (-50% dano)+Nevasca (stun+dano)
-- `este` Desbloqueio ao PISAR na city2 (flag city2_unlocked salva no savegame) + aviso na tela
-- `este` HUD: 4 botoes de skill (Q/E/R/G), skills bloqueadas aparecem como "???" (cinza) na tela K e nos botoes
-- `este` Player: buffs bersek (x2.5 dano), escudo arcano (metade do dano recebido), precisao, golpe duplo (2 hits)
+- Skills avancadas R/G por classe (8 novas): sword Investida+Terremoto (stun em area), axe Golpe Duplo+Bersek, bow Precisao (3 criticos)+Tiro Multiplo (explosao em area), staff Escudo Arcano (-50% dano)+Nevasca (stun+dano)
+- Desbloqueio ao PISAR na city2 (flag city2_unlocked salva no savegame) + aviso na tela
+- HUD: 4 botoes de skill (Q/E/R/G), skills bloqueadas aparecem como "???" (cinza) na tela K e nos botoes
+- Player: buffs bersek (x2.5 dano), escudo arcano (metade do dano recebido), precisao, golpe duplo (2 hits)
 
 ## 2026-10-01 — v0.3 → v0.4 (madrugada de trabalho autonomo)
 
@@ -52,7 +76,9 @@ Formato: [data] versão — o que mudou (commit)
 - `9e89392` Area 1 (Combate & Feedback): flash de dano, numeros flutuantes, morte com fade, level up com anel dourado
 
 ## Fila (proximos ciclos)
-- [ ] Auditoria Area 5 (Itens & Economia) — PROXIMO CICLO
-- [ ] Balanceamento geral
+- [x] Auditoria Area 5 (Itens & Economia) — OK ciclo 6
+- [x] Auditoria Area 6 (UI/UX) — implementada ciclo 7
+- [ ] Auditoria Area 7 (Balanceamento geral) — PROXIMO CICLO
+- [ ] Auditoria Area 8 (Audio — do zero)
 - [ ] Multiplayer: mobs autoritativos, raridade, fusao, trade/party, contas
 - [ ] Build Android
