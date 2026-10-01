@@ -1,6 +1,7 @@
 extends Node2D
 ## Main — controla qual mapa está ativo e o spawn do player
-## O player é criado POR CÓDIGO. Cada mapa tem um MARCADOR visível na saída.
+## MUNDO 2X (2048x2048): predios proporcionais ao player, estilo Tibia
+## Player criado por codigo; marcador pulsante na saida
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const COLLIDERS = preload("res://scripts/world/colliders.gd")
@@ -8,13 +9,13 @@ const COLLIDERS = preload("res://scripts/world/colliders.gd")
 const MAPS = {
 	"city1": {
 		"texture": "res://assets/maps/city1.png",
-		"player_spawn": Vector2(512, 620),
-		"exit": {"pos": Vector2(512, 800), "radius": 42, "to": "rat_cave", "label": "BUEIRO ↓"},
+		"player_spawn": Vector2(1024, 1240),
+		"exit": {"pos": Vector2(1024, 1600), "radius": 84, "to": "rat_cave", "label": "BUEIRO ↓"},
 	},
 	"rat_cave": {
 		"texture": "res://assets/maps/rat_cave.png",
-		"player_spawn": Vector2(512, 400),
-		"exit": {"pos": Vector2(512, 90), "radius": 42, "to": "city1", "label": "SAÍDA ↑"},
+		"player_spawn": Vector2(1024, 800),
+		"exit": {"pos": Vector2(1024, 180), "radius": 84, "to": "city1", "label": "SAÍDA ↑"},
 	},
 }
 
@@ -45,7 +46,7 @@ func _create_player() -> void:
 	player = pscene.instantiate()
 	player.name = "Player"
 	add_child(player)
-	player.position = Vector2(512, 620)
+	player.position = Vector2(1024, 1240)
 
 func _physics_process(_delta: float) -> void:
 	if switching or player == null:
@@ -80,6 +81,7 @@ func switch_map(name: String) -> void:
 	var sprite = Sprite2D.new()
 	sprite.texture = TEXHELPER.load_map(MAPS[name]["texture"])
 	sprite.centered = false
+	sprite.scale = Vector2(2, 2)
 	map_layer.add_child(sprite)
 	if player != null:
 		player.global_position = MAPS[name]["player_spawn"]
@@ -89,7 +91,6 @@ func switch_map(name: String) -> void:
 		var spawner = load("res://scripts/world/rat_cave.gd").new()
 		entities.add_child(spawner)
 	COLLIDERS.build_colliders(name, map_layer)
-	# MARCADOR da saida — seta pulsante sobre o bueiro/grade
 	var ex = MAPS[current].get("exit")
 	if ex:
 		var marker = Label.new()

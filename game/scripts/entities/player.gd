@@ -1,11 +1,11 @@
 extends CharacterBody2D
 ## Player — clique para andar, classes estilo Rucoy (arma define classe),
-## troca de arma com teclas 1-4, customização cabelo (Y) e túnica (T)
+## 4 DIRECOES (down/up/side + flip), troca de arma 1-4, customizacao T/Y
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 
-const SPEED = 140.0
+const SPEED = 260.0
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 
@@ -21,9 +21,15 @@ var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 
 const ANIMS = {
-	"idle": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-	"walk": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
-	"attack": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
+	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
+	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
+	"idle_side": "res://assets/sprites/animation/player/knight/idle/side/knight_idle_side_base.png",
+	"walk_down": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png",
+	"walk_up": "res://assets/sprites/animation/player/knight/walk/up/knight_walk_up_base.png",
+	"walk_side": "res://assets/sprites/animation/player/knight/walk/side/knight_walk_side_base.png",
+	"attack_down": "res://assets/sprites/animation/player/knight/attack/down/knight_attack_down_base.png",
+	"attack_up": "res://assets/sprites/animation/player/knight/attack/up/knight_attack_up_base.png",
+	"attack_side": "res://assets/sprites/animation/player/knight/attack/side/knight_attack_side_base.png",
 	"death": "res://assets/sprites/animation/player/knight/death/down/knight_death_down_base.png",
 }
 
@@ -40,11 +46,11 @@ func _build_frames() -> void:
 			continue
 		sf.add_animation(anim)
 		sf.set_animation_speed(anim, 8.0)
-		sf.set_animation_loop(anim, anim == "idle" or anim == "walk")
+		sf.set_animation_loop(anim, anim.begins_with("idle") or anim.begins_with("walk"))
 		for t in texs:
 			sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
-	sprite.play("idle")
+	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _strip_tex(t: Texture2D) -> Texture2D:
@@ -89,7 +95,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		moving = true
 		var mobs = get_tree().get_nodes_in_group("mobs")
 		for mob in mobs:
-			if not mob.dead and mob.global_position.distance_to(world_pos) < 40.0:
+			if not mob.dead and mob.global_position.distance_to(world_pos) < 80.0:
 				target = mob.global_position
 				moving = true
 				break
@@ -99,7 +105,7 @@ func _physics_process(delta: float) -> void:
 		return
 	attack_cooldown = max(0.0, attack_cooldown - delta)
 	if attacking:
-		if not sprite.is_playing() or sprite.animation != "attack":
+		if not sprite.is_playing() or not sprite.animation.begins_with("attack"):
 			attacking = false
 		return
 
@@ -140,7 +146,16 @@ func _update_facing(dir: Vector2) -> void:
 	else:
 		facing = "up" if dir.y < 0 else "down"
 
-func _play(anim: String) -> void:
+func _play(base: String) -> void:
+	var anim := base + "_down"
+	if facing == "up":
+		anim = base + "_up"
+		sprite.flip_h = false
+	elif facing == "left" or facing == "right":
+		anim = base + "_side"
+		sprite.flip_h = facing == "left"
+	else:
+		sprite.flip_h = false
 	if sprite.animation != anim:
 		sprite.play(anim)
 

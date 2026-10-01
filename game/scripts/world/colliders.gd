@@ -1,5 +1,5 @@
 extends Node2D
-## Colisores do mapa — gerados por código a partir do layout conhecido
+## Colisores do mapa — MUNDO 2X (2048x2048)
 
 static func build_colliders(map_name: String, parent: Node) -> void:
 	for c in parent.get_children():
@@ -21,23 +21,23 @@ static func _add_rect(parent: Node, pos: Vector2, size: Vector2) -> void:
 	parent.add_child(body)
 
 static func _city(parent: Node) -> void:
-	_add_rect(parent, Vector2(512, 130), Vector2(1024, 40))
-	_add_rect(parent, Vector2(130, 512), Vector2(40, 764))
-	_add_rect(parent, Vector2(894, 512), Vector2(40, 764))
-	_add_rect(parent, Vector2(265, 881), Vector2(270, 40))
-	_add_rect(parent, Vector2(759, 881), Vector2(270, 40))
+	_add_rect(parent, Vector2(1024, 260), Vector2(2048, 80))
+	_add_rect(parent, Vector2(260, 1024), Vector2(80, 1528))
+	_add_rect(parent, Vector2(1788, 1024), Vector2(80, 1528))
+	_add_rect(parent, Vector2(530, 1762), Vector2(540, 80))
+	_add_rect(parent, Vector2(1518, 1762), Vector2(540, 80))
 	var f = StaticBody2D.new()
-	f.position = Vector2(512, 512)
+	f.position = Vector2(1024, 1024)
 	var cs = CollisionShape2D.new()
 	var c = CircleShape2D.new()
-	c.radius = 46.0
+	c.radius = 92.0
 	cs.shape = c
 	f.add_child(cs)
 	parent.add_child(f)
-	_add_rect(parent, Vector2(745, 715), Vector2(150, 130))
+	_add_rect(parent, Vector2(1490, 1430), Vector2(300, 260))
 
 static func _cave(parent: Node) -> void:
-	_add_rect(parent, Vector2(512, 35), Vector2(1024, 70))
-	_add_rect(parent, Vector2(512, 989), Vector2(1024, 70))
-	_add_rect(parent, Vector2(35, 512), Vector2(70, 1024))
-	_add_rect(parent, Vector2(989, 512), Vector2(70, 1024))
+	_add_rect(parent, Vector2(1024, 70), Vector2(2048, 140))
+	_add_rect(parent, Vector2(1024, 1978), Vector2(2048, 140))
+	_add_rect(parent, Vector2(70, 1024), Vector2(140, 2048))
+	_add_rect(parent, Vector2(1978, 1024), Vector2(140, 2048))
