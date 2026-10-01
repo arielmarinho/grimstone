@@ -1,6 +1,6 @@
 extends Node2D
 ## Main — controla qual mapa está ativo e o spawn do player
-## Cidade tem bueiro (sul); ao andar até ele, desce pra caverna. Na caverna, a grade (norte) sobe.
+## Cidade tem bueiro; ao andar até ele, desce pra caverna. Na caverna, a grade sobe.
 
 const MAPS = {
 	"city1": {
@@ -25,6 +25,11 @@ var switching: bool = false
 func _ready() -> void:
 	GameManager.load_game()
 	switch_map(GameManager.current_map if GameManager.current_map in MAPS else "city1")
+	$Player.weapon = GameManager.weapon
+	$Player.hair_color = GameManager.hair_color
+	$Player.tunic_color = GameManager.tunic_color
+	$Player._build_frames()
+	$CanvasLayer.set_player($Player)
 
 func _physics_process(_delta: float) -> void:
 	if switching or player.dead:
@@ -54,4 +59,7 @@ func switch_map(name: String) -> void:
 	if name == "rat_cave":
 		var spawner = load("res://scripts/world/rat_cave.gd").new()
 		entities.add_child(spawner)
+	GameManager.weapon = player.weapon
+	GameManager.hair_color = player.hair_color
+	GameManager.tunic_color = player.tunic_color
 	GameManager.save_game()
