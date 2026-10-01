@@ -6,13 +6,13 @@ const WEAPONS = {
 	"sword": {
 		"nome": "Espada", "classe": "Guerreiro",
 		"cor": Color(0.78, 0.8, 0.84), "cor_cabo": Color(0.35, 0.24, 0.14),
-		"dano": 15, "alcance": 60.0, "cooldown": 0.8, "skill": "espada",
+		"dano": 15, "alcance": 260.0, "cooldown": 0.8, "skill": "espada",
 		"tipo": "melee",
 	},
 	"axe": {
 		"nome": "Machado", "classe": "Barbaro",
 		"cor": Color(0.72, 0.74, 0.78), "cor_cabo": Color(0.4, 0.28, 0.16),
-		"dano": 22, "alcance": 55.0, "cooldown": 1.3, "skill": "machado",
+		"dano": 22, "alcance": 255.0, "cooldown": 1.3, "skill": "machado",
 		"tipo": "melee",
 	},
 	"bow": {
@@ -35,6 +35,15 @@ const CLOTHES_COLORS = {
 	"preto": Color(0.12, 0.12, 0.14),
 	"castanho_claro": Color(0.59, 0.41, 0.24),
 	"branco": Color(0.78, 0.78, 0.8),
+}
+
+const PANTS_COLORS = {
+	"marrom": Color(0.28, 0.23, 0.19),
+	"preto": Color(0.15, 0.15, 0.17),
+	"azul": Color(0.2, 0.3, 0.55),
+	"verde": Color(0.22, 0.4, 0.24),
+	"vermelho": Color(0.6, 0.2, 0.2),
+	"cinza": Color(0.45, 0.45, 0.48),
 }
 
 static func draw_weapon(img: Image, weapon: String, cx: int, sy: int, f: int, is_attack: bool) -> void:

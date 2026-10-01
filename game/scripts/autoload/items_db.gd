@@ -7,6 +7,7 @@ const ITEMS = {
 	"carne": {"nome": "Carne", "tipo": "uso", "cor": Color(0.72, 0.3, 0.24), "hp": 30, "desc": "Recupera 30 HP"},
 	"pocao_vida": {"nome": "Pocao de Vida", "tipo": "uso", "cor": Color(0.85, 0.2, 0.25), "hp": 50, "desc": "Recupera 50 HP"},
 	"pocao_mana": {"nome": "Pocao de Mana", "tipo": "uso", "cor": Color(0.3, 0.45, 0.9), "mana": 40, "desc": "Recupera 40 Mana"},
+	"flecha": {"nome": "Flechas", "tipo": "municao", "cor": Color(0.72, 0.58, 0.36), "desc": "Municao do arco"},
 	"espada": {"nome": "Espada", "tipo": "arma", "arma": "sword", "cor": Color(0.8, 0.82, 0.86)},
 	"machado": {"nome": "Machado", "tipo": "arma", "arma": "axe", "cor": Color(0.75, 0.77, 0.8)},
 	"arco": {"nome": "Arco", "tipo": "arma", "arma": "bow", "cor": Color(0.55, 0.4, 0.22)},
@@ -53,6 +54,11 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 				_ellipse(img2, cx, cy + 2, size * 0.22, size * 0.26, Color(0.2, 0.2, 0.25))
 				_ellipse(img2, cx, cy + 3, size * 0.17, size * 0.2, c)
 				_ellipse(img2, cx - 2, cy - 1, 2, 2, Color(1, 1, 1, 0.5))
+		"municao":
+			for i in range(int(size * 0.5)):
+				_rect(img2, int(cx - size * 0.3) + i, int(cy + size * 0.3) - i, 2, 2, c)
+			_rect(img2, int(cx + size * 0.16), int(cy - size * 0.32), 3, 8, Color(0.85, 0.85, 0.9))
+			_rect(img2, int(cx - size * 0.34), int(cy + size * 0.22), 4, 6, Color(0.9, 0.88, 0.8))
 		"arma":
 			var wid = it.get("arma", "sword")
 			var eq = preload("res://scripts/autoload/equips.gd")
