@@ -100,18 +100,25 @@ func _build_frames() -> void:
 	sf.remove_animation("default")
 	for anim in ANIMS:
 		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
-		# art com rosto/expressao); up usa a ARTE REAL editada (rosto vira cabelo =
-		# costas de verdade); side usa o PERFIL DE VERDADE (orelha/olho/tronco
-		# estreito/espada na frente, cores exatas da arte real). Flip da arte de
-		# frente pro lado é PROIBIDO (silhueta larga = boneco feio).
+		# art com rosto/expressao); up/side usam a ARTE REAL NAS 4 DIRECOES (b64
+		# proprio) quando existir no pacote; SEM o b64 (repo/pacote antigo), caem
+		# no fallback v0.6.19 validado (up = arte real editada rosto->cabelo,
+		# side = perfil procedural) — o jogo NUNCA fica sem animacao.
 		var texs: Array
 		if "_down" in anim or anim == "death":
 			# down/death: ARTE REAL (a aprovada — pixel art com rosto/expressao)
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		else:
-			# up/side: ARTE REAL NAS 4 DIRECOES (PNGs gerados por IA no estilo da
-			# referencia, quantizados pra paleta do down) — fim do procedural
+			# up/side: ARTE REAL NAS 4 DIRECOES (b64 proprio) se existir no pacote;
+			# SEM o b64 (repo/pacote antigo), cai no fallback v0.6.19 validado
+			# (up = arte real editada rosto->cabelo, side = perfil procedural) —
+			# o jogo NUNCA fica sem animacao, em nenhum estado
 			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+			if texs.is_empty():
+				if "_up" in anim:
+					texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
+				else:
+					texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
@@ -359,8 +366,8 @@ func _spawn_crit_text(pos: Vector2) -> void:
 	l.text = "CRIT!"
 	l.position = pos + Vector2(-20, -50)
 	l.add_theme_font_size_override("font_size", 14)
-	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 	l.add_theme_constant_override("outline_size", 4)
 	get_parent().add_child(l)
 	var tw = l.create_tween()
