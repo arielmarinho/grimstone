@@ -34,17 +34,20 @@ const TABLES = {
 	"goblin": [
 		{"id": "moeda", "chance": 1.0, "min": 20, "max": 40},
 		{"id": "pocao_vida_p", "chance": 0.3, "min": 1, "max": 1},
+		{"id": "pocao_vida_m", "chance": 0.12, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.35, "min": 2, "max": 5},
 		{"id": "espada", "chance": 0.06, "min": 1, "max": 1},
 	],
 	"orc": [
 		{"id": "moeda", "chance": 1.0, "min": 40, "max": 80},
 		{"id": "pocao_vida_m", "chance": 0.5, "min": 1, "max": 2},
+		{"id": "pocao_vida_g", "chance": 0.1, "min": 1, "max": 1},
 		{"id": "machado", "chance": 0.1, "min": 1, "max": 1},
 	],
 	"skeleton": [
 		{"id": "moeda", "chance": 1.0, "min": 35, "max": 70},
 		{"id": "pocao_mana_m", "chance": 0.4, "min": 1, "max": 1},
+		{"id": "pocao_mana_g", "chance": 0.1, "min": 1, "max": 1},
 		{"id": "flecha", "chance": 0.4, "min": 3, "max": 6},
 		{"id": "cajado", "chance": 0.08, "min": 1, "max": 1},
 	],
