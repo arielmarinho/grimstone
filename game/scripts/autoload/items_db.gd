@@ -64,7 +64,8 @@ static func _strip_magenta(img: Image) -> Image:
 	for y in range(img.get_height()):
 		for x in range(img.get_width()):
 			var c = img.get_pixel(x, y)
-			if c.a > 0.0 and c.r > 0.65 and c.b > 0.65 and c.g < 0.55 and absf(c.r - c.b) < 0.3:
+			# magenta/rosa: r E b altos, g baixo, r~b (preserva vermelho da carne/pocao)
+			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
 				img.set_pixel(x, y, Color(0, 0, 0, 0))
 	return img
 
