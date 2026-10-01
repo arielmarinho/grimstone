@@ -37,9 +37,8 @@ fortify `__longjmp_chk`/`__memcpy_chk`). **O build final é no Mac do usuário.*
 
 ## PENDÊNCIAS antes do primeiro APK (fila)
 
-1. **Touch controls** — o jogo hoje é 100% teclado/mouse (WASD/setas, Q/E/R/G,
-   B/C/K/F, Enter pro chat). Precisa: joystick virtual de movimento + botões de
-   skill na tela + tap pra atacar (estilo Rucoy). PRÓXIMO CICLO.
-2. **Orientação** — jogo é landscape 1280x720; conferir `screen/orientation`
-   no project.godot (adicionar `sensor_landscape` se necessário).
+1. **Touch controls** — FEITO (ciclo 16): joystick virtual + botões Q/E/R/G +
+   tap-to-move (`scripts/ui/touch_controls.gd`, invisível em desktop).
+2. **Orientação** — FEITO (ciclo 17): `window/handheld/orientation=4`
+   (sensor_landscape) no project.godot, commit 523b2282.
 3. Testar APK num device real antes de qualquer loja.
