@@ -35,6 +35,7 @@
 - hud.gd: painel BESTIARIO tecla N (mesmo estilo da tela K), nao vistos = "???"
 - Teste test_bestiary.gd BESTIARY_TEST_OK; headless 0 erros
 - Push verificado por blob SHA: game_manager/mob/teste byte-exatos; hud +1 byte (newline); network_manager reconstruido (cosmetico, funcional); title_screen reparado byte-exato
+- Sync do ciclo 24: local alinhado ao remoto em request_mob_damage (gate is_online — versao remota melhor), network_manager agora byte-exato
 ### Area 1 — Combate & Feedback (02:51-03:01) OK
 - Mapeado: dano era so numero na barra, SEM flash, SEM numeros flutuantes, morte instantanea
 - Implementado: flash branco no sprite ao levar hit (0.15s), numero de dano flutuante (sobe e some), morte com fade (corpo desvanece 0.8s+1.2s), level up com anel dourado expandindo + texto
@@ -70,7 +71,7 @@
 ### Area 6 — UI/UX (ciclo 7, 03:33-03:45) implementada
 - BUG 1 (grave): _make_label adicionava o label ao ROOT do HUD — labels de titulo/hint dos paineis mochila/roupas/skills ficavam SEMPRE visiveis sobre o jogo e se ACUMULAVAM a cada refresh da tela K. Fix: _make_label so cria; quem adiciona e o painel
 - BUG 2 (perf): mochila reconstruia os 20 botoes A CADA FRAME enquanto aberta — agora rebuild so quando o conteudo muda (assinatura id:qty)
-- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca aparecia
+- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca apareceu
 - BUG 4: preview do painel de roupas NUNCA era renderizado — agora renderiza o knight com as cores atuais e atualiza a cada clique
 - NOVO: cooldown NUMERICO nos botoes Q/E/R/G (segundos restantes no centro, estilo MMO)
 - NOVO: barra de feedback central no HUD — mana insuficiente, skill bloqueada (VILA), sem flechas agora aparecem NA TELA (antes so print no console invisivel)
@@ -112,7 +113,7 @@
 ### Area 9 — fase 2: Mobs autoritativos (ciclo 14, 04:42+) implementado
 - Servidor roda a IA dos mobs e replica snapshot 10Hz; clientes so renderizam espelhos (NetMob) — regra gs-netcode #1/#3
 - Dano do cliente via RPC validado NO SERVIDOR (vivo + range 400px); XP/loot autoritativos via roll_loot_list -> RPC pro ultimo atacante (Rucoy)
-- Servidor dedicado (--server): NetTarget = alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
+- Servidor dedicado (--server): NetTarget — alvo virtual do player online mais proximo; dano do mob roteado por RPC (damage_local_player)
 - NetTest fase MOBS PASSOU (server+A+B localhost): espelhos chegaram, cliente pediu dano, servidor validou e aplicou, HP caiu no snapshot — RESULT OK nos 3 roles
 - Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
 - Validado headless 0 erros; pendente: teste no Mac do usuario

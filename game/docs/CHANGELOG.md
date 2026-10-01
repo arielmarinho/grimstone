@@ -157,9 +157,9 @@ Formato: [data] versão — o que mudou (commit)
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- HUD: fix labels no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim morte com tamanho, preview roupas renderiza, cooldown numerico Q/E/R/G, feedback na tela (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
-- Titulo: v0.4.5 + ESC sai
+- Titulo: versao v0.4.5 + ESC sai
 
 ## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
 
