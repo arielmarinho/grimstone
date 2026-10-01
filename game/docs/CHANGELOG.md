@@ -2,6 +2,18 @@
 
 Formato: [data] versão — o que mudou (commit)
 
+## 2026-10-01 — v0.6.0 (ciclo 18: RARIDADE DE ITENS — 5 tiers + sufixos)
+
+- NOVO `scripts/autoload/rarity.gd`: 5 tiers estilo RPG (Comum 70% / Incrivel 20% +10% / Raro 7% +25% / Epico 2.5% +50% / Lendario 0.5% +100%) conforme docs/DESIGN_ONLINE.md secao 4
+- Chave de item com tier: "espada#2" = Espada Rara — tier 0 (comum) continua "espada" (save antigo 100% compativel)
+- loot_table.gd: armas dropadas sorteiam tier; RARITY_BONUS por mob (rat/slime/bat 0, spider/goblin 1, wolf 2, orc/skeleton 3 — mobs fortes = tiers mais altos); vale offline (roll_drop) E online (roll_loot_list via RPC)
+- drop.gd: aura colorida da raridade embaixo do icone no chao + aviso "RARO!" no pickup
+- player.gd: TODO dano (ataque + skills Q/E/R/G) multiplica pelo tier da arma equipada (GameManager.weapon_dano_mult()); teclas 1-4 trocam pra arma comum; sprite/skills/som usam a BASE da arma
+- hud.gd: tooltip da mochila "Espada Raro"; equipar arma com tier pela mochila com feedback; hotbar/skills/preview por weapon_base()
+- game_manager.gd: weapon_base()/weapon_tier()/weapon_dano_mult()/EQUIPS_OK (load clampa arma invalida)
+- Validado Godot headless --import + --quit: 0 erros de script
+- Proximo: v0.6.1 fusao de itens (painel F: 3 iguais do mesmo tier -> 1 do tier seguinte, 50 moedas)
+
 ## 2026-10-01 — v0.5.6 (ciclo 16: touch controls Android + preset de export)
 
 - TouchControls autoload (scripts/ui/touch_controls.gd): joystick virtual (canto inf. esquerdo) + 4 botoes de skill Q/E/R/G (inf. direito) + tap em qualquer lugar = mover/atacar (estilo Rucoy)
@@ -93,7 +105,7 @@ Formato: [data] versão — o que mudou (commit)
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
 - HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
-- Titulo: v0.4.5 + ESC sai
+- Titulo: versao v0.4.5 (estava v0.3) + ESC sai
 
 ## 2026-10-01 — v0.4.5 (ciclo 6: Area 5 Itens & Economia — balanceamento)
 

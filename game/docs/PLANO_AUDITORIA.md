@@ -17,6 +17,7 @@
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (ciclo 9) |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
+| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE implementada ciclo 18 (v0.6.0) — fusao pendente (v0.6.1) |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -59,7 +60,7 @@
 ### Area 6 — UI/UX (ciclo 7, 03:33-03:45) implementada
 - BUG 1 (grave): _make_label adicionava o label ao ROOT do HUD — labels de titulo/hint dos paineis mochila/roupas/skills ficavam SEMPRE visiveis sobre o jogo e se ACUMULAVAM a cada refresh da tela K. Fix: _make_label so cria; quem adiciona e o painel
 - BUG 2 (perf): mochila reconstruia os 20 botoes A CADA FRAME enquanto aberta — agora rebuild so quando o conteudo muda (assinatura id:qty)
-- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca apareceu
+- BUG 3: dim da tela de morte tinha tamanho zero (PRESET_FULL_RECT antes do add_child) — vermelho nunca aparecia
 - BUG 4: preview do painel de roupas NUNCA era renderizado — agora renderiza o knight com as cores atuais e atualiza a cada clique
 - NOVO: cooldown NUMERICO nos botoes Q/E/R/G (segundos restantes no centro, estilo MMO)
 - NOVO: barra de feedback central no HUD — mana insuficiente, skill bloqueada (VILA), sem flechas agora aparecem NA TELA (antes so print no console invisivel)
@@ -106,17 +107,17 @@
 - Fix durante o ciclo: parse error "NetTarget not found" (class_name nao resolve no import frio — usar get_script() == NETTARGET)
 - Validado headless 0 erros; pendente: teste no Mac do usuario
 
-### Area 9 — ciclo 15: interpolacao + lag artificial (05:06+) OK
-- FIX GRAVE: limpeza do ciclo 14 (47aefdf) removeu is_online() inteiro junto com o codigo morto — parse error quebrava o NetworkManager no boot; funcao restaurada
-- Lag artificial --netlag=<ms> no NetworkManager (fila de entrega atrasada nos snapshots recebidos)
-- Interpolacao por BUFFER de snapshots no NetMob (mira ~120ms no passado) — mobs remotos deslizam suave
-- NetTest: server fase 2 estendida 8s->20s; fix break que teleportava sem mob vivo
-- NetTest COM LAG PASSOU: server + A + B com --netlag=150 — registro, chat, posicao, dano em mob via RPC, hp caiu no snapshot (RESULT OK nos 3 roles)
-- Validado headless 0 erros; pendente: teste no Mac do usuario
-
-### Ciclo 17 (05:25, 01/10) — pendencias do ciclo 16 resolvidas
+## Ciclo 17 (05:25, 01/10) — pendências do ciclo 16 resolvidas
 - player.gd (joystick) CONFIRMADO idêntico no GitHub (diff = só newline no fim)
 - CHANGELOG v0.5.6 pushado no remoto (a outra instância do cron pushou o mesmo conteúdo em paralelo — colisão detectada, recuo da escrita, sem duplicar)
 - Orientação Android sensor_landscape (`window/handheld/orientation=4`) adicionada ao project.godot e pushada (523b2282) — pendência do ciclo 16 fechada
-- BUILD_ANDROID.md atualizado (pendências 1 e 2 = FEITAS, commit 1185e70)
+- BUILD_ANDROID.md atualizado (pendência 2 = FEITA)
 - Headless 0 erros. Próximo: teste no Mac do usuário OU build APK real no Mac (guia pronto)
+
+## Ciclo 18 (05:29, 01/10) — v0.6.0 RARIDADE DE ITENS implementada
+- rarity.gd novo: 5 tiers (Comum/Incrivel/Raro/Epico/Lendario) com chances 70/20/7/2.5/0.5% e multiplicadores de dano 1.0/1.1/1.25/1.5/2.0
+- Armas dropadas por mobs ganham tier sorteado (RARITY_BONUS por mob: orc/skeleton 3, wolf 2, spider/goblin 1); vale offline E online (roll_loot_list)
+- Aura colorida no drop no chao + tooltip "Espada Raro" na mochila + feedback ao equipar
+- TODO dano do player multiplica pelo tier da arma equipada; teclas 1-4 = arma comum
+- Save antigo 100% compativel (tier 0 = chave sem "#")
+- Headless 0 erros. Proximo: fusao de itens (painel F, v0.6.1)
