@@ -1,6 +1,6 @@
 extends CanvasLayer
-## HUD: barras, hotbar (1-4), SKILLS Q/E/R/G com botoes (estilo Rucoy), flechas,
-## mochila (B), roupas+calca (C), tela de skills (K), morte
+## HUD: barras, hotbar (1-4), SKILLS Q/E/R/G com botões (estilo Rucoy), flechas,
+## mochila (B), roupas+calça (C), tela de skills (K), morte
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
@@ -26,6 +26,7 @@ var skills_panel: Control
 var player_ref: Node = null
 var hotbar_slots: Array = []
 var skill_btns := {}
+var preview: TextureRect
 
 const WEAPON_KEYS = ["sword", "axe", "bow", "staff"]
 
@@ -147,7 +148,7 @@ func _process_hotbar_highlight() -> void:
 		stn.border_color = Color(0.95, 0.8, 0.3) if player_ref.weapon == WEAPON_KEYS[i] else Color(0.35, 0.3, 0.25)
 		slot.add_theme_stylebox_override("normal", stn)
 
-# ---------- BOTOES DE SKILL (Q/E/R/G, estilo Rucoy) ----------
+# ---------- BOTÕES DE SKILL (Q/E/R/G, estilo Rucoy) ----------
 func _build_skill_buttons() -> void:
 	var slots = ["Q", "E", "R", "G"]
 	for i in range(slots.size()):
