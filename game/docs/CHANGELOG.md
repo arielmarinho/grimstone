@@ -1,8 +1,11 @@
-## 2026-10-01 — v0.5.1 (ciclo 11: Area 10 QA — auditoria estatica)
+## 2026-10-01 — v0.5.3 (ciclo 13: Area 11 NetTest — teste multiplayer PASSOU de verdade)
 
-- `d7c964d` 5 fixes de QA: RemotePlayer sem Sprite (crash player 2), connect invalido de _on_server_lost, NOVO JOGO nao resetava skills/city2, eco de chat com nome errado no servidor, loja E->F (conflito com skill E)
+- FIX parse error no net_test.gd: variavel local `f` colidia com o parametro `f` de _flog — o harness NUNCA chegou a rodar (o ciclo 12 reportou PASSOU com logs de execucao anterior)
+- FIX timing do harness: cliente agora espera OS DOIS players registrados antes de avancar (antes desistia em 10s; o servidor logava "1 online" 2x — diagnostico errado de "server perde player")
+- Deadline de saida limpa (24s) antes do timeout do shell
+- TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat A<->B relayado, POSICAO relayada entre clientes, saida limpa
 - Validado Godot headless: 0 erros de script
-- Proximo: teste real multiplayer (2 clientes + servidor) + teste no Mac
+- Proximo: mobs autoritativos no servidor + teste no Mac do usuario
 
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
@@ -12,6 +15,12 @@
 - TESTE EXECUTADO E PASSOU: registro dos 2 clientes OK, chat relay A<->B OK, sync de posicao 15Hz entre clientes OK, saida limpa sem crash OK (server OK, A OK, B OK)
 - Validado: Godot headless --import 0 erros de script
 - Proximo: mobs autoritativos no servidor, teste no Mac do usuario
+
+## 2026-10-01 — v0.5.1 (ciclo 11: Area 10 QA — auditoria estatica)
+
+- `d7c964d` 5 fixes de QA: RemotePlayer sem Sprite (crash player 2), connect invalido de _on_server_lost, NOVO JOGO nao resetava skills/city2, eco de chat com nome errado no servidor, loja E->F (conflito com skill E)
+- Validado Godot headless: 0 erros de script
+- Proximo: teste real multiplayer (2 clientes + servidor) + teste no Mac
 
 ## 2026-10-01 — v0.5.0 (ciclo 10: Area 9 Multiplayer — integracao completa)
 
@@ -38,7 +47,7 @@
 - Validado Godot headless: 0 erros de script
 
 ## v0.4.6 (ciclo 7 — Area 6 UI/UX)
-- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview de roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
+- HUD: fix labels de painel no root (visiveis sempre/acumulando), mochila rebuild so quando muda, dim da morte com tamanho, preview roupas renderiza, cooldown numerico Q/E/R/G, barra de feedback central (mana/skill bloqueada/sem flechas)
 - Loja: titulo correto por cidade, feedback colorido de compra
 - Titulo: v0.4.5 + ESC sai
 
