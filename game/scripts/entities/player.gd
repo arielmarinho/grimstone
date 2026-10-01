@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Player — classes estilo Rucoy (arma define classe), SKILLS Q/E + R/G (city2),
 ## flechas, critico, customizacao T/Y/U (tunica/cabelo/calca), LEVEL UP com efeito
-## ANIMACOES: 4 direcoes REAIS (up/side/down) via procedural — idle/walk/attack/death
+## ANIMACOES: HIBRIDO — down usa a ARTE REAL aprovada; up/side usam procedural alinhado
 
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
@@ -41,8 +41,7 @@ var buff_perfurante: bool = false
 var _last_level: int = 1
 var _regen_timer: float = 0.0
 
-# ANIMS com paths up/side REAIS — o procedural desenha cada direcao
-# (usar o PNG down pra tudo fazia o player andar so pra baixo — bug do usuario)
+# ANIMS com paths up/side REAIS — down carrega o PNG real, up/side o procedural desenha
 const ANIMS = {
 	"idle_down": "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
 	"idle_up": "res://assets/sprites/animation/player/knight/idle/up/knight_idle_up_base.png",
@@ -99,9 +98,14 @@ func _build_frames() -> void:
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		# PROCEDURAL com 4 direcoes REAIS (up/side/down) — o PNG so tem "down",
-		# usar ele fazia o player andar so pra baixo (bug reportado pelo usuario)
-		var texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
+		# art com rosto/expressao); up/side usam o PROCEDURAL alinhado as cores reais
+		# (os PNGs up/side nao existem). Nunca mais "so anda pra baixo".
+		var texs: Array
+		if "_down" in anim or anim == "death":
+			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+		else:
+			texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
