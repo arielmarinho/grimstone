@@ -270,7 +270,7 @@ func _use_skill(slot: String) -> void:
 			print("GOLPE DUPLO armado! proximos 2 golpes acertam 2x")
 		"grito":
 			buff_grito_time = 12.0
-			print("GRITO DE GUERRA! +50%% dano por 12s")
+			print("GRITO DE GUERRA! +50% dano por 12s")
 		"giratorio":
 			_skill_aoe(3.0)
 		"sangue_frio":
