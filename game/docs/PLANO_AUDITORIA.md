@@ -18,7 +18,7 @@
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
 | 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO+ESTIMATIVAS implementadas ciclos 18-20 (v0.6.0/v0.6.1/v0.6.2) — aguarda usuario |
-| 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | implementado ciclo 21 (v0.6.3) — aguarda usuario |
+| 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | AUDITADO ciclo 31+32 — 2 bugs graves corrigidos (quest done-nao-entregue sumia do painel; from_id faltando no dano online) + teste corrigido |
 | 13 | **Banco/Depósito** | gs-game-design | NPC banco, depositar/sacar itens | implementado ciclo 23 (v0.6.5) — aguarda usuario |
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
 | 15 | **Decoracao** | gs-level-design | postes, flores, barris, bandeiras, barraca | implementado ciclo 26 (v0.6.8) — aguarda usuario |
@@ -32,6 +32,12 @@
 - Usuario valida cada area no final
 
 ## Log de auditoria
+### Area 12 — Quests & NPC (ciclos 31-32) AUDITADA — 2 bugs graves corrigidos
+- BUG 1 (grave): quest_available retornava false quando quest estava done mas NAO entregue — missao SUMIA do painel do NPC no exato momento em que completava, jogador NUNCA conseguia entregar; fix: disponivel ate claimed
+- BUG 2 (grave, online): net_mob_take_damage chamava mob.take_damage(dmg) SEM from_id — _last_hit_by ficava 0, recompensa (xp/loot/quest/bestiario) nunca chegava no servidor dedicado; fix: take_damage(dmg, from_id)
+- Menor: dica de teclas do HUD nao listava F (loja) — adicionada
+- Falso travamento do test_quests resolvido: era ASSERTION (FakeGM espelhava a logica ANTIGA), nao hang — FakeGM corrigido, QUEST_TEST_OK
+- Regressao: 7/7 testes unitarios OK + headless 0 erros; GitHub sincronizado (hud/test_quests/CHANGELOG blob SHA verificado)
 ### Area 18 — Checklist de teste no Mac (ciclo 29, v0.6.10) CONCLUIDA
 - Regressao completa: 7/7 testes unitarios OK (fusion/estimates/quests/food/bank/bestiary/runes), headless 0 erros
 - docs/TESTE_MAC.md criado e pushado (blob SHA byte-exato) — 13 secoes cobrindo v0.5.6..v0.6.10
