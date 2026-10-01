@@ -121,8 +121,10 @@
 - arco/cajado equalizados, dano endgame -30%, loot +30%, curva skill XP quadratica, variancia de dano ±10%, pocoes G dropam
 ### Area 4 — Mapas & Mundo (ciclo 5) implementado
 - colliders refeitos (portoes=arte, abertura 224px), fix grave saida N da floresta, city2 zona segura, REGEN Tibia (mana sempre, HP fora de combate)
-### Area 3 — Monstros & IA (ciclo 4b) OK
-- hit sem dano em player morto, range 110px no golpe, leash 700px, dummy simplificado
+### Area 3 — Monstros & IA (ciclo 4b OK; RE-AUDITADA ciclo 59, v0.6.31) OK
+- ciclo 4b: hit sem dano em player morto, range 110px no golpe, leash 700px, dummy simplificado
+- ciclo 59 (online): 3 bugs de recompensa corrigidos — (1) HOSTED: recompensa (xp/loot/quest) ia pro HOST mesmo quando um CLIENTE deu o golpe final (die() so mandava RPC em modo dedicated; agora is_server cobre hosted+dedicated); (2) _rpc_mob_removed recebia o peer id do atacante como id de mob (broadcast inutil — espelho e gerenciado pelo snapshot d=true); (3) _last_hit_by do HOST nunca era setado (player chamava take_damage sem from_peer — golpe do host nao registrava e hit velho de cliente podia herdar o kill); fix: from_peer=0 -> _last_hit_by=1 (peer do host)
+- Validacao: gdparse OK, import 0 erros, run real 0 erros, 7/7 testes OK, NetTest server+A+B 3/3 PASSOU (registro, chat, posicao, 4 mobs espelhados, dano autoritativo)
 ### Area 2 — Player & Skills (ciclo 2) implementado
 - skills R/G por classe (8 skills), desbloqueio na city2 (flag persistida), HUD 4 slots Q/E/R/G, dummy de treino
 ### Area 1 — Combate & Feedback (ciclo 1) OK
