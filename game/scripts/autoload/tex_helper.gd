@@ -60,7 +60,7 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	CURRENT_PANTS = pants
 	return _procedural(path, weapon, hair, tunic)
 
-# recolore a arte REAL do knight: troca os pixels da tunica/cabelo pela cor escolhida
+# recolore a arte REAL do knight: troca os pixels da túnica/cabelo pela cor escolhida
 static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 	var base_tunic := [Color(0.6, 0.36, 0.2), Color(0.47, 0.26, 0.14), Color(0.53, 0.31, 0.18)]
 	var base_hair := Color(0.29, 0.17, 0.14)
@@ -75,7 +75,7 @@ static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 			var c = img.get_pixel(x, y)
 			if c.a < 0.1:
 				continue
-			# tunica: tons de marrom medio/escuro na faixa do tronco
+			# túnica: tons de marrom médio/escuro na faixa do tronco
 			for bt in base_tunic:
 				if absf(c.r - bt.r) < 0.09 and absf(c.g - bt.g) < 0.09 and absf(c.b - bt.b) < 0.09:
 					var shade: float = c.r / maxf(bt.r, 0.01)
@@ -87,10 +87,11 @@ static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 				img.set_pixel(x, y, Color(new_hair.r * shade2, new_hair.g * shade2, new_hair.b * shade2, c.a))
 	return img
 
-# UP a partir da ARTE REAL: cobre o ROSTO INTEIRO com cabelo — costas de verdade,
+# UP a partir da ARTE REAL: substitui o rosto (pele) por cabelo — costas de verdade,
 # mantendo 100% a identidade visual do knight aprovado
 static func _make_up_from_real(img: Image) -> Image:
 	var hair := Color(0.29, 0.17, 0.14)
+	var hair_d := Color(0.22, 0.13, 0.11)
 	var out := img.duplicate()
 	out.convert(Image.FORMAT_RGBA8)
 	for y in range(out.get_height()):
@@ -98,6 +99,7 @@ static func _make_up_from_real(img: Image) -> Image:
 			var c = out.get_pixel(x, y)
 			if c.a < 0.1:
 				continue
+			# pele da arte real (rosto): (0.98, 0.73, 0.53) e sombra (0.85, 0.6, 0.42)
 			# REGIAO DO ROSTO (y 24-50, x 38-72): tudo vira cabelo — pele clara,
 			# pele sombreada, olhos e contorno. Costas = cabeca coberta de cabelo.
 			var in_face: bool = y >= 24 and y <= 50 and x >= 38 and x <= 72
@@ -178,7 +180,7 @@ static func _draw_knight(img: Image, f: int, is_attack: bool, is_death: bool, is
 		hair = Equips.CLOTHES_COLORS[hair_color]
 	var skin := Color(0.98, 0.73, 0.53)  # pele da arte real
 	var skin_sh := Color(0.85, 0.6, 0.42)
-	var tunic := Color(0.6, 0.36, 0.2)   # tunica marrom da arte real
+	var tunic := Color(0.6, 0.36, 0.2)   # túnica marrom da arte real
 	var tunic_d := Color(0.47, 0.26, 0.14)
 	if tunic_color != "castanho" and Equips.CLOTHES_COLORS.has(tunic_color):
 		tunic = Equips.CLOTHES_COLORS[tunic_color]
