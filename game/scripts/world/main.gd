@@ -183,10 +183,10 @@ func _net_send_position() -> void:
 	if player == null or player.dead or not NetworkManager.is_online():
 		return
 	var anim = "idle:" + player.facing
-	if player.moving:
-		anim = "walk:" + player.facing
-	elif player.attacking:
+	if player.attacking:
 		anim = "attack:" + player.facing
+	elif player.moving:
+		anim = "walk:" + player.facing
 	NetworkManager.send_position(player.global_position, current, anim)
 
 # ---------- MOBS AUTORITATIVOS (fase 2) ----------

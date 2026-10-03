@@ -6,6 +6,16 @@ extends Object
 ## IDs casam com os handlers em player.gd _use_skill().
 
 const SKILLS = {
+	"spear": [
+		{"id": "golpe", "nome": "Golpe de Lanca", "tecla": "Q", "mana": 20, "cd": 8.0,
+			"desc": "O proximo ataque causa 3x de dano"},
+		{"id": "rodopio", "nome": "Varredura", "tecla": "E", "mana": 35, "cd": 12.0,
+			"desc": "Golpeia todos os monstros ao redor (dano x2)"},
+		{"id": "golpe_duplo", "nome": "Estocada Dupla", "tecla": "R", "mana": 45, "cd": 14.0,
+			"desc": "Os proximos 2 ataques acertam 2 vezes (o 2o golpe causa 50%)"},
+		{"id": "investida", "nome": "Investida", "tecla": "G", "mana": 40, "cd": 12.0,
+			"desc": "Avanca ate o alvo e causa dano x2.5"},
+	],
 	"sword": [
 		{"id": "golpe", "nome": "Golpe Poderoso", "tecla": "Q", "mana": 20, "cd": 8.0,
 			"desc": "O proximo ataque causa 3x de dano"},

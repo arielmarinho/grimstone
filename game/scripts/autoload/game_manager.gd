@@ -20,7 +20,7 @@ var skills := {
 var current_map: String = "city1"
 var coins: int = 0
 var bag := {}
-var weapon: String = "sword"
+var weapon: String = "spear"
 var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
@@ -334,10 +334,10 @@ func load_game() -> bool:
 	mana = min(int(parsed.get("mana", mana_max)), mana_max)
 	skills = parsed.get("skills", skills)
 	current_map = parsed.get("current_map", "city1")
-	weapon = parsed.get("weapon", "sword")
+	weapon = parsed.get("weapon", "spear")
 	# save antigo: arma sem tier continua valida (tier 0 = comum)
 	if not EQUIPS_OK(weapon):
-		weapon = "sword"
+		weapon = "spear"
 	coins = int(parsed.get("coins", 0))
 	bag = parsed.get("bag", {})
 	hair_color = parsed.get("hair_color", "castanho")

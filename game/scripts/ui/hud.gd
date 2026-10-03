@@ -35,7 +35,18 @@ var _bag_sig: String = ""
 var feedback_label: Label
 var _feedback_tween: Tween
 
-const WEAPON_KEYS = ["sword", "axe", "bow", "staff"]
+const WEAPON_KEYS = ["spear", "sword", "axe", "bow", "staff", "druid_staff"]
+const WEAPON_ICON_IDS = {
+	"spear": "lanca",
+	"sword": "espada",
+	"axe": "machado",
+	"bow": "arco",
+	"staff": "cajado",
+	"druid_staff": "cajado_druida",
+}
+
+func _skill_weapon_key() -> String:
+	return "staff" if player_ref != null and player_ref.weapon == "druid_staff" else player_ref.weapon if player_ref != null else ""
 
 func _ready() -> void:
 	hp_bar = _make_bar(Color(0.85, 0.2, 0.2), Vector2(20, 16))
@@ -316,16 +327,17 @@ func _make_bar(color: Color, pos: Vector2) -> ProgressBar:
 	add_child(bar)
 	return bar
 
-# ---------- HOTBAR DE ARMAS (1-4) ----------
+# ---------- HOTBAR DE ARMAS (1-6) ----------
 func _build_hotbar() -> void:
-	for i in range(4):
+	for i in range(WEAPON_KEYS.size()):
 		var slot = Button.new()
-		slot.position = Vector2(560 + i * 46, 640)
-		slot.size = Vector2(42, 42)
+		slot.position = Vector2(460 + i * 42, 642)
+		slot.size = Vector2(38, 38)
 		var icon = TextureRect.new()
-		icon.texture = ITEMS_DB.draw_icon(WEAPON_KEYS[i], 28)
-		icon.position = Vector2(7, 7)
-		icon.custom_minimum_size = Vector2(28, 28)
+		var icon_id: String = WEAPON_ICON_IDS[WEAPON_KEYS[i]]
+		icon.texture = ITEMS_DB.draw_icon(icon_id, 26)
+		icon.position = Vector2(6, 6)
+		icon.custom_minimum_size = Vector2(26, 26)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -348,7 +360,7 @@ func _select_weapon(wid: String) -> void:
 		player_ref._build_frames()
 
 func _process_hotbar_highlight() -> void:
-	for i in range(4):
+	for i in range(WEAPON_KEYS.size()):
 		var slot = hotbar_slots[i]
 		var stn = StyleBoxFlat.new()
 		stn.bg_color = Color(0.12, 0.11, 0.14, 0.92)
@@ -397,7 +409,7 @@ func _press_skill(slot: String) -> void:
 		player_ref._use_skill(slot)
 
 func _process_skill_buttons() -> void:
-	var list = SKILLS.SKILLS.get(player_ref.weapon, [])
+	var list = SKILLS.SKILLS.get(_skill_weapon_key(), [])
 	var slots = ["Q", "E", "R", "G"]
 	for i in range(slots.size()):
 		var slot: String = slots[i]
@@ -871,7 +883,7 @@ func _refresh_skills_panel() -> void:
 		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
 		skills_panel.add_child(st)
 		y += 30
-		var list = SKILLS.SKILLS.get(player_ref.weapon, [])
+		var list = SKILLS.SKILLS.get(_skill_weapon_key(), [])
 		for i in range(list.size()):
 			var sk = list[i]
 			if not SKILLS.skill_unlocked(sk):

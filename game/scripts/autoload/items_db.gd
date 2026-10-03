@@ -19,6 +19,8 @@ const ITEMS = {
 	"runa_gelo": {"nome": "Runa de Gelo", "tipo": "runa", "cor": Color(0.4, 0.75, 0.95), "desc": "Congela o monstro mais proximo (dano + atordoa 2s)"},
 	"runa_trovoada": {"nome": "Runa da Trovoada", "tipo": "runa", "cor": Color(0.95, 0.9, 0.3), "desc": "Raio em area ao seu redor (dano em todos)"},
 	"runa_cura": {"nome": "Runa de Cura", "tipo": "runa", "cor": Color(0.35, 0.9, 0.45), "desc": "Recupera 40% do HP maximo"},
+	"cajado_druida": {"nome": "Cajado Druidico", "tipo": "arma", "arma": "druid_staff", "cor": Color(0.35, 0.7, 0.22)},
+	"lanca": {"nome": "Lanca", "tipo": "arma", "arma": "spear", "cor": Color(0.72, 0.74, 0.78)},
 	"espada": {"nome": "Espada", "tipo": "arma", "arma": "sword", "cor": Color(0.8, 0.82, 0.86)},
 	"machado": {"nome": "Machado", "tipo": "arma", "arma": "axe", "cor": Color(0.75, 0.77, 0.8)},
 	"arco": {"nome": "Arco", "tipo": "arma", "arma": "bow", "cor": Color(0.55, 0.4, 0.22)},
@@ -26,25 +28,15 @@ const ITEMS = {
 }
 
 static func draw_icon(id: String, size: int = 24) -> Texture2D:
-	# 1) PNG real (assets_override > assets/icons) — com strip de magenta
-	for base in ["res://assets_override/icons/", "res://assets/icons/"]:
-		var path = base + id + ".png"
-		if ResourceLoader.exists(path):
-			var tex = load(path)
-			if tex != null:
-				var img = tex.get_image()
-				if img != null:
-					return ImageTexture.create_from_image(_strip_magenta(img))
-				return tex
-	# 2) PNG embutido (base64 da arte pixel real) — pocoes de nivel reusam a arte base
-	var base_id: String = id.trim_suffix("_p").trim_suffix("_m").trim_suffix("_g")
-	var embedded = preload("res://scripts/autoload/icons_embedded.gd")
-	var png_bytes = embedded.get_png_bytes(base_id)
-	if png_bytes.size() > 0:
-		var img = Image.new()
-		if img.load_png_from_buffer(png_bytes) == OK:
-			return ImageTexture.create_from_image(_strip_magenta(img))
-	# 3) fallback: desenha por codigo
+	# Ícones atuais são PNGs próprios com alfa em assets/icons. Não carregue
+	# caches antigos de assets_override: alguns sobreviviam sem PNG fonte.
+	var base_id: String = id.split("#")[0].trim_suffix("_p").trim_suffix("_m").trim_suffix("_g")
+	var icon_path := "res://assets/icons/%s.png" % base_id
+	if ResourceLoader.exists(icon_path):
+		var tex := load(icon_path) as Texture2D
+		if tex != null:
+			return tex
+	# fallback: desenha por código caso um ícone novo ainda não tenha PNG.
 	var img2 = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	img2.fill(Color(0, 0, 0, 0))
 	var it = ITEMS.get(id, {"cor": Color(0.5, 0.5, 0.5), "tipo": ""})
@@ -103,20 +95,10 @@ static func draw_icon(id: String, size: int = 24) -> Texture2D:
 			_rect(img2, int(cx + size * 0.16), int(cy - size * 0.32), 3, 8, Color(0.85, 0.85, 0.9))
 			_rect(img2, int(cx - size * 0.34), int(cy + size * 0.22), 4, 6, Color(0.9, 0.88, 0.8))
 		"arma":
-			var wid = it.get("arma", "sword")
+			var wid: String = it.get("arma", "sword")
 			var eq = preload("res://scripts/autoload/equips.gd")
 			eq.draw_weapon(img2, wid, int(size * 0.2), 4, 0, false)
 	return ImageTexture.create_from_image(img2)
-
-static func _strip_magenta(img: Image) -> Image:
-	img.convert(Image.FORMAT_RGBA8)
-	for y in range(img.get_height()):
-		for x in range(img.get_width()):
-			var c = img.get_pixel(x, y)
-			# magenta/rosa: r E b altos, g baixo, r~b (preserva vermelho da carne/pocao)
-			if c.a > 0.0 and c.r > 0.47 and c.b > 0.39 and c.g < 0.43 and absf(c.r - c.b) < 0.31:
-				img.set_pixel(x, y, Color(0, 0, 0, 0))
-	return img
 
 static func _ellipse(img: Image, cx: float, cy: float, rx: float, ry: float, c: Color) -> void:
 	for j in range(int(cy - ry) - 1, int(cy + ry) + 2):

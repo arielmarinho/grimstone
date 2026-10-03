@@ -120,12 +120,16 @@ static func _strip_magenta(img: Image) -> Image:
 
 static func _load_image(path: String) -> Image:
 	var override_path = path.replace("res://assets/", "res://assets_override/")
-	var img = Image.load_from_file(ProjectSettings.globalize_path(override_path))
-	if img != null:
-		return _strip_magenta(img)
-	img = Image.load_from_file(ProjectSettings.globalize_path(path))
-	if img != null:
-		return _strip_magenta(img)
+	var override_disk_path: String = ProjectSettings.globalize_path(override_path)
+	if FileAccess.file_exists(override_disk_path):
+		var override_img := Image.load_from_file(override_disk_path)
+		if override_img != null:
+			return _strip_magenta(override_img)
+	var disk_path: String = ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(disk_path):
+		var img := Image.load_from_file(disk_path)
+		if img != null:
+			return _strip_magenta(img)
 	var f = FileAccess.open(path + ".b64", FileAccess.READ)
 	if f == null:
 		return null

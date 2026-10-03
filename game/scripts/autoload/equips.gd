@@ -3,6 +3,18 @@ extends Object
 ## Sistema de armas estilo Rucoy: a ARMA define a classe/estilo de combate.
 
 const WEAPONS = {
+	"druid_staff": {
+		"nome": "Cajado Druidico", "classe": "Druida",
+		"cor": Color(0.34, 0.42, 0.18), "cor_orb": Color(0.35, 0.88, 0.22),
+		"dano": 17, "alcance": 220.0, "cooldown": 1.0, "skill": "magia",
+		"tipo": "magic",
+	},
+	"spear": {
+		"nome": "Lanca", "classe": "Paladino",
+		"cor": Color(0.72, 0.74, 0.78), "cor_cabo": Color(0.42, 0.27, 0.15),
+		"dano": 15, "alcance": 280.0, "cooldown": 0.9, "skill": "espada",
+		"tipo": "melee",
+	},
 	"sword": {
 		"nome": "Espada", "classe": "Guerreiro",
 		"cor": Color(0.78, 0.8, 0.84), "cor_cabo": Color(0.35, 0.24, 0.14),
@@ -55,6 +67,10 @@ const PANTS_COLORS = {
 static func draw_weapon(img: Image, weapon: String, cx: int, sy: int, f: int, is_attack: bool) -> void:
 	var w = WEAPONS[weapon]
 	match weapon:
+		"spear":
+			_draw_blade(img, cx + 3, sy - 2, 3, 24, Color(0.42, 0.27, 0.15))
+			_draw_blade(img, cx, sy - 5, 9, 6, Color(0.72, 0.74, 0.78))
+			_draw_blade(img, cx + 2, sy - 7, 5, 3, Color(0.9, 0.91, 0.94))
 		"sword":
 			var steel: Color = w["cor"]
 			var steel_l: Color = Color(0.9, 0.91, 0.94)
@@ -88,6 +104,12 @@ static func draw_weapon(img: Image, weapon: String, cx: int, sy: int, f: int, is
 			if is_attack and f >= 2:
 				_draw_blade(img, cx + 10, sy + 9, 14, 2, Color(0.9, 0.85, 0.7))
 				_draw_blade(img, cx + 22, sy + 8, 3, 4, Color(0.85, 0.85, 0.85))
+		"druid_staff":
+			_draw_blade(img, cx + 3, sy - 2, 3, 26, w["cor"])
+			_draw_circle(img, cx + 4.5, sy - 5, 4.0, w["cor_orb"])
+			_draw_circle(img, cx + 3.5, sy - 6, 1.2, Color(0.85, 1.0, 0.68))
+			if is_attack and f >= 2:
+				_draw_circle(img, cx + 17, sy + 8, 4, Color(0.4, 0.9, 0.25))
 		"staff":
 			var wood: Color = w["cor"]
 			var orb: Color = w["cor_orb"]

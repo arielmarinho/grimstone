@@ -148,6 +148,7 @@ func _new_game() -> void:
 	GameManager.coins = 0
 	GameManager.bag = {}
 	GameManager.current_map = "city1"
+	GameManager.weapon = "spear"
 	GameManager.arrows = 50
 	GameManager.skills = {"espada": {"level": 10, "xp": 0}, "defesa": {"level": 10, "xp": 0}}
 	GameManager.city2_visited = false

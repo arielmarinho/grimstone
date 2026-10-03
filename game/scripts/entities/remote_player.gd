@@ -33,6 +33,7 @@ const ANIMS = {
 func _ready() -> void:
 	# RemotePlayer e criado POR CODIGO (nao tem .tscn) — o Sprite precisa existir antes de _build_frames
 	sprite = AnimatedSprite2D.new()
+	sprite.scale = Vector2(1.15, 1.15)
 	add_child(sprite)
 	_build_frames()
 	_build_name_label()
@@ -67,19 +68,41 @@ func _build_name_label() -> void:
 	l.z_index = 45
 	add_child(l)
 
+func _sprite_sheet_path(anim: String) -> String:
+	var class_dir: String = ""
+	match weapon.split("#")[0]:
+		"spear":
+			class_dir = "paladin"
+		"staff":
+			class_dir = "mage"
+		"druid_staff":
+			class_dir = "druid"
+	if class_dir.is_empty():
+		return ANIMS[anim]
+	var parts := anim.split("_")
+	var action: String = parts[0]
+	var direction: String = "down" if action == "death" else parts[1]
+	return "res://assets/sprites/animation/player/%s/%s/%s/%s_%s_%s.png" % [class_dir, action, direction, class_dir, action, direction]
+
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
-		var texs = TEXHELPER.load_sheet_custom(ANIMS[anim], weapon, hair_color, tunic_color, pants_color)
+		var sheet_path: String = _sprite_sheet_path(anim)
+		var texs = TEXHELPER.load_sheet_custom(sheet_path, weapon, hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
-		sf.set_animation_speed(anim, 8.0)
-		sf.set_animation_loop(anim, anim.begins_with("idle") or anim.begins_with("walk"))
-		for t in texs:
-			sf.add_frame(anim, _strip_tex(t))
+		var anim_speed: float = 12.0 if weapon.split("#")[0] == "druid_staff" and anim.begins_with("attack") else 8.0
+		sf.set_animation_speed(anim, anim_speed)
+		var is_idle: bool = anim.begins_with("idle")
+		sf.set_animation_loop(anim, anim.begins_with("walk"))
+		if is_idle:
+			sf.add_frame(anim, _strip_tex(texs[0]))
+		else:
+			for t in texs:
+				sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
 	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -113,7 +136,7 @@ func _physics_process(_delta: float) -> void:
 		global_position = global_position.lerp(target_pos, 0.25)
 		_play(base_anim if base_anim in ["walk", "idle", "attack"] else "walk")
 	else:
-		_play("idle")
+		_play("attack" if base_anim == "attack" else "idle")
 
 func _play(base: String) -> void:
 	var anim := base + "_down"
@@ -122,9 +145,13 @@ func _play(base: String) -> void:
 		sprite.flip_h = false
 	elif facing == "left" or facing == "right":
 		anim = base + "_side"
-		sprite.flip_h = facing == "left"
+		var weapon_base: String = weapon.split("#")[0]
+		var native_faces_right: bool = weapon_base not in ["spear", "druid_staff"]
+		sprite.flip_h = facing == "left" if native_faces_right else facing == "right"
 	else:
 		sprite.flip_h = false
 	if sprite.sprite_frames != null and sprite.sprite_frames.has_animation(anim):
 		if sprite.animation != anim:
+			sprite.play(anim)
+		elif base != "idle" and not sprite.is_playing():
 			sprite.play(anim)

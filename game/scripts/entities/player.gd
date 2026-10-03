@@ -20,7 +20,7 @@ var dead: bool = false
 var facing: String = "down"
 var attack_cooldown: float = 0.0
 
-var weapon: String = "sword"
+var weapon: String = "spear"
 var hair_color: String = "castanho"
 var tunic_color: String = "castanho"
 var pants_color: String = "marrom"
@@ -59,6 +59,7 @@ const ANIMS = {
 func _ready() -> void:
 	target = global_position
 	_last_level = GameManager.level
+	sprite.scale = Vector2(1.15, 1.15)
 	_build_frames()
 
 func _notify_level_up() -> void:
@@ -94,11 +95,28 @@ func _notify_level_up() -> void:
 	tw2.parallel().tween_property(ring, "modulate:a", 0.0, 0.6)
 	tw2.tween_callback(ring.queue_free)
 
+func _sprite_sheet_path(anim: String) -> String:
+	var class_dir: String = ""
+	match GameManager.weapon_base():
+		"spear":
+			class_dir = "paladin"
+		"staff":
+			class_dir = "mage"
+		"druid_staff":
+			class_dir = "druid"
+	if class_dir.is_empty():
+		return ANIMS[anim]
+	var parts := anim.split("_")
+	var action: String = parts[0]
+	var direction: String = "down" if action == "death" else parts[1]
+	return "res://assets/sprites/animation/player/%s/%s/%s/%s_%s_%s.png" % [class_dir, action, direction, class_dir, action, direction]
+
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
+		var sheet_path: String = _sprite_sheet_path(anim)
 		# HIBRIDO CRITERIOSO: down usa a ARTE REAL (a que o usuario aprovou — pixel
 		# art com rosto/expressao); up usa a ARTE REAL editada (rosto vira cabelo =
 		# costas de verdade); side usa o PERFIL DE VERDADE (orelha/olho/tronco
@@ -107,29 +125,36 @@ func _build_frames() -> void:
 		var texs: Array
 		if "_down" in anim or anim == "death":
 			# down/death: ARTE REAL (a aprovada — pixel art com rosto/expressao)
-			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+			texs = TEXHELPER.load_sheet_custom(sheet_path, GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		else:
 			# up/side: ARTE REAL NAS 4 DIRECOES (b64 proprio) se existir no pacote;
 			# SEM o b64 (repo/pacote antigo), cai no fallback v0.6.19 validado
 			# (up = arte real editada rosto->cabelo, side = perfil procedural) —
 			# o jogo NUNCA fica sem animacao, em nenhum estado
-			texs = TEXHELPER.load_sheet_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+			texs = TEXHELPER.load_sheet_custom(sheet_path, GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 			if texs.is_empty():
 				if "_up" in anim:
-					texs = TEXHELPER.load_sheet_up_real(ANIMS[anim].replace("/up/", "/down/"), hair_color, tunic_color)
+					texs = TEXHELPER.load_sheet_up_real(sheet_path.replace("/up/", "/down/"), hair_color, tunic_color)
 				else:
-					texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+					texs = TEXHELPER.load_sheet_procedural_custom(sheet_path, GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		# BLINDAGEM: se TUDO falhar (PNG + fallback), procedural garante a
 		# animação — "no animation with name X" NUNCA acontece
 		if texs.is_empty():
-			texs = TEXHELPER.load_sheet_procedural_custom(ANIMS[anim], GameManager.weapon_base(), hair_color, tunic_color, pants_color)
+			texs = TEXHELPER.load_sheet_procedural_custom(sheet_path, GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
 		sf.add_animation(anim)
-		sf.set_animation_speed(anim, 8.0)
-		sf.set_animation_loop(anim, anim.begins_with("idle") or anim.begins_with("walk"))
-		for t in texs:
-			sf.add_frame(anim, _strip_tex(t))
+		var anim_speed: float = 12.0 if GameManager.weapon_base() == "druid_staff" and anim.begins_with("attack") else 8.0
+		sf.set_animation_speed(anim, anim_speed)
+		var is_idle: bool = anim.begins_with("idle")
+		sf.set_animation_loop(anim, anim.begins_with("walk"))
+		if is_idle:
+			# Idle usa um quadro fixo; os quadros da referência são variações de
+			# pose, e tocá-los em loop fazia o personagem parecer sempre andando.
+			sf.add_frame(anim, _strip_tex(texs[0]))
+		else:
+			for t in texs:
+				sf.add_frame(anim, _strip_tex(t))
 	sprite.sprite_frames = sf
 	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -150,12 +175,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if dead:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		var weapons = ["sword", "axe", "bow", "staff"]
-		if event.keycode >= KEY_1 and event.keycode <= KEY_4:
+		var weapons = ["spear", "sword", "axe", "bow", "staff", "druid_staff"]
+		if event.keycode >= KEY_1 and event.keycode <= KEY_6:
 			var idx = event.keycode - KEY_1
 			var base = GameManager.weapon_base()
 			if idx < weapons.size() and weapons[idx] != base:
-				# troca de arma: perde o tier (tier vem do item dropado, teclas 1-4 = arma comum)
+				# troca de arma: perde o tier (tier vem do item dropado, teclas 1-6 = armas comuns)
 				weapon = weapons[idx]
 				GameManager.weapon = weapon
 				_build_frames()
@@ -197,7 +222,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---------- SKILLS (estilo Rucoy) ----------
 func _skill_for_slot(slot: String) -> Dictionary:
-	var list = SKILLS.SKILLS.get(weapon, [])
+	var list = SKILLS.SKILLS.get("staff" if weapon == "druid_staff" else weapon, [])
 	for sk in list:
 		if sk["tecla"] == slot:
 			return sk
@@ -456,10 +481,18 @@ func _physics_process(delta: float) -> void:
 	if moving and dist > 6.0:
 		var dir = (target - global_position).normalized()
 		velocity = dir * SPEED
+		var previous_position: Vector2 = global_position
 		move_and_slide()
 		# cinto de seguranca: player NUNCA sai do mapa (2048x2048), mesmo se um
 		# colisor falhar — centro clampado em 40..2008
 		global_position = global_position.clamp(Vector2(40, 40), Vector2(2008, 2008))
+		if global_position.distance_to(previous_position) < 0.05:
+			# Não mantenha walk quando uma parede impede o movimento.
+			moving = false
+			target = global_position
+			velocity = Vector2.ZERO
+			_play("idle")
+			return
 		_update_facing(dir)
 		_play("walk")
 		var mob = _mob_in_range(w["alcance"])
@@ -467,6 +500,7 @@ func _physics_process(delta: float) -> void:
 			_attack(mob)
 	else:
 		moving = false
+		target = global_position
 		velocity = Vector2.ZERO
 		_play("idle")
 		var mob = _mob_in_range(w["alcance"])
@@ -498,10 +532,16 @@ func _play(base: String) -> void:
 		sprite.flip_h = false
 	elif facing == "left" or facing == "right":
 		anim = base + "_side"
-		sprite.flip_h = facing == "left"
+		# O perfil base do Paladino e do Druida olha para a esquerda; Mago e
+		# Knight procedural olham para a direita.
+		var weapon_base: String = GameManager.weapon_base()
+		var native_faces_right: bool = weapon_base not in ["spear", "druid_staff"]
+		sprite.flip_h = facing == "left" if native_faces_right else facing == "right"
 	else:
 		sprite.flip_h = false
 	if sprite.animation != anim:
+		sprite.play(anim)
+	elif not sprite.is_playing() and base != "idle":
 		sprite.play(anim)
 
 func _attack(mob) -> void:
@@ -514,6 +554,8 @@ func _attack(mob) -> void:
 			_show_feedback("Sem flechas! Compre na loja.")
 			return
 		GameManager.arrows -= 1
+	# O alvo pode mover-se desde que começou a caminhada; orientar no momento
+	# do golpe garante que o sprite e o ataque apontem para o inimigo atual.
 	_update_facing(mob.global_position - global_position)
 	attacking = true
 	attack_cooldown = w["cooldown"]
