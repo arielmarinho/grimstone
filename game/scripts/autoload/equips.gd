@@ -44,21 +44,24 @@ const WEAPONS = {
 # Paleta de customização (cabelo + túnica) — cores extraídas das referências
 # do usuário (knight castanho/preto/branco + túnica vermelha)
 # ESCALA DO SPRITE POR CLASSE — MEDIDA nos PNGs do repo, nao presumida.
-# Altura do CORPO e linha dos PES dentro da celula 96x96 (mediana de idle+walk,
-# medido por scripts/222ef96c095afc0b/measure_art.py):
-#   knight 86.0px / pes 88.0   paladino 56.0 / 84.0
-#   mago   55.5px / pes 88.5   druida   55.0 / 87.0
+# Altura do CORPO e linha dos PES dentro da celula 96x96, mediana de
+# idle+walk (scripts/222ef96c095afc0b/measure_art.py):
+#   knight 86.0 / pes 88.0 (40 abaixo do centro)
+#   paladino 56.0 / 84.0 (36)   mago 55.5 / 88.5 (40.5)   druida 55.0 / 87.0 (39)
 # Com sprite.scale fixo em 1.15 as classes novas apareciam 33-36% MENORES que
-# o knight na tela. Fator = 86 / altura_classe, aplicado sobre o 1.15 do knight.
-# Nenhum PNG e alterado (a arte do usuario fica intacta, o ajuste e em runtime).
+# o knight na tela. Nenhum PNG e alterado: o ajuste e em runtime.
 const KNIGHT_SPRITE_SCALE := 1.15
 const KNIGHT_BODY_H := 86.0
-const KNIGHT_BODY_BOTTOM := 88.0
-const CLASS_BODY_H := {"paladin": 56.0, "mage": 55.5, "druid": 55.0}
-const CLASS_BODY_BOTTOM := {"paladin": 84.0, "mage": 88.5, "druid": 87.0}
-const CELL_CENTER := 48.0
+# "feet" = quanto os pes ficam ABAIXO do centro da celula (em px de textura).
+const CLASS_GEOM := {
+	"paladin": {"h": 56.0, "feet": 36.0},
+	"mage": {"h": 55.5, "feet": 40.5},
+	"druid": {"h": 55.0, "feet": 39.0},
+}
+# linha dos pes do knight NA TELA = 40px abaixo do centro * 1.15
+const KNIGHT_FEET_SCREEN := 40.0 * KNIGHT_SPRITE_SCALE
 
-## Diretorio da classe no pacote de sprites para uma arma base.
+## Classe de sprite que a arma usa ("knight" quando nao e das novas).
 static func class_dir_for(weapon_base: String) -> String:
 	match weapon_base:
 		"spear":
@@ -69,29 +72,25 @@ static func class_dir_for(weapon_base: String) -> String:
 			return "druid"
 	return "knight"
 
-## Escala que iguala a ALTURA do corpo a do knight.
+## Escala do sprite para a classe da arma (1.15 no knight).
 static func sprite_scale_for(weapon_base: String) -> float:
-	if not CLASS_BODY_H.has(class_dir_for(weapon_base)):
+	var cls := class_dir_for(weapon_base)
+	if not CLASS_GEOM.has(cls):
 		return KNIGHT_SPRITE_SCALE
-	return KNIGHT_SPRITE_SCALE * (KNIGHT_BODY_H / float(CLASS_BODY_H[class_dir_for(weapon_base)]))
+	return KNIGHT_SPRITE_SCALE * (KNIGHT_BODY_H / float(CLASS_GEOM[cls]["h"]))
 
-## Deslocamento vertical (em pixels de TEXTURA) para os PES ficarem no mesmo Y
-## do knight. Sem isto o sprite cresce em torno do CENTRO da celula e o
-## personagem AFUNDA no chao: 18px (paladino), 26px (mago), 24px (druida) —
-## medido. `AnimatedSprite2D.offset` e multiplicado pela escala do node, por
-## isso a divisao final por `sc`.
+## Offset local (em px de textura, ANTES da escala) que mantem os pes na mesma
+## linha do knight. O offset do AnimatedSprite2D e multiplicado pela escala do
+## node, entao isola-se: feet*s + offset*s = KNIGHT_FEET_SCREEN.
 static func sprite_offset_y_for(weapon_base: String) -> float:
 	var cls := class_dir_for(weapon_base)
-	var sc := sprite_scale_for(weapon_base)
-	if sc <= 0.0:
+	if not CLASS_GEOM.has(cls):
 		return 0.0
-	var feet_knight: float = (KNIGHT_BODY_BOTTOM - CELL_CENTER) * KNIGHT_SPRITE_SCALE
-	var bottom: float = float(CLASS_BODY_BOTTOM.get(cls, KNIGHT_BODY_BOTTOM))
-	var feet_class: float = (bottom - CELL_CENTER) * sc
-	var delta: float = feet_knight - feet_class
-	if absf(delta) < 0.5:
+	var s: float = sprite_scale_for(weapon_base)
+	if s <= 0.0:
 		return 0.0
-	return delta / sc
+	var feet: float = float(CLASS_GEOM[cls]["feet"])
+	return KNIGHT_FEET_SCREEN / s - feet
 
 const CLOTHES_COLORS = {
 	"castanho": Color(0.53, 0.28, 0.15),
