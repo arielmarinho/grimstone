@@ -1,3 +1,18 @@
+## v0.6.36 — Perfil lateral: classes novas olhavam para o lado errado
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG (polish visual): ao andar para os lados, Paladino/Mago/Druida apareciam de COSTAS para onde caminhavam. O codigo presumia o lado da arte (`not in ["spear","druid_staff"]`).
+- MEDICAO na arte do repo (nao presumida): 1o quadro de idle/side ampliado 20x — as 3 folhas novas olham para a DIREITA (rosto, nariz e arma a direita); a folha do Knight (.b64 + procedural) olha para a ESQUERDA. O mapa de flip estava invertido para lanca, cajado_druida, espada/machado/arco.
+- FIX em player.gd e remote_player.gd: `native_faces_right = weapon_base in ["spear","staff","druid_staff"]` — o avatar remoto usa o mesmo mapa (senao o outro jogador andava de costas na tela).
+- Validacao: gdparse OK nos 2 arquivos + Godot 4.7.2 headless `--import` 0 erros. Provas visuais: artifacts/side_single.png e artifacts/knight_side.png. Teste final no Mac do usuario.
+
+## v0.6.35 — Quadros descentralizados das classes novas (personagem "patinando")
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG (polish visual, visivel no primeiro minuto de jogo): as folhas do Paladino/Mago/Druida tem o personagem DESLOCADO dentro da celula na propria referencia do usuario — medido na fonte do druida, o centro dos pes cai em x=288 e x=736 nas 4 celulas (±44px do centro). Medido nas folhas do repo: druid idle/side = 46px de drift entre o 1o e o 4o quadro, druid hurt/idle/attack/up/down = 40-44px, mage attack = 11px, paladin death = 10px. O AnimatedSprite2D centraliza cada textura do SpriteFrames, entao o personagem saltava lateralmente a cada quadro (patinava parado e no ataque).
+- FIX em player.gd: novo `_align_frames()` aplicado as texturas de cada animacao em `_build_frames()` (antes do add_frame). Ele mede o centro dos PES de cada quadro (faixa de 25% de baixo do corpo, nao a bbox inteira — que muda quando a arma vai pra frente no ataque) e, se o drift passar de 3px, recentraliza o quadro na celula. Folhas ja alinhadas (knight, paladin idle) ficam intocadas; death fica de fora porque corpo deitado nao tem pes estaveis.
+- Resultado: druid drift 47px -> 0, mage 6px -> 0, paladin 1.5px -> 0. Nenhum PNG tocado (a arte do usuario fica intacta, o ajuste e em runtime).
+- Validacao: gdparse OK; Godot 4.7.2 headless reconstruido no sandbox — `--import` 0 erros e run real (`--quit-after`) 0 erros; render comparativo antes/depois em artifacts/audit_align_frames_v0635.png. Teste visual final fica no Mac do usuario.
+- Godot headless voltou a funcionar no sandbox (LD_LIBRARY_PATH=tmp/godot-alpine/usr/lib): import e run reais validam, com ruido conhecido de fonte (U_FILE_ACCESS_ERROR do _spoof_check, inofensivo).
+
 ## v0.6.34 — Armas das classes novas jogaveis (Paladino/Druida)
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG: as classes Paladino (lanca) e Druida (cajado_druida) existiam em equips.gd/items_db.gd desde a v0.6.33, mas NENHUMA loja vendia as armas e NENHUM mob as dropava — as duas classes eram INALCANCAVEIS para um jogador
