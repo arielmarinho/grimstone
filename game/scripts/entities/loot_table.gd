@@ -61,6 +61,7 @@ const TABLES = {
 		{"id": "runa_fogo", "chance": 0.08, "min": 1, "max": 1},
 		{"id": "runa_gelo", "chance": 0.06, "min": 1, "max": 1},
 		{"id": "cajado", "chance": 0.08, "min": 1, "max": 1},
+		{"id": "cajado_druida", "chance": 0.05, "min": 1, "max": 1},
 	],
 }
 
