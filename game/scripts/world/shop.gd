@@ -16,6 +16,7 @@ const CATALOG_CITY1 = {
 	"machado": 120,
 	"arco": 150,
 	"cajado": 180,
+	"lanca": 160,
 }
 const CATALOG_CITY2 = {
 	"pocao_vida_m": 45,
@@ -34,6 +35,10 @@ const CATALOG_CITY2 = {
 	"machado": 120,
 	"arco": 150,
 	"cajado": 180,
+	# classes novas (Paladino/Druida) — liberadas na city2: sem isto as armas
+	# existiam em items_db/equips mas NENHUMA loja vendia (classe inalcancavel)
+	"lanca": 160,
+	"cajado_druida": 200,
 }
 
 var city: String = "city1"
