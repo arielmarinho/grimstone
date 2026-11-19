@@ -42,6 +42,7 @@
 | 25 | **Player 100% ARTE REAL (hibrido up/side)** | gs-pixel-art + gs-qa-testing | UP = arte real editada (rosto vira cabelo), SIDE = arte real com flip_h; preview + check de pixels | OK ciclo 41 (v0.6.17) — preview_hybrid2 validado, headless 0 erros |
 | 29 | **Area 6 UI/UX re-auditada** | gs-ui-ux | paineis exclusivos (HUD.close_all_panels + grupo npc_panel: loja/banco/missoes), versao centralizada GameManager.GAME_VERSION (titulo hardcoded v0.6.17), dica de teclas c/ Z/X | OK ciclo 56 (v0.6.28) — 7/7 testes + run real 0 erros |
 | 28 | **Player ARTE REAL 4 direcoes + fallback** | gs-pixel-art + gs-qa-testing | up/side = b64 real proprio; fallback v0.6.17/19 sem o b64; preview_final3 + check_real4 | OK ciclo 47 (v0.6.21) — pendente push dos 6 b64 |
+| 31 | **Animacao de caminhada das classes** | gs-pixel-art | walk vs idle das folhas paladino/mago/druida, leitura de passo | AUDITADO ciclo 60 (v0.6.34) — walk era identico ao idle em 3 classes (personagem deslizava); fix `_walk_variation` no tex_helper (balanco de passo sintetizado, so onde nao ha passada real) |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -164,3 +165,7 @@
 - Fiel aos colisores (regra do usuario); check_city2 programatico OK; run real 0 erros + 7/7 testes
 - Incidente: push em partes sobrescreveu o arquivo inteiro 2x — reparo com push completo byte-exato
 - Fix ciclo 53: STALL da feira saiu do telhado da casa NE (1320,420 -> 1320,380, decor+colisor em par)
+### Area 31 — Animacao de caminhada das classes novas (ciclo 60, v0.6.34) OK
+- Folha por folha (33 folhas de player no repo): paladin walk/down e walk/up IDENTICOS ao idle; mage walk/down e walk/up IDENTICOS ao idle; druid walk/down com 4 quadros iguais
+- Fix em tex_helper.load_sheet_custom -> _walk_variation: detecta folha de walk sem passada (quadros iguais ou = idle) e aplica balanco 4 quadros (0,-2 / 0 / +1 px), up com -1 px lateral; folhas com passada real intactas
+- Validacao: gdparse 52/52 OK + render comparativo (artifacts/audit_walk_classes_v0633.png); headless indisponivel no sandbox neste ciclo
