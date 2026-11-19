@@ -28,7 +28,7 @@
 | 8 | **Audio** | gs-audio | AudioManager procedural, 12 SFX, 3 musicas | OK (re-auditada ciclo 58: wiring completo, sintese musicas em THREAD — boot nao trava) |
 | 9 | **Multiplayer** | gs-netcode | fundacao, mobs autoritativos | fase 2 OK ciclo 14 + interpolacao/lag 150ms OK ciclo 15 (server+A+B localhost PASSOU) — teste no Mac pendente |
 | 10 | **QA final** | gs-qa-testing | fluxo completo, release | teste multiplayer real PASSOU ciclo 13+15 (server+2 clientes localhost: registro, chat, posicao, dano em mob) — teste no Mac pendente |
-| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | RARIDADE+FUSAO+ESTIMATIVAS implementadas ciclos 18-20 (v0.6.0/v0.6.1/v0.6.2) — aguarda usuario |
+| 11 | **Raridade & Fusao** | gs-game-design | 5 tiers, loot com tier, fusao painel F | AUDITADO ciclo 19/11 (v0.6.33) — 3 bugs de chave crua ("espada#2"): skills vazias no player, skills/crit/preview no HUD e clique na hotbar derrubava a raridade |
 | 12 | **Quests & NPC** | gs-game-design | missoes de caca com NPC, recompensas | AUDITADO ciclo 31+32 — 2 bugs graves corrigidos (quest done-nao-entregue sumia do painel; from_id faltando no dano online) + teste corrigido |
 | 13 | **Banco/Depósito** | gs-game-design | NPC banco, depositar/sacar itens | implementado ciclo 23 (v0.6.5) — aguarda usuario |
 | 14 | **Bestiário** | gs-game-design | registro de caça, ficha dos 8 mobs, tecla N | implementado ciclo 24 (v0.6.6) — aguarda usuario |
