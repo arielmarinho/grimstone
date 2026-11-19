@@ -146,7 +146,8 @@ func _play(base: String) -> void:
 	elif facing == "left" or facing == "right":
 		anim = base + "_side"
 		var weapon_base: String = weapon.split("#")[0]
-		var native_faces_right: bool = weapon_base not in ["spear", "druid_staff"]
+		# mesmo mapa do player.gd: folhas novas olham a DIREITA, knight a ESQUERDA
+		var native_faces_right: bool = weapon_base in ["spear", "staff", "druid_staff"]
 		sprite.flip_h = facing == "left" if native_faces_right else facing == "right"
 	else:
 		sprite.flip_h = false
