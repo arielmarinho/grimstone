@@ -48,8 +48,12 @@ static func load_sheet_procedural_custom(path: String, weapon: String, hair: Str
 static func load_sheet_custom(path: String, weapon: String, hair: String, tunic: String, pants: String = "marrom") -> Array[Texture2D]:
 	var img := _load_image(path)
 	if img != null:
-		# recolore o PNG real se a cor escolhida nao e a base (tunica/cabelo)
-		if tunic != "castanho" or hair != "castanho":
+		# O _recolor_real usa a PALETA DO KNIGHT (tons de marrom extraidos da arte
+		# dele). Aplicada nas folhas do usuario (paladino/mago/druida) ela repinta
+		# 13-33% dos pixels opacos — a armadura branca, a tunica azul e a verde
+		# viravam marrom so por trocar a cor da roupa no T. Nessas classes a arte
+		# do usuario fica INTACTA (AGENTS.md: preservar a referencia).
+		if _is_knight_sheet(path) and (tunic != "castanho" or hair != "castanho"):
 			img = _recolor_real(img, hair, tunic)
 		# folhas sem passada propria (walk == idle) ganham balanco sintetizado
 		if "/walk/" in path:
@@ -63,7 +67,10 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	CURRENT_PANTS = pants
 	return _procedural(path, weapon, hair, tunic)
 
-# recolore a arte REAL do knight: troca os pixels da túnica/cabelo pela cor escolhida
+## Folhas do pipeline (paladino/mago/druida) vem do usuario, nao da arte do knight.
+static func _is_knight_sheet(path: String) -> bool:
+	return "/player/knight/" in path
+
 static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 	var base_tunic := [Color(0.6, 0.36, 0.2), Color(0.47, 0.26, 0.14), Color(0.53, 0.31, 0.18)]
 	var base_hair := Color(0.29, 0.17, 0.14)
