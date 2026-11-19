@@ -1,3 +1,11 @@
+## v0.6.34 — Armas das classes novas jogaveis (Paladino/Druida)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG: as classes Paladino (lanca) e Druida (cajado_druida) existiam em equips.gd/items_db.gd desde a v0.6.33, mas NENHUMA loja vendia as armas e NENHUM mob as dropava — as duas classes eram INALCANCAVEIS para um jogador
+- FIX: "lanca" 160 na city1 + city2; "cajado_druida" 200 na city2 (progressao: classe avancada chega na vila); skeleton dropa cajado_druida 5%
+- NOVO TESTE DE REGRESSAO tests/test_shop_weapons.gd: toda arma de equips.WEAPONS precisa de loja OU drop (le os .gd como texto, sem autoloads)
+- Validacao: gdparse 0 erros, import 0 erros, run real 0 erros, 8/8 testes unitarios OK
+- Godot headless 4.7.2 reconstruido no sandbox (apk alpine edge testing) — validacao real voltou a funcionar
+
 ## v0.6.34 — Area 31: animacao de caminhada das classes novas (19/11)
 Formato: codigo no GitHub (push MCP), docs pushados
 - AUDITORIA da integracao das classes Paladino/Mago/Druida (commit 6ce6920): a folha de WALK dessas classes veio das poses de IDLE do pipeline, entao **andar era identico a ficar parado** — paladino e mago tinham walk/down e walk/up byte-identicos ao idle; druida tinha 4 quadros iguais em walk/down. O personagem "deslizava" pelo mapa sem nenhum passo (quebra de polish visivel no primeiro minuto de jogo).
