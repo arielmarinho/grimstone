@@ -33,7 +33,6 @@ const ANIMS = {
 func _ready() -> void:
 	# RemotePlayer e criado POR CODIGO (nao tem .tscn) — o Sprite precisa existir antes de _build_frames
 	sprite = AnimatedSprite2D.new()
-	sprite.scale = Vector2(1.15, 1.15)
 	add_child(sprite)
 	_build_frames()
 	_build_name_label()
@@ -86,6 +85,11 @@ func _sprite_sheet_path(anim: String) -> String:
 
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
+	# mesma escala por classe do player.gd (medida na arte, ver Equips)
+	var wbase: String = str(weapon).split("#")[0]
+	var sc: float = Equips.sprite_scale_for(wbase)
+	sprite.scale = Vector2(sc, sc)
+	sprite.offset = Vector2(0.0, Equips.sprite_offset_y_for(wbase))
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
