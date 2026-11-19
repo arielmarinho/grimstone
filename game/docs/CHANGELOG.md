@@ -1,3 +1,26 @@
+## v0.6.38 — Area 34: ancora do alinhamento de quadros (sprite "patinando") + avatar remoto
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG medido (nao presumido), com avaliador INDEPENDENTE (centro de massa do corpo, 20-80% da altura, nunca a mesma banda usada como ancora): o alinhador de quadros da v0.6.35 media a faixa dos PES (25% de baixo do bbox). Os pes BALANCAM quando o personagem anda ou golpeia, entao o proprio movimento era lido como "drift" e corrigido — o passo era anulado quadro a quadro e o sprite deslizava. Residual medio 3.39px, pior 13.7px, 16/39 folhas com drift >= 3px.
+- FIX: nova ancora `_body_center_img` = MEDIANA dos x opacos na faixa de 25% a 55% do corpo (tronco). A mediana ignora arma/efeito que aparece de um lado so. `_align_frames` virou `align_frames` (estatico e publico). Resultado medido: residual medio 2.38px, pior 8.2px, 9/39 folhas com drift >= 3px; o caso pior (mago/attack, 13.7px) caiu para 8.2px e knight/walk/down de 8.9px para 1.7px.
+- SEGUNDO BUG: o avatar remoto (`remote_player.gd`) NAO tinha alinhamento nenhum — as folhas novas tem 40-45px de drift entre o 1o e o 4o quadro, entao o outro jogador "patinava" na tela. Agora usa a MESMA `align_frames` do player.
+- Nao mexe em nenhum PNG (arte do usuario intacta): tudo em runtime.
+- Prova visual: artifacts/align_v0638_antes_depois.png (antes/depois com a linha do centro de massa).
+- Ferramentas novas em `scripts/222ef96c095afc0b/`: `measure_feet2.py`, `align_methods.py`, `align_xcheck.py`, `align_head.py`, `align_final2.py`, `align_cross.py`, `align_decide.py`, `proof_align.py` (comparam 7 ancoras candidatas contra 3 avaliadores cruzados).
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + run real 0 erros + 8/8 testes OK (fusion, quests, scale, shop_weapons, runes, bank, bestiary, food).
+- Descartado: um `tests/test_align.gd` headless ficou >4min por varrer pixel a pixel em GDScript; removido — a medicao equivalente sai em segundos pelo `align_decide.py` em Python.
+- Pendente: julgamento visual do usuario no Mac (mesmo tema da v0.6.37).
+
+## v0.6.38 — Numeros de dano unificados + feedback de combate ONLINE
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG (polish de combate, o item mais antigo da fila de feedback): o numero flutuante de dano existia em TRES copias (`mob.gd::_spawn_damage_number`, `player.gd::_spawn_crit_text`, `projectile.gd::_spawn_crit_text`), cada uma com fonte, tamanho e curva diferentes — e NENHUMA delas rodava ONLINE: no cliente o mob e espelho (`net_authority=false`), quem aplica o dano e o servidor e o `take_damage` do cliente so repassa o pedido. Resultado: jogando online o jogador acertava sem ver numero nenhum, e o dano RECEBIDO pelo player nunca mostrava numero.
+- FIX 1 (fonte unica): `FX.damage_number(pos, amount, crit, kind)` em `fx.gd`, com os 3 estilos — normal (creme, 15px), critico (dourado, 19px, "%d!"), dano recebido (vermelho, 16px) — e um "pop" de escala (nasce 1.45x e assenta em 0.12s) que da peso ao golpe. `float_text()` passou a devolver o Label e aceitar a altura da subida.
+- FIX 2 (online): o servidor acumula o dano aplicado em `mob.net_dmg_acc` / `net_dmg_crit` e o proximo snapshot leva `hd`/`hc`; o espelho no cliente desconta a queda de HP do snapshot e mostra o numero (com fallback pela diferenca de HP se o campo faltar). O critico agora viaja no RPC (`request_mob_damage` / `_rpc_mob_damage` / `net_mob_take_damage` ganharam `crit`), entao o numero dourado aparece tambem online.
+- FIX 3 (dano no player): `take_damage` do player desenha o numero vermelho junto do flash e do shake de camera.
+- `take_damage(amount, from_peer, crit)` no mob: o critico deixa de ser um texto separado e vira parte do numero.
+- NOVO `tests/test_damage_numbers.gd` (headless, le os .gd como texto): garante fonte unica, ausencia das copias, campo `hd`/`hc` no snapshot, crit no RPC e numero no dano recebido — DAMAGE_NUMBERS_TEST_OK.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + run real 0 erros + 3 testes (damage_numbers, scale, shop_weapons) OK. Versao 0.6.38 / versionCode 70.
+- Pendente: julgamento visual do usuario no Mac (tamanho/posicao do numero) e teste online com 2 clientes.
+
 ## v0.6.37 — Escala por classe MEDIDA na arte + pes no chao + preview do painel C
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG medido (nao presumido), por `scripts/222ef96c095afc0b/measure_art.py` sobre os PNGs do repo (mediana de idle+walk, celula 96x96): altura do CORPO knight 86.0px / paladino 56.0 / mago 55.5 / druida 55.0; e a linha dos PES fica 40 / 36 / 40.5 / 39 px abaixo do centro da celula. Com `sprite.scale` fixo em 1.15 as classes novas apareciam 33-36% MENORES que o knight.
