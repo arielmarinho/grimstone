@@ -59,7 +59,6 @@ const ANIMS = {
 func _ready() -> void:
 	target = global_position
 	_last_level = GameManager.level
-	sprite.scale = Vector2(1.15, 1.15)
 	_build_frames()
 
 func _notify_level_up() -> void:
@@ -95,15 +94,12 @@ func _notify_level_up() -> void:
 	tw2.parallel().tween_property(ring, "modulate:a", 0.0, 0.6)
 	tw2.tween_callback(ring.queue_free)
 
+## Diretorio da classe no pacote de sprites ("paladin"/"mage"/"druid"/"knight").
+func _class_dir() -> String:
+	return Equips.class_dir_for(GameManager.weapon_base())
+
 func _sprite_sheet_path(anim: String) -> String:
-	var class_dir: String = ""
-	match GameManager.weapon_base():
-		"spear":
-			class_dir = "paladin"
-		"staff":
-			class_dir = "mage"
-		"druid_staff":
-			class_dir = "druid"
+	var class_dir: String = "" if _class_dir() == "knight" else _class_dir()
 	if class_dir.is_empty():
 		return ANIMS[anim]
 	var parts := anim.split("_")
@@ -113,6 +109,17 @@ func _sprite_sheet_path(anim: String) -> String:
 
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
+	# ESCALA POR CLASSE (v0.6.37): a altura do CORPO dentro da celula de 96x96
+	# difere por classe (knight 86px, paladino 56, mago 53, druida 53 — medido
+	# nos PNGs por scripts/222ef96c095afc0b/measure_art.py). Com escala fixa
+	# 1.15 as classes novas apareciam 32-35% menores. Aplicado AQUI porque a
+	# troca de arma (teclas 1-6, loja, mochila) reconstroi os frames por aqui.
+	var base_w: String = GameManager.weapon_base()
+	var sc: float = Equips.sprite_scale_for(base_w)
+	sprite.scale = Vector2(sc, sc)
+	# e os PES no chao: crescer em torno do centro da celula afundaria o
+	# personagem (medido 18-26px). Ver Equips.sprite_offset_y_for.
+	sprite.offset = Vector2(0.0, Equips.sprite_offset_y_for(base_w))
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
