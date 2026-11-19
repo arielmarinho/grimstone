@@ -1,3 +1,12 @@
+## v0.6.34 — Area 31: animacao de caminhada das classes novas (19/11)
+Formato: codigo no GitHub (push MCP), docs pushados
+- AUDITORIA da integracao das classes Paladino/Mago/Druida (commit 6ce6920): a folha de WALK dessas classes veio das poses de IDLE do pipeline, entao **andar era identico a ficar parado** — paladino e mago tinham walk/down e walk/up byte-identicos ao idle; druida tinha 4 quadros iguais em walk/down. O personagem "deslizava" pelo mapa sem nenhum passo (quebra de polish visivel no primeiro minuto de jogo).
+- FIX em tex_helper.gd (`_walk_variation`, aplicado so em load_sheet_custom com path de /walk/): quando a folha de walk e identica ao idle OU os 4 quadros sao iguais, o jogo aplica um BALANCO de passo sintetizado de 4 quadros (0/-2/0/+1 px vertical, -1 px lateral no up). Folhas que JA tem passada real (druida walk/side, knight) nao sao tocadas — verificado folha por folha nas 33 folhas de player do repo.
+- Medicao antes/depois (artifacts/audit_walk_classes_v0633.png): ANTES 3 classes deslizando; DEPOIS balanco de passo. Nenhuma folha com passada real sofreu alteracao.
+- Achado secundario: o pipeline (`scripts/process_character_references.py`) mapeia walk/up e walk/down para as MESMAS linhas do idle — a correcao real seria desenhar passos na referencia; o balanco cobre ate isso existir (registrado em references).
+- Validacao: gdparse OK em todos os 52 .gd; Godot headless continua indisponivel no sandbox (binario esvaziado) — validacao visual por render das folhas + preview no Mac pendente
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
 ## v0.6.33 — Area 11: raridade de arma vazando pra skills/HUD (19/11)
 Formato: codigo no GitHub (push MCP), docs pushados
 - 3 BUGS de raridade (arma com tier "espada#2") corrigidos — a chave passava crua pra tabelas que so conhecem a base:
