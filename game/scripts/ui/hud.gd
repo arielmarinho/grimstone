@@ -46,7 +46,11 @@ const WEAPON_ICON_IDS = {
 }
 
 func _skill_weapon_key() -> String:
-	return "staff" if player_ref != null and player_ref.weapon == "druid_staff" else player_ref.weapon if player_ref != null else ""
+	if player_ref == null:
+		return ""
+	# BASE da arma: arma com raridade vira "espada#2" e nao existe em SKILLS.SKILLS
+	var wbase: String = GameManager.weapon_base()
+	return "staff" if wbase == "druid_staff" else wbase
 
 func _ready() -> void:
 	hp_bar = _make_bar(Color(0.85, 0.2, 0.2), Vector2(20, 16))
@@ -224,7 +228,7 @@ func _process(_delta: float) -> void:
 	xp_num.text = "%d XP" % (GameManager.xp - prev_xp)
 	map_label.text = "Nivel %d  |  %s" % [GameManager.level, GameManager.current_map]
 	arrows_label.text = "Flechas: %d" % GameManager.arrows
-	arrows_label.visible = player_ref != null and player_ref.weapon == "bow"
+	arrows_label.visible = player_ref != null and GameManager.weapon_base() == "bow"
 	# comida/energia: indicador "BEM ALIMENTADO" com minutos restantes
 	if GameManager.well_fed_time > 0.0:
 		fed_label.text = "BEM ALIMENTADO (%s) — regen 2x" % GameManager.fmt_time_min(GameManager.well_fed_time / 60.0)
@@ -232,7 +236,7 @@ func _process(_delta: float) -> void:
 	else:
 		fed_label.visible = false
 	if player_ref != null:
-		var w = EQUIPS.WEAPONS[player_ref.weapon]
+		var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
 		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | Z/X runas | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | F loja | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
@@ -355,8 +359,10 @@ func _build_hotbar() -> void:
 
 func _select_weapon(wid: String) -> void:
 	if player_ref != null and not player_ref.dead:
-		player_ref.weapon = wid
-		GameManager.weapon = wid
+		# clicar na arma que JA esta equipada nao pode derrubar a raridade dela
+		var new_w: String = GameManager.weapon if wid == GameManager.weapon_base() else wid
+		player_ref.weapon = new_w
+		GameManager.weapon = new_w
 		player_ref._build_frames()
 
 func _process_hotbar_highlight() -> void:
@@ -833,7 +839,7 @@ func _update_preview() -> void:
 		return
 	var texs = TEXHELPER.load_sheet_custom(
 		"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-		player_ref.weapon, player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+		GameManager.weapon_base(), player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
 	if not texs.is_empty():
 		preview.texture = texs[0]
 
@@ -880,7 +886,7 @@ func _refresh_skills_panel() -> void:
 	y += 10
 	if player_ref != null:
 		var st = _make_label(Vector2(370, y), 16, Color(0.6, 0.9, 1.0))
-		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[player_ref.weapon]["classe"]
+		st.text = "Skills de %s (aperte a tecla ou clique o botao no HUD):" % EQUIPS.WEAPONS[GameManager.weapon_base()]["classe"]
 		skills_panel.add_child(st)
 		y += 30
 		var list = SKILLS.SKILLS.get(_skill_weapon_key(), [])
@@ -898,7 +904,7 @@ func _refresh_skills_panel() -> void:
 			skills_panel.add_child(l)
 			y += 24
 		y += 10
-		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[player_ref.weapon]["skill"], {"level": 10})["level"]
+		var crit_lv = GameManager.skills.get(EQUIPS.WEAPONS[GameManager.weapon_base()]["skill"], {"level": 10})["level"]
 		var lc = _make_label(Vector2(370, y), 14, Color(1.0, 0.85, 0.3))
 		lc.text = "Chance de critico: %.1f%% (dano x2)" % (SKILLS.crit_chance(crit_lv) * 100.0)
 		skills_panel.add_child(lc)
