@@ -1,3 +1,13 @@
+## v0.6.33 — Area 11: raridade de arma vazando pra skills/HUD (19/11)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 3 BUGS de raridade (arma com tier "espada#2") corrigidos — a chave passava crua pra tabelas que so conhecem a base:
+  - (1) player._skill_for_slot usava `weapon` cru -> com arma rara a lista de skills vinha VAZIA (Q/E/R/G nao faziam nada)
+  - (2) hud._skill_weapon_key idem -> botoes do HUD e painel K (tecla K) ficavam sem skills/descricao
+  - (3) hud._select_weapon (clique na hotbar) sobrescrevia a arma equipada pela base -> clicar na arma JA equipada DERRUBAVA a raridade sem aviso
+- Efeitos colaterais cobertos no HUD: class_label, label de flechas (arco), preview de roupas e chance de critico agora usam GameManager.weapon_base()
+- Validacao: gdparse OK nos 3 arquivos; Godot headless indisponivel no sandbox neste ciclo (binario do tmp/ esvaziado) — teste real fica no Mac
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md); area visual (Knight) bloqueada na referencia do usuario
+
 ## v0.6.32 — Re-auditoria Area 7 Balanceamento (ciclo 59b, 01/10)
 Formato: codigo no GitHub (push MCP), docs pushados
 - Re-simulacao da economia com quests/runas/fusao no jogo: TTK alvo OK, sustentabilidade fecha em todos os maps (pior caso slime: 95/min de pocao vs 135/min ganhos = positivo), XP/skill curves OK
