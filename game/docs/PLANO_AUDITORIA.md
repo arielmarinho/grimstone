@@ -169,3 +169,8 @@
 - Folha por folha (33 folhas de player no repo): paladin walk/down e walk/up IDENTICOS ao idle; mage walk/down e walk/up IDENTICOS ao idle; druid walk/down com 4 quadros iguais
 - Fix em tex_helper.load_sheet_custom -> _walk_variation: detecta folha de walk sem passada (quadros iguais ou = idle) e aplica balanco 4 quadros (0,-2 / 0 / +1 px), up com -1 px lateral; folhas com passada real intactas
 - Validacao: gdparse 52/52 OK + render comparativo (artifacts/audit_walk_classes_v0633.png); headless indisponivel no sandbox neste ciclo
+
+### Area 32 — Perfil lateral das classes (ciclo 61, v0.6.36) OK
+- BUG: andando para os lados Paladino/Mago/Druida apareciam de costas; flip_h calculado por presuncao, nao pela arte
+- MEDIDO: 3 folhas novas olham a DIREITA; knight (.b64 + procedural) a ESQUERDA -> player.gd + remote_player.gd corrigidos
+- Validacao: gdparse OK, headless import 0 erros, render ampliado 20x (artifacts/side_single.png, artifacts/knight_side.png)
