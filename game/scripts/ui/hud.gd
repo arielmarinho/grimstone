@@ -834,12 +834,22 @@ func _set_pants(c: String) -> void:
 	_update_preview()
 
 func _update_preview() -> void:
-	# preview do knight com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado
+	# preview com as cores atuais (idle down, frame 0) — antes NUNCA era renderizado.
+	# FIX v0.6.37: o caminho era FIXO no knight, entao jogar de Paladino/Mago/Druida
+	# e abrir o painel C mostrava o knight (outra classe) no preview.
 	if player_ref == null:
 		return
+	var cls_dir: String = player_ref._class_dir()
+	var sheet := "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png"
+	if cls_dir != "knight":
+		sheet = "res://assets/sprites/animation/player/%s/idle/down/%s_idle_down.png" % [cls_dir, cls_dir]
 	var texs = TEXHELPER.load_sheet_custom(
-		"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
-		GameManager.weapon_base(), player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+		sheet, GameManager.weapon_base(), player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
+	if texs.is_empty():
+		# fallback: arte do knight (o pacote antigo nao tem as folhas novas)
+		texs = TEXHELPER.load_sheet_custom(
+			"res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png",
+			GameManager.weapon_base(), player_ref.hair_color, player_ref.tunic_color, player_ref.pants_color)
 	if not texs.is_empty():
 		preview.texture = texs[0]
 
