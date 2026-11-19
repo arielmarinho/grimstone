@@ -1,6 +1,348 @@
+## v0.6.37 — Escala por classe MEDIDA na arte + pes no chao + preview do painel C
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG medido (nao presumido), por `scripts/222ef96c095afc0b/measure_art.py` sobre os PNGs do repo (mediana de idle+walk, celula 96x96): altura do CORPO knight 86.0px / paladino 56.0 / mago 55.5 / druida 55.0; e a linha dos PES fica 40 / 36 / 40.5 / 39 px abaixo do centro da celula. Com `sprite.scale` fixo em 1.15 as classes novas apareciam 33-36% MENORES que o knight.
+- Fix sem tocar em nenhum PNG (arte do usuario intacta): `Equips.sprite_scale_for(weapon_base)` = 1.15 x (86 / altura da classe), aplicado dentro de `_build_frames()` — caminho por onde TODA troca de arma passa (teclas 1-6, loja, mochila, fusao).
+- SEGUNDO bug do mesmo tema, achado ao subir a escala: crescer em torno do CENTRO da celula AFUNDAVA o personagem no chao (18-26px). Novo `Equips.sprite_offset_y_for()` poe os pes na mesma linha do knight; aplicado em `sprite.offset` no player e no avatar remoto.
+- `remote_player.gd`: mesma tabela (avatar online nasce no tamanho e no chao certos).
+- FIX painel C: o preview era caminho FIXO no knight — jogar de Paladino/Mago/Druida mostrava o knight. Agora usa a folha da classe, com fallback para o knight.
+- `player.gd`: extraido `_class_dir()` (delega a `Equips.class_dir_for`) = fonte unica de "qual classe esta equipada".
+- NOVO `tests/test_scale.gd` (headless): 6 armas + arma desconhecida -> altura na tela 98.9px e pes 46.0px para TODAS as classes = SCALE_TEST_OK.
+- NOVA ferramenta `scripts/222ef96c095afc0b/measure_art.py` (mede e imprime as constantes prontas para o equips.gd).
+- Godot 4.7.2 headless reconstruido no sandbox (`scripts/8b4db9d1c8bcdc35/setup_godot.sh`, idempotente). `--import`: 0 erros. Prova visual: artifacts/scale_compare_v0637.png.
+- Pendente: teste no Mac do usuario (julgamento visual do tamanho por classe).
+
+## v0.6.36 — Perfil lateral: classes novas olhavam para o lado errado
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG (polish visual): ao andar para os lados, Paladino/Mago/Druida apareciam de COSTAS para onde caminhavam. O codigo presumia o lado da arte (`not in ["spear","druid_staff"]`).
+- MEDICAO na arte do repo (nao presumida): 1o quadro de idle/side ampliado 20x — as 3 folhas novas olham para a DIREITA (rosto, nariz e arma a direita); a folha do Knight (.b64 + procedural) olha para a ESQUERDA. O mapa de flip estava invertido para lanca, cajado_druida, espada/machado/arco.
+- FIX em player.gd e remote_player.gd: `native_faces_right = weapon_base in ["spear","staff","druid_staff"]` — o avatar remoto usa o mesmo mapa (senao o outro jogador andava de costas na tela).
+- Validacao: gdparse OK nos 2 arquivos + Godot 4.7.2 headless `--import` 0 erros. Provas visuais: artifacts/side_single.png e artifacts/knight_side.png. Teste final no Mac do usuario.
+
+## v0.6.35 — Quadros descentralizados das classes novas (personagem "patinando")
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG (polish visual, visivel no primeiro minuto de jogo): as folhas do Paladino/Mago/Druida tem o personagem DESLOCADO dentro da celula na propria referencia do usuario — medido na fonte do druida, o centro dos pes cai em x=288 e x=736 nas 4 celulas (±44px do centro). Medido nas folhas do repo: druid idle/side = 46px de drift entre o 1o e o 4o quadro, druid hurt/idle/attack/up/down = 40-44px, mage attack = 11px, paladin death = 10px. O AnimatedSprite2D centraliza cada textura do SpriteFrames, entao o personagem saltava lateralmente a cada quadro (patinava parado e no ataque).
+- FIX em player.gd: novo `_align_frames()` aplicado as texturas de cada animacao em `_build_frames()` (antes do add_frame). Ele mede o centro dos PES de cada quadro (faixa de 25% de baixo do corpo, nao a bbox inteira — que muda quando a arma vai pra frente no ataque) e, se o drift passar de 3px, recentraliza o quadro na celula. Folhas ja alinhadas (knight, paladin idle) ficam intocadas; death fica de fora porque corpo deitado nao tem pes estaveis.
+- Resultado: druid drift 47px -> 0, mage 6px -> 0, paladin 1.5px -> 0. Nenhum PNG tocado (a arte do usuario fica intacta, o ajuste e em runtime).
+- Validacao: gdparse OK; Godot 4.7.2 headless reconstruido no sandbox — `--import` 0 erros e run real (`--quit-after`) 0 erros; render comparativo antes/depois em artifacts/audit_align_frames_v0635.png. Teste visual final fica no Mac do usuario.
+- Godot headless voltou a funcionar no sandbox (LD_LIBRARY_PATH=tmp/godot-alpine/usr/lib): import e run reais validam, com ruido conhecido de fonte (U_FILE_ACCESS_ERROR do _spoof_check, inofensivo).
+
+## v0.6.34 — Armas das classes novas jogaveis (Paladino/Druida)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG: as classes Paladino (lanca) e Druida (cajado_druida) existiam em equips.gd/items_db.gd desde a v0.6.33, mas NENHUMA loja vendia as armas e NENHUM mob as dropava — as duas classes eram INALCANCAVEIS para um jogador
+- FIX: "lanca" 160 na city1 + city2; "cajado_druida" 200 na city2 (progressao: classe avancada chega na vila); skeleton dropa cajado_druida 5%
+- NOVO TESTE DE REGRESSAO tests/test_shop_weapons.gd: toda arma de equips.WEAPONS precisa de loja OU drop (le os .gd como texto, sem autoloads)
+- Validacao: gdparse 0 erros, import 0 erros, run real 0 erros, 8/8 testes unitarios OK
+- Godot headless 4.7.2 reconstruido no sandbox (apk alpine edge testing) — validacao real voltou a funcionar
+
+## v0.6.34 — Area 31: animacao de caminhada das classes novas (19/11)
+Formato: codigo no GitHub (push MCP), docs pushados
+- AUDITORIA da integracao das classes Paladino/Mago/Druida (commit 6ce6920): a folha de WALK dessas classes veio das poses de IDLE do pipeline, entao **andar era identico a ficar parado** — paladino e mago tinham walk/down e walk/up byte-identicos ao idle; druida tinha 4 quadros iguais em walk/down. O personagem "deslizava" pelo mapa sem nenhum passo (quebra de polish visivel no primeiro minuto de jogo).
+- FIX em tex_helper.gd (`_walk_variation`, aplicado so em load_sheet_custom com path de /walk/): quando a folha de walk e identica ao idle OU os 4 quadros sao iguais, o jogo aplica um BALANCO de passo sintetizado de 4 quadros (0/-2/0/+1 px vertical, -1 px lateral no up). Folhas que JA tem passada real (druida walk/side, knight) nao sao tocadas — verificado folha por folha nas 33 folhas de player do repo.
+- Medicao antes/depois (artifacts/audit_walk_classes_v0633.png): ANTES 3 classes deslizando; DEPOIS balanco de passo. Nenhuma folha com passada real sofreu alteracao.
+- Achado secundario: o pipeline (`scripts/process_character_references.py`) mapeia walk/up e walk/down para as MESMAS linhas do idle — a correcao real seria desenhar passos na referencia; o balanco cobre ate isso existir (registrado em references).
+- Validacao: gdparse OK em todos os 52 .gd; Godot headless continua indisponivel no sandbox (binario esvaziado) — validacao visual por render das folhas + preview no Mac pendente
+- Achado 2 (mesma auditoria, arquivos ja prontos no espelho local): as armas das classes novas nao eram vendidas em NENHUMA loja — `lanca` (Paladino) e `cajado_druida` (Druida) existiam em items_db/equips mas eram inalcancaveis jogando; agora lanca na city1 e lanca+cajado_druida na city2, e o cajado_druida entra no loot (5%)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.33 — Area 11: raridade de arma vazando pra skills/HUD (19/11)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 3 BUGS de raridade (arma com tier "espada#2") corrigidos — a chave passava crua pra tabelas que so conhecem a base:
+  - (1) player._skill_for_slot usava `weapon` cru -> com arma rara a lista de skills vinha VAZIA (Q/E/R/G nao faziam nada)
+  - (2) hud._skill_weapon_key idem -> botoes do HUD e painel K (tecla K) ficavam sem skills/descricao
+  - (3) hud._select_weapon (clique na hotbar) sobrescrevia a arma equipada pela base -> clicar na arma JA equipada DERRUBAVA a raridade sem aviso
+- Efeitos colaterais cobertos no HUD: class_label, label de flechas (arco), preview de roupas e chance de critico agora usam GameManager.weapon_base()
+- Validacao: gdparse OK nos 3 arquivos; Godot headless indisponivel no sandbox neste ciclo (binario do tmp/ esvaziado) — teste real fica no Mac
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md); area visual (Knight) bloqueada na referencia do usuario
+
+## v0.6.32 — Re-auditoria Area 7 Balanceamento (ciclo 59b, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Re-simulacao da economia com quests/runas/fusao no jogo: TTK alvo OK, sustentabilidade fecha em todos os maps (pior caso slime: 95/min de pocao vs 135/min ganhos = positivo), XP/skill curves OK
+- Quests sao one-time (cadeia), runas e fusao sao SINKS de moedas — nenhum exploit de economia
+- VEREDITO: sem mudancas de codigo necessarias
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.31 — Auditoria Area 3 Monstros & IA online (ciclo 59, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 3 BUGS de recompensa no modo ONLINE corrigidos em mob.gd/network_manager.gd:
+  - (1) HOSTED: recompensa (xp/loot/quest/bestuario) ia pro HOST local mesmo quando um CLIENTE deu o golpe final — die() so mandava RPC de recompensa em modo dedicated; agora `is_server` cobre hosted+dedicated (recompensa sempre autoritativa online)
+  - (2) _rpc_mob_removed recebia o peer id do ATACANTE como se fosse id de mob (broadcast inutil) — agora broadcast sem id (espelho do cliente e gerenciado pelo snapshot d=true)
+  - (3) _last_hit_by do HOST nunca era setado: player chamava take_damage(dmg) sem from_peer — no servidor o golpe do host nao registrava e um hit velho de cliente podia "herdar" o kill; fix: from_peer=0 -> _last_hit_by=1 (peer id do host)
+- Validacao: gdparse OK, import 0 erros, run real --quit-after 120 0 erros, 7/7 testes unitarios OK, NetTest server+A+B localhost PASSOU 3/3 (registro, chat A<->B, posicao, 4 mobs espelhados, dano autoritativo)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.30 — Auditoria Area 8 Audio (ciclo 58, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- AUDITORIA da Area 8 (gs-audio): wiring de play_sfx/play_music conferido em TODOS os pontos (hit/shoot/cast/mob_death/player_hurt/player_death/level_up/coin/pickup/potion/ui_click/door; musicas title/city/cave com crossfade no switch_map) — sem gaps
+- MEDICAO de boot: sintese total = 1195ms (SFX 91ms + MUSICAS 1100ms); run real completo = 2.9s — no Android a sintese pode custar 3-5s de tela travada
+- FIX: sintese das MUSICAS agora roda em THREAD (boot instantaneo); play_music durante a sintese guarda pedido PENDENTE e toca quando pronta (teste funcional: toca no frame 506); stop_music espera o thread; _exit_tree espera o thread (segfault na saida corrigido)
+- Validacao: gdparse OK, import 0 erros, run real 0 erros, 7/7 testes unitarios OK
+
+## v0.6.29 — Auditoria Area 5 Itens & Economia re-auditada (ciclo 57, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- SIMULACAO ANTES DE MEXER (regra 5 gs-combat-balance, scripts/81724fd159dae26a/area5_resim.py): TTK alvo 5-10s OK (orc 8.2s skill 10, 5.9s skill 30); player aguenta 12+ hits do mob do mapa; economia fecha (loot/min >= 2 pocoes do mapa em todos os maps: 104-467 moedas/min vs custo de pocao 30-120/min)
+- POCOES M/G MENOS EFICIENTES QUE A P (bug de economia): vida P 3,3 hp/moeda vs M 2,5 / G 2,7 — ninguem compraria a maior; fix: M 60->45, G 110->90 (vida), M 70->55, G 130->110 (mana) — eficiencia M/G agora >= P em TODOS
+- PRECOS DE ARMA INCOERENTES: city2 vendia machado/arco/cajado MAIS BARATO que city1 (100/130/160 vs 120/150/180) — desconto por progredir; fix: precos unificados (progresso = catalogo maior, nao desconto)
+- PEIXE nao se comprava na city1 (que TEM o lago na arte v0.6.23) — adicionado (10 moedas)
+- ARCO era a UNICA arma sem fonte de drop (espada=goblin, machado=wolf+orc, cajado=skeleton) — goblin agora dropa arco (6%)
+- LABEL HONESTO: loja mostrava "2 moedas" pra flecha mas vende 10 por vez — agora "2 moedas (x10)"
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK; shop.gd/loot_table.gd byte-exatos no remoto (blob SHA conferido)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.28 — Auditoria Area 6 UI/UX (ciclo 56, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- PANEIS EXCLUSIVOS (regra gs-ui-ux "abrir um fecha o outro"): novo HUD.close_all_panels() fecha mochila/roupas/skills/bestiario/chat + NPCs (grupo npc_panel); loja/banco/missoes chamam call_group("hud","close_all_panels") ao abrir — antes loja+banco+missao abriam SIMULTANEAMENTE e nenhum fechava os paineis do HUD (B/C/K/N)
+- VERSAO CENTRALIZADA: GameManager.GAME_VERSION ("0.6.28") — titulo usava "v0.6.17" HARDCODED (housekeeping manual esquecia); export_presets.cfg 0.6.17 -> 0.6.28
+- Dica de teclas do HUD agora lista Z/X (cinto de runas, faltava desde a v0.6.11)
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.27 — Auditoria Area 4 Mapas pos-redesenho (ciclo 55, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 3 fixes de colliders fieis a arte (pos v0.6.23/24): muralha SUL da city1 CONTINUA com abertura so no bueiro (mundo x 920-1168 — a arte desenha parede em todo o resto), portao da cerca de treino da city1 VISIVEL na arte (vao sem poste, mundo x 530-630), vao da ponte do lago EXATO (mundo y 986-1038)
+- tex_helper.gd: portao da cerca de treino desenhado sem poste no vao (linhas ~163-167, comentario "PORTAO da cerca")
+- Validacao: preview + check de pixels + 7/7 testes unitarios OK + run real --quit-after 120 0 erros
+- GitHub: tex_helper.gd byte-exato (blob SHA 1633c848, 44999 bytes, commit a4a7abe)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.26 — Auditoria Area 2 Player&Skills (ciclo 54, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- 6 fixes de skills (descricao vs codigo): NEVASCA agora AOE+stun 2.2x/1.5s (era _skill_aoe 3.0 SEM stun); ESCUDO ARCANO 10s (era 8s); TIRO CERTEIRO desc corrigida pra x2 (critico do jogo e x2); GOLPE DUPLO desc corrigida (2 ataques, 2o golpe 50%); CHUVA DE FLECHAS exige 5 flechas (antes zerava e soltava a AOE mesmo sem); skills com alvo (atordoar/fogo/investida/tiro_multi) DEVOLVEM mana e nao gastam cooldown quando nao ha alvo (feedback no HUD)
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
+- GitHub: player.gd byte-exato verificado lendo de volta (3 pushes: 1o saiu com indentacao errada na investida, 2o com typo "armado" — ambos reparados); skills_db.gd SHA c59038fe byte-exato
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.25 — Fix stall da city2 (ciclo 53, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- STALL (barraca de feira) da city2 saia do telhado da casa NE: decor 1320,420 -> 1320,380 e colisor acompanha (colliders/decor em par, regra "colisor casa com o cenario")
+- Pushado no GitHub por 2 instancias em paralelo (2a00809 + c643aa4) — conteudo identico, sem conflito
+- Validacao: gdparse OK + headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.24 — City2 fiel aos colisores, nivel de arte da city1 (ciclo 52, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- tex_helper.gd: city2 REDESENHADA no nivel de arte da city1 (v0.6.23) — base oliva de montanha, ruas de pedra com paralelepipedos + meio-fio, praca central com ESTATUA de heroi ana (pedestal de blocos + figura com capacete de chifres e machado), muralha de blocos com ameias, torres de esquina com seteiras e torres de portao com ESTANDARTE azul-dourado, 4 casas anas de pedra com telhado de cobre + janelas com brilho quente + chamine com fumaca, FORJA acesa (boca de forno laranja + chamine + fumaca), rochas e arvores esparsas
+- FIEL AOS COLISORES (regra do usuario): portao OESTE abertura y 466-578 (arte), muralha SUL em 2 segmentos (x 100-250 e 775-925 — estrada de pedra desce LIVRE ate a borda), LESTE fechada, 4 casas/forja/estatua solidos
+- tests/check_city2.gd NOVO: check programatico (portao oeste limpo 18px vs controle 1626, estrada sul ate a borda 1975px, forja acesa 391px) = RESULT OK
+- Validacao: gdparse OK + preview visual (artifacts/map_city2.png) + check_city2 OK + run real 0 erros + 7/7 testes unitarios OK
+- INCIDENTE: push do tex_helper em 2 partes SUBSTITUIU o arquivo inteiro 2x (remoto ficou so com a parte 2) — reparado com push do arquivo COMPLETO, remoto byte-exato vs local confirmado (44903 bytes)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md) OU city2 com referencia propria (se ele mandar)
+
+## v0.6.23 — City1 fiel à referência do usuário (ciclo 51, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Redesenho do city1 seguindo a referência que o usuário mandou (city1_mapa_area.png): LAGO à esquerda com margem de areia, brilhos, vitorias-regias e CACHOEIRA no topo; PONTE de madeira cruzando o lago no caminho leste-oeste; AREA DE TREINO no alto-esquerda (areia, cerca de madeira com portão, 2 bonecos de palha); FONTE multinível no centro (3 tiers + jorros); loja de ARMAS com teto azul e placa de espadas cruzadas; loja de POÇÕES com teto roxo e placa de frasco (a LOJA [F] fica nela); casa marrom com chaminé no canto sudeste; TORRES com bandeira vermelha nas esquinas dos portões leste/sul
+- Colisores refeitos casando com a nova arte: muralha com portões leste/sul abertos (y/x 932-1156), lago em 2 rects com VÃO da ponte (caminho cruza), prédios nas novas posições, cerca da área de treino com PORTÃO (player entra pra treinar), fonte r=104
+- Barris/caixote do decor movidos pra fora da loja de poções nova; rato do spawner reposicionado (nascia dentro do prédio)
+- VALIDAÇÃO VISUAL OBRIGATÓRIA cumprida: preview renderizado (artifacts/map_city1.png) e analisado — lago, ponte, dummies, fonte multinível, lojas e torres presentes; check programático dos portões (0/21 px de muralha na abertura leste e sul, 15/20 no controle), lago azul e ponte marrom confirmados por amostragem de pixels
+- Validação: headless --import 0 erros + run real --quit-after 120 0 erros + 7/7 testes unitários OK
+- Commits: bae91fa (colliders/decor/spawners), af11179 (tex_helper), docs este commit
+- Fila: teste no Mac do usuário (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md) OU city2 seguindo referência
+
+## v0.6.22 — b64 4-direcoes COMPLETOS no remoto + fix whitespace (ciclo 49, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Os 6 b64 up/side do knight (idle/walk/attack x up/side) agora estao COMPLETOS no remoto: attack/side pushado (faltava), idle/side reparado (estava truncado em 60 bytes — lixo de push quebrado)
+- FIX CRITICO no tex_helper.gd: _load_image agora remove whitespace INTERNO do b64 (push MCP insere espacos) — sem isso os 4 b64 up/side existentes falhavam no decode e caian no fallback procedural; agora a arte real 4-direcoes carrega DE VERDADE
+- SANDBOX RECICLADO: espelho local grimstone/game e tmp/godot-alpine (Godot de validacao) PERDIDOS na reciclagem do ambiente — GitHub e a fonte da verdade; validacao de sintaxe feita com gdparse (gdtoolkit sobreviveu); reconstrucao do espelho local pendente para proximo ciclo
+- Validacao: gdparse OK no tex_helper; b64 locais decodificam PNGs validos 384x96 (4 frames, IEND OK); remotos verificados lendo de volta (idle/up, idle/side, attack/side completos)
+- Commits: 5b62275 (tex_helper fix), 3aab12e (attack/side), 69ab7fd (idle/side)
+
+## v0.6.21 — Player ARTE REAL nas 4 direcoes + fallback seguro (ciclo 47, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- Player up/side agora usam ARTE REAL PROPRIA (b64 up/side gerados por IA no estilo da referencia, quantizados pra paleta do down) — fim do procedural no player, quando os b64 existirem no pacote
+- FALLBACK SEGURO: sem o b64 (repo/pacote antigo), up = arte real editada (rosto->cabelo, v0.6.17) e side = perfil procedural (v0.6.19) — o jogo NUNCA fica sem animacao em nenhum estado
+- Validacao VISUAL obrigatoria cumprida: preview_final3.gd (artifacts/player_real4_dirs.png) + check_real4.gd programatico (up/side = 3000+ px diferentes do down; up = 1 px de pele no rosto vs 114 no down = costas de verdade)
+- Validacao: headless --import + run real --quit-after = 0 erros; 7/7 testes unitarios OK
+- INCIDENTE (reincidente): 1o push do player.gd reconstruido de memoria saiu 6998 bytes (vs 20595) — reparado imediatamente com o local verbatim (20595, blob SHA 15e0fdd byte-exato); regra ABSOLUTA reforcada: NUNCA reconstruir arquivo grande de memoria
+- Pendente: push dos 6 b64 up/side (filtro de contexto omite base64 — metodo alternativo em preparo); com o fallback, o jogo funciona igual em qualquer estado
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.20 — Auditoria de integridade pos-ciclo 43 + REPARO CRITICO do CHANGELOG (ciclo 44, 01/10)
+Formato: codigo no GitHub (push MCP), docs pushados
+- CRITICO: CHANGELOG.md no remoto estava DESTRUIDO (26 bytes, placeholder) — restaurado com o conteudo local completo (33488 bytes, blob SHA 43de58d byte-exato verificado lendo de volta)
+- Auditoria blob SHA de 30 arquivos (autoload/entities/world/ui/tests): player/hud/title/main/colliders/decor/mob_sprites/loot_table/network_manager/rarity/items_db/skills_db/equips/fx/audio_manager/mob_authority/touch_controls/bank/quest_npc/shop/spawners/test_bank/test_bestiary/test_estimates/test_food/test_map_check/test_runes/preview_final/hybrid2/maps/mobs/rat byte-exatos
+- Divergencias investigadas: game_manager.gd (semantica completa 14/14 features = encoding MCP, NAO mexer); drop.gd/hp_bar.gd (remoto = local sem acentos, funcional); rat_cave.gd (remoto MAIS NOVO e melhor: spawna rato+morcego+aranha — local adotou o remoto); mob.gd (semantica completa 17/17 features netcode/quests/dummy = encoding); test_fusion.gd (remoto = versao antiga simplificada do teste — local e o correto, pushado); preview_todas.gd (remoto = versao antiga sem walk — local e o correto, pushado)
+- Validacao: headless --import + run real --quit-after = 0 erros; 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.19 — SIDE do player: perfil de verdade + preview de 4 classes (ciclo 43, 01/10)
+Formato: codigo no GitHub (91e675b local, push MCP)
+- SIDE do knight NAO e mais flip da arte de frente: perfil procedural com as cores exatas da arte real (orelha/olho/tronco estreito/espada na frente) — estilo Tibia de verdade
+- UP continua ARTE REAL editada (rosto vira cabelo); DOWN = arte real original
+- NOVO test: tests/preview_todas.gd — folha 4 classes (sword/axe/bow/staff) x 3 direcoes, validado visualmente (artifacts/preview_todas.png)
+- Validacao: headless --import + run real --quit-after = 0 erros; 7/7 testes unitarios OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.18 — Housekeeping de versao (ciclo 42, 01/10)
+Formato: codigo no GitHub (push MCP)
+- title_screen.gd: versao do titulo v0.6.15 -> v0.6.17 (estava 2 versoes atras — housekeeping so pegava export_presets)
+- export_presets.cfg: version/name 0.6.10 -> 0.6.17 (version/code continua 1, sobe no build de release)
+- FIX tex_helper.gd: _make_up_from_real agora usa REGIAO do rosto (y 24-50, x 38-72) — pele clara, sombreada, olhos e contorno viram cabelo = costas de verdade (antes so pele clara era substituida e sobrava rosto no up)
+- Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK; preview_final OK
+
+## v0.6.17 — Player 100% ARTE REAL (hibrido: down real + up real editada + side real flip) (ciclo 41, 01/10)
+Formato: codigo no GitHub (3881b00 local, push MCP 99658a8/225fbf9/ece7d2a)
+- Player UP = ARTE REAL editada: load_sheet_up_real substitui o rosto (pele) por cabelo = costas de verdade, mantendo 100% a identidade visual aprovada (NADA de procedural no player)
+- Player SIDE = ARTE REAL de frente com flip_h (estilo Tibia — esquerda/direita cobertos pela mesma folha)
+- Validacao VISUAL: tests/preview_hybrid2.gd (artifacts/player_hybrid2.png) + check programatico de pixels de pele (idle_down=380 px de rosto vs idle_up=12 px = rosto virou cabelo OK)
+- INCIDENTE: 1o push do tex_helper saiu TRUNCADO (sem as funcoes de mapa) + typo _draw_rect — reparado com push do arquivo local COMPLETO, remoto validado lendo de volta (semanticamente identico, encoding de acentos do MCP so)
+- Validacao: headless --import + --quit-after 120 = 0 erros
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.16 — Player 4 direcoes REAIS + validacao visual (ciclo 39, 01/10)
+Formato: codigo no GitHub (509f48a local, push MCP), docs pushados
+- FIX do bug "so anda pra baixo" na CAUSA RAIZ: player.gd ANIMS apontam pra paths up/side REAIS e tex_helper.load_sheet_procedural_custom desenha procedural 4 direcoes (idle/walk/attack em down/up/side; death deitado = padrao Tibia, cadaver nao tem direcao)
+- Validacao VISUAL headless: tests/preview_player.gd — folha 8x4 confirmada (frente/costas/perfil com flip/death) em artifacts/player_dirs_preview.png
+- Sincronizacao: player.gd/tex_helper.gd local alinhados ao remoto (comentarios 4-direcoes da instancia paralela, logica identica, blob SHA conferido); mob.gd remoto = canônico com netcode/quests/dummy (todas as features OK)
+- Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK; preview visual OK
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## v0.6.15 — Numeros de recompensa flutuantes (ciclo 38b, 01/10)
+Formato: codigo + docs no GitHub (fe2f526/d478d24), local e6267ba
+- FX autoload novo (scripts/autoload/fx.gd): numeros flutuantes de GANHO — +XP (azul), +moedas (dourado), +cura (verde), +mana (azul), SKILL UP (dourado grande)
+- GameManager emite sinais xp_gained/coins_gained/healed/mana_gained/skill_up_event; FX conecta no _ready e desenha no player
+- coin.gd/drop.gd chamam FX.coin_gain direto no pickup
+- FIX ciclo 38c: FX.coin_gain() NAO existia no fx.gd (coin/drop chamavam funcao inexistente — moeda nunca sumia, spam de erro) — funcao adicionada (local c15da91, GitHub f5be00b)
+- FIX ciclo 38c: commit de audio f57897d tinha APAGADO o corpo inteiro do projectile.gd no remoto (_ready/_physics_process/_hit/_spawn_crit_text — flechas/bolas de fogo mortas no GitHub) — restaurado byte-exato (b21f2aa0)
+- O dano ja tinha numero flutuante (mob.gd); agora TUDO que o player ganha tambem mostra
+- Validacao: headless --import + --quit-after 120 = 0 erros; 7/7 testes unitarios OK
+
 # GRIMSTONE — Changelog
 
+## 2026-10-01 — v0.6.14 (ciclo 37b: validacao do portao sul + integridade)
+
+- VALIDACAO do fix do portao sul (commit 2734149): muralha SUL das 2 cidades agora tem 2 segmentos (x 200-500 e x 1550-1850) — o caminho do bueiro (city1) e a estrada de pedra (city2) descem ATE a borda do mapa sem parede cortando; trigger do bueiro movido pra y1750 (raio 110), alcancavel andando reto pelo caminho
+- Integridade GitHub↔local conferida por blob SHA: colliders.gd/main.gd/preview_rat2 byte-exatos; CHANGELOG/PLANO divergem so no newline final (encoding MCP, conteudo identico)
+- preview_rat2.gd: teste visual do rato procedural (4 frames) — saida em artifacts/rat_now.png
+- Validacao: headless --import 0 erros + execucao real --quit-after 120 0 erros + 7/7 testes unitarios OK (FUSION/ESTIMATE/QUEST/FED/BANK/BESTIARY/RUNE) + NetTest server+A+B localhost PASSOU 3/3
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## 2026-10-01 — v0.6.13 (ciclo 36: polish visual de mapas + reparo de regressao no remoto)
+
+- POLISH VISUAL (instancia paralela, commit 9af7c82/473f064): bordas do mundo em TODOS os mapas (player nunca sai do sprite), rato procedural REDESENHADO maior (64x44, presenca estilo Rucoy), caverna refeita (escura, tochas/cristais/teias), casas retangulares estilo Tibia, restauracao do feedback de dano (flash vermelho + shake + som) e sons de level up/cast que o polish tinha regredido
+- REGRESSAO no remoto corrigida (este ciclo): mob.gd e spawners.gd no GitHub tinham voltado pra base ANTIGA (sem netcode autoritativo/quests/dummy/leash/variancia/_net_map) — re-pushados byte-exato do local canônico (mob 44132464, spawners 4aaf0400)
+- Arquivos de teste novos (test_map_check, preview_maps, preview_rat) pushados no remoto — blob SHA byte-exato
+- Validacao: headless --import + --quit-after 0 erros; 7/7 testes unitarios OK (FUSION/ESTIMATE/QUEST/FED/BANK/BESTIARY/RUNE)
+- Pendente: teste no Mac do usuario OU build APK (docs/TESTE_MAC.md / BUILD_ANDROID.md)
+
+## 2026-10-01 — v0.6.12 (ciclo 34: sincronizacao GitHub↔local + fusao do fix visual)
+
+- AUDITORIA de sincronizacao pos-v0.6.11: 4/9 arquivos-chave byte-exatos; game_manager/title_screen = so encoding MCP (nao mexer)
+- REGRESSAO corrigida: mob.gd e player.gd no remoto tinham o fix visual (ANIMS all-down) aplicado sobre uma base ANTIGA — perderam from_peer (recompensa online), quest_on_kill, bestiario, TouchControls, raridade, regen. FUNSAO: logica local completa + ANIMS all-down (arte down real em todas as direcoes, flip_h cobre os lados)
+- hud.gd remoto estava sem a v0.6.11 (cinto Z/X ausente) — local pushado byte-exato (fd7cbf0a)
+- Regressao: 7/7 testes unitarios OK + headless 0 erros (--import e --quit-after)
+- GitHub: mob.gd abfed491, player.gd 4ec07f32, hud.gd fd7cbf0a (todos byte-exatos verificados lendo de volta)
+- LICAO: fix de emergencia aplicado direto no remoto (sem passar pelo local) cria divergencia de base — sempre fundir com o local canônico
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac
+
+## 2026-10-01 — v0.6.11 (ciclo 33: CINTO DE RUNAS + REGRESSOES GRAVES corrigidas)
+
+- CINTO DE RUNAS (v0.6.11, trabalho deixado por instância anterior do cron, agora COMPLETO e commitado): 2 slots de atalho (teclas Z/X) usam a runa direto no combate sem abrir a mochila; atribuicao por clique no slot do cinto + runa da mochila; save persistido ("belt"); NOVO JOGO zera
+- REGRESSAO GRAVE corrigida (desde o ciclo 25, v0.6.7 — a validacao --import nunca pegava): loot_table.gd usava ITEMS_DB sem `const ITEMS_DB = preload(...)` -> Parse Error que quebrava o main.gd INTEIRO (mobs nao spawnavam, nem offline). Mesma regressao no game_manager.gd (belt_assign usava ITEMS_DB global)
+- FIX: hud.gd chamava `_show_feedback()` mas a funcao era `show_feedback()` (12 chamadas quebradas) — renomeada e conexao do signal corrigida; `lab_placeholder` inexistente substituido por blab
+- VALIDACAO REAL (nova): headless --import + execucao direta da main 0 erros; NetTest server+A+B localhost PASSOU 3/3 (registro, chat, posicao, 4 mobs espelhados, dano autoritativo validado); regressao 7/7 testes unitarios OK (fusion/estimates/quests/food/bank/bestiary/runes)
+- GitHub: 4 pushes (loot_table fc77d3b, game_manager 294f9da, hud f8ee27f, title_screen a4a2cd4)
+- LICAO: --import NAO compila dependencias quebradas se o arquivo tem preload circular/missing class — rodar o jogo de verdade (--quit-after ou nettest) apos mudancas em arquivos com many dependencies (loot_table -> main)
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac
+
+## 2026-10-01 — v0.6.10 (ciclo 32: fechamento do ciclo 31)
+
+- hud.gd pushado no GitHub (faltava desde o ciclo 31: dica da tecla F loja na dica de teclas) — remoto validado lendo de volta, semanticamente identico ao local (encoding de acentos do MCP)
+- test_quests.gd confirmado byte-exato no remoto (blob SHA eedeb8d9) — ja estava sincronizado
+- Travamento do test_quests no ciclo 31 NAO era transitorio: era ASSERTION — o FakeGM do teste ainda espelhava a logica ANTIGA (done -> indisponivel) enquanto o game_manager real ja tinha o fix do ciclo 31 (claimed -> indisponivel); FakeGM corrigido e QUEST_TEST_OK de verdade
+- test_quests.gd corrigido pushado no GitHub (blob SHA verificado lendo de volta)
+- Regressao: TODOS os 7 testes unitarios OK (fusion/estimates/quests/food/bank/bestiary/runes) + headless --import 0 erros
+- Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## 2026-10-01 — v0.6.10 (ciclo 29: CHECKLIST DE TESTE NO MAC)
+
+- NOVO: docs/TESTE_MAC.md — checklist consolidado de teste no Mac cobrindo TUDO que acumulou desde a ultima validacao do usuario (13 secoes: combate, skills R/G, raridade/fusao, quests, comida, banco, bestiario, runas, estimativas, decor, sprites direcionais, multiplayer, save) com tempo estimado (~20-25 min)
+- Regressao: TODOS os 7 testes unitarios PASSARAM (fusion/estimates/quests/food/bank/bestiary/runes) + headless 0 erros
+- GitHub sincronizado (commit 97adf65, blob SHA verificado byte-exato)
+- Fila: usuario testa no Mac (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
+
+## 2026-10-01 — v0.6.10 (ciclo 28: AUDITORIA PROFUNDA de integridade GitHub↔local)
+
+- Auditoria completa de TODOS os arquivos do repo (blob SHA git hash-object local vs get_file_contents remoto): scripts/autoload, entities, world, ui, tests, scenes, project.godot, export_presets.cfg, docs, assets (sprites .b64, README)
+- Resultado: 32/36 byte-exatos. 4 divergencias investigadas uma a uma: game_manager.gd (conteudo remoto SEMANTICAMENTE COMPLETO, 12/12 features — divergencia = encoding de acentos + newline do MCP, licao do ciclo 25, SEM reparo necessario); hp_bar.gd (newline final cosmico); drop.gd/projectile.gd/rat_cave.gd (remoto = local sem acentos + newline, conteudo funcional identico)
+- CONCLUSAO: NENHUM arquivo corrompido ou truncado no remoto — o protocolo blob SHA pegou so diferencas de encoding do push_files
+- Godot headless: 0 erros de script
+
+## 2026-10-01 — v0.6.9 (ciclo 27: SPRITES DIRECIONAIS dos mobs)
+
+- NOVO: mobs agora desenham direcoes REAIS (down/up/side) em vez da mesma cara de frente pra tudo — up = costas sem rosto, side = perfil (flip_h cobre a esquerda)
+- FIX GRAVE: o RATO estava INVISIVEL nas direcoes up/side — so existiam PNGs "down" e o fallback procedural nao tinha case "rat". Agora rato procedural completo (3 direcoes + death: orelhas rosa, olhos vermelhos, dentes, cauda)
+- Aplicado a: slime/bat/spider/wolf/goblin/orc/skeleton (rosto so no down; up = costas); orc/goblin/esqueleto mantem arma no perfil
+- draw_mob ganhou parametro dir (thread via tex_helper._dir_from_path); ANIMS do mob.gd agora cai no procedural pro rat (up/side)
+- Teste visual tests/preview_mobs.gd (folha PNG das 8 criaturas x 3 direcoes); 7 testes unitarios OK; headless 0 erros
+- Local f7a60ae
+- Proximo: teste no Mac do usuario (acumulado grande) OU build APK no Mac
+
+## 2026-10-01 — v0.6.8 (ciclo 26: DECOR — decoracao das cidades)
+
+- NOVO: decoracao procedural nas 2 cidades (scripts/world/decor.gd) — postes de luz com braco e lampada + brilho aditivo (BLEND_MODE_ADD), canteiros de flores ao redor da fonte/estatua, barris de madeira com aros de metal, caixotes com diagonal, bandeiras vermelhas onduladas nos portoes e barraca de feira com toldo listrado + mercadorias
+- Objetos solidos (barris, caixotes, barraca) com colisor proprio (StaticBody2D circle r=26 no decor + rects casando no colliders.gd)
+- Integrado ao switch_map: DECOR.build_decor(name, map_layer) logo apos build_colliders — limpa junto com o mapa ao trocar
+- Validado Godot headless: 0 erros de script
+- Local 118351c; GitHub 7272ba0/2e80c75/594a821 (blob SHA byte-exato: decor 0a7cc106, main 7048f499, colliders 11719725)
+- Proximo: teste no Mac do usuario (acumulado grande) OU build APK no Mac
+
 Formato: [data] versão — o que mudou (commit)
+
+## 2026-10-01 — v0.6.7 (ciclo 25: RUNAS — escopo expandido)
+
+- 4 runas estilo Tibia (items_db.gd): Runa de Fogo (bola de fogo no alvo mais proximo), Runa de Gelo (dano + atordoa 2s), Runa da Trovoada (dano em area 220px ao redor), Runa de Cura (+40% HP)
+- Qualquer classe usa, NAO gasta mana, consome a pedra (estilo Tibia); dano fixo escalado pela skill "magia" (base * (1 + lvl*0.02)) — fogo 60, gelo 35, trovoada 45
+- hud.gd: usar runa pela mochila (B); runas de alvo devolvem a pedra se nao ha monstro por perto; trovoada com anel de energia visual; feedback + som
+- Icone procedural: pedra runica (losango) com glifo na cor do elemento
+- Lojas: city1 vende Runa de Cura (40); city2 vende as 4 (fogo 55, gelo 45, trovoada 60, cura 35)
+- Loot: skeleton dropa fogo 8% / gelo 6%, goblin trovoada 5%, slime cura 4%
+- Teste tests/test_runes.gd RUNE_TEST_OK (7 casos); headless 0 erros
+- Proximo: teste no Mac do usuario (acumulado grande) OU house/decoracao OU build APK
+
+Formato: [data] versão — o que mudou (commit)
+
+## 2026-10-01 — v0.6.7 (ciclo 25: POLISH DE COMBATE — feedback de dano no player)
+
+- NOVO: flash VERMELHO no player ao tomar dano (o mob ja tinha flash branco; agora os dois lados tem feedback)
+- NOVO: tremida curta de camera (shake 0.13s) ao tomar dano — impacto visivel
+- Camera com position_smoothing (speed 6.0) — movimento mais suave ao andar e trocar de mapa
+- Validado Godot headless: 0 erros de script
+- Local 77fd17d; GitHub 45905cf (player.gd + player.tscn, blob SHA byte-exato)
+
+## 2026-10-01 — v0.6.6 (ciclo 24: BESTIARIO — estilo Tibia)
+
+- NOVO: BESTIARIO (tecla N) — registro de caca estilo Tibia: ficha dos 8 mobs (nome, onde vive, lore curta), contador de derrotas por tipo, monstros nunca enfrentados ficam "???" (descobre cacando), rodape "Descobertos: X de 8"
+- GameManager: BESTIARY_INFO (ficha dos 8 mobs), bestiary_kill/bestiary_count/bestiary_seen, save "bestiary" persistido (save antigo compativel), NOVO JOGO zera
+- mob.gd: kill offline registra no bestiario (dummy de treino NAO conta)
+- network_manager.gd: kill ONLINE registra no cliente via _rpc_mob_reward (servidor autoritativo conta, cliente registra ao receber recompensa)
+- hud.gd: painel BESTIARIO (tecla N, mesmo estilo da tela K), dica de teclas atualizada
+- Teste unitario tests/test_bestiary.gd: BESTIARY_TEST_OK (8 casos: registro, acumulo, dummy ignorado, ordem de seen, ficha completa, round-trip JSON)
+- Validado Godot headless: 0 erros de script
+- Local af95cb2; GitHub 92a5b6f/64ba191/bd3d759/80f0f20/e633fc9 (reparos byte-exatos por blob SHA)
+
+## 2026-10-01 — v0.6.5 (ciclo 23: BANCO/DEPOSITO — estilo Tibia)
+
+- NOVO scripts/world/bank.gd: NPC banco nas 2 cidades (tecla T) — depositar/sacar itens da mochila (libera os 20 slots), tier de raridade preservado ("espada#2" deposita como raro e volta raro)
+- GameManager.bank persistido no save ("bank"); NOVO JOGO zera; save antigo compativel
+- HUD: dica de teclas atualizada (T banco)
+- Teste unitario tests/test_bank.gd PASSOU (BANK_TEST_OK — depositar/sacar, tier preservado, item inexistente); headless 0 erros
+- Proximo: bestiario OU teste no Mac do usuario
+
+## 2026-10-01 — v0.6.4 (ciclo 22: polish de quests + comida)
+- HUD: tecla J agora funciona em QUALQUER lugar — perto do NPC abre o painel; longe, mostra "Procure o MESTRE DAS MISSOES" (NPC entrou no grupo quest_npc)
+- HUD: aviso "MISSAO PRONTA: ..." aparece quando uma quest completa (signal quest_ready no GameManager) — lembra de entregar no NPC
+- Dica de teclas no HUD atualizada (J missoes)
+- test_food.gd: expectativa de hp corrigida (hp0 era capturado antes do set) — FED_TEST_OK
+- Validacao: headless 0 erros; testes QUEST/ESTIMATE/FUSION/FED OK
+
+## 2026-10-01 — v0.6.3 (ciclo 21: QUESTS COM NPC — estilo Tibia/Rucoy)
+
+- NOVO scripts/world/quest_npc.gd: NPC "Mestre das Missões" nas 2 cidades (tecla J perto dele) — sprite procedural (mestre de túnica azul com pergaminho), painel no estilo da loja
+- 6 missões de caça em CADEIA (GameManager.QUESTS): ratos 5x (40 moedas/100xp) -> slimes 5x (60/180) -> aranhas 5x (100/350) -> goblins 5x (140/500) -> orcs 4x (250/900) -> esqueletos 4x (250/900); city1 tem as 2 primeiras, city2 as 4 seguintes
+- Cada quest só aparece depois da anterior ENTREGUE (req); painel mostra ACEITAR / progresso X/Y / ENTREGAR com recompensa
+- mob.gd: kill conta pra quest (offline); online: _rpc_mob_reward agora carrega o mob_type e o cliente conta o kill (servidor autoritativo mantém XP/loot)
+- Persistido no save ("quests": progress/done/claimed); NOVO JOGO zera; save antigo compatível (sem quests = vazio)
+- Teste unitário tests/test_quests.gd PASSOU (QUEST_TEST_OK — cadeia, progresso, entrega dupla bloqueada, recompensa); headless 0 erros
+- Próximo: teste no Mac do usuário OU comida/energia OU banco/depósito
 
 ## 2026-10-01 — v0.6.2 (ciclo 20: ESTIMATIVAS DE TEMPO na tela K — estilo Tibia)
 
@@ -69,9 +411,9 @@ Formato: [data] versão — o que mudou (commit)
 - FIX parse error no net_test.gd: variavel local `f` colidia com o parametro `f` de _flog — o harness NUNCA chegou a rodar (o ciclo 12 reportou PASSOU com logs de execucao anterior)
 - FIX timing do harness: cliente agora espera OS DOIS players registrados antes de avancar (antes desistia em 10s; o servidor logava "1 online" 2x — diagnostico errado de "server perde player")
 - Deadline de saida limpa (24s) antes do timeout do shell
-- TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat A<->B relayado, POSICAO relayada entre clientes, saida limpa
+- TESTE REAL EXECUTADO E PASSOU: server OK + cliente A OK + cliente B OK no localhost — 2 players registrados SIMULTANEAMENTE, chat relay A<->B, POSICAO relayada entre clientes, saida limpa
 - Validado Godot headless: 0 erros de script
-- Proximo: mobs autoritativos no servidor + teste no Mac do usuario
+- Proximo: mobs autoritativos no servidor, teste no Mac do usuario
 
 ## 2026-10-01 — v0.5.2 (ciclo 12: teste de rede localhost PASSOU + fixes criticos)
 
