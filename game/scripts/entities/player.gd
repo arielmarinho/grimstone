@@ -222,7 +222,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # ---------- SKILLS (estilo Rucoy) ----------
 func _skill_for_slot(slot: String) -> Dictionary:
-	var list = SKILLS.SKILLS.get("staff" if weapon == "druid_staff" else weapon, [])
+	# usa a BASE da arma: com raridade a chave e "espada#2" e SKILLS.SKILLS nao tem essa chave
+	var wbase: String = GameManager.weapon_base()
+	var list = SKILLS.SKILLS.get("staff" if wbase == "druid_staff" else wbase, [])
 	for sk in list:
 		if sk["tecla"] == slot:
 			return sk
