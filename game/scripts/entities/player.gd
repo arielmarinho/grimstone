@@ -110,8 +110,8 @@ func _sprite_sheet_path(anim: String) -> String:
 func _build_frames() -> void:
 	TEXHELPER.CURRENT_PANTS = pants_color
 	# ESCALA POR CLASSE (v0.6.37): a altura do CORPO dentro da celula de 96x96
-	# difere por classe (knight 86px, paladino 56, mago 53, druida 53 — medido
-	# nos PNGs por scripts/222ef96c095afc0b/measure_art.py). Com escala fixa
+	# difere por classe (knight 86px, paladino 58, mago 56, druida 56 — medido
+	# pixel a pixel nos PNGs do repo). Com escala fixa
 	# 1.15 as classes novas apareciam 32-35% menores. Aplicado AQUI porque a
 	# troca de arma (teclas 1-6, loja, mochila) reconstroi os frames por aqui.
 	var base_w: String = GameManager.weapon_base()
