@@ -5,6 +5,7 @@ Formato: codigo no GitHub (push MCP), docs pushados
 - Medicao antes/depois (artifacts/audit_walk_classes_v0633.png): ANTES 3 classes deslizando; DEPOIS balanco de passo. Nenhuma folha com passada real sofreu alteracao.
 - Achado secundario: o pipeline (`scripts/process_character_references.py`) mapeia walk/up e walk/down para as MESMAS linhas do idle — a correcao real seria desenhar passos na referencia; o balanco cobre ate isso existir (registrado em references).
 - Validacao: gdparse OK em todos os 52 .gd; Godot headless continua indisponivel no sandbox (binario esvaziado) — validacao visual por render das folhas + preview no Mac pendente
+- Achado 2 (mesma auditoria, arquivos ja prontos no espelho local): as armas das classes novas nao eram vendidas em NENHUMA loja — `lanca` (Paladino) e `cajado_druida` (Druida) existiam em items_db/equips mas eram inalcancaveis jogando; agora lanca na city1 e lanca+cajado_druida na city2, e o cajado_druida entra no loot (5%)
 - Fila: teste no Mac do usuario (docs/TESTE_MAC.md) OU build APK no Mac (docs/BUILD_ANDROID.md)
 
 ## v0.6.33 — Area 11: raridade de arma vazando pra skills/HUD (19/11)
