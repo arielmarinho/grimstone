@@ -150,12 +150,12 @@ func _build_frames() -> void:
 			texs = TEXHELPER.load_sheet_procedural_custom(sheet_path, GameManager.weapon_base(), hair_color, tunic_color, pants_color)
 		if texs.is_empty():
 			continue
-		# QUADROS DESCENTRALIZADOS (v0.6.35): as folhas novas (paladino/mago/
+		# QUADROS DESCENTRALIZADOS (v0.6.35, ancora refeita na v0.6.38): as folhas novas (paladino/mago/
 		# druida) vem da referencia com o personagem deslocado dentro da celula
 		# (druida: centro dos pes em x-244=288 e x-778=736, +-44px). Como o
 		# AnimatedSprite2D centraliza cada textura, o personagem "patinava"
 		# lateralmente a cada quadro. Recentraliza pelo CENTRO DOS PES.
-		texs = _align_frames(texs, anim)
+		texs = align_frames(texs, anim)
 		sf.add_animation(anim)
 		var anim_speed: float = 12.0 if GameManager.weapon_base() == "druid_staff" and anim.begins_with("attack") else 8.0
 		sf.set_animation_speed(anim, anim_speed)
@@ -172,26 +172,35 @@ func _build_frames() -> void:
 	sprite.play("idle_down")
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-## Centro horizontal (x) da faixa dos PES (25% de baixo do corpo). -1 = vazio.
-static func _feet_center_img(im: Image) -> float:
+## ANCORA ESTAVEL DO QUADRO (v0.6.38): centro X do TRONCO — mediana dos pixels
+## opacos na faixa de 25% a 55% da altura do corpo.
+## ANTES media a faixa dos PES (25% de baixo): os pes BALANCAM quando o
+## personagem anda/golpeia, entao o alinhador "corrigia" o passo e o sprite
+## deslizava dentro da propria animacao. Medido nos PNGs do repo (avaliador
+## independente = centro de massa do corpo): residual medio 3.39px -> 2.38px e
+## folhas com drift >=3px 16/39 -> 9/39 (pior 13.7px -> 8.2px). A MEDIANA
+## ignora arma/efeito que aparece so de um lado do corpo.
+static func _body_center_img(im: Image) -> float:
 	var used: Rect2i = im.get_used_rect()
 	if used.size.x <= 0 or used.size.y <= 0:
 		return -1.0
-	var band_y: int = used.position.y + int(used.size.y * 0.75)
-	var min_x: int = 1 << 20
-	var max_x: int = -1
-	for y in range(band_y, used.position.y + used.size.y):
+	var top_y: int = used.position.y + int(used.size.y * 0.25)
+	var bot_y: int = used.position.y + int(used.size.y * 0.55)
+	var xs: Array = []
+	for y in range(top_y, bot_y):
 		for x in range(used.position.x, used.position.x + used.size.x):
 			if im.get_pixel(x, y).a > 0.2:
-				min_x = mini(min_x, x)
-				max_x = maxi(max_x, x)
-	if max_x < 0:
+				xs.append(x)
+	if xs.is_empty():
 		return -1.0
-	return (min_x + max_x) * 0.5
+	xs.sort()
+	return float(xs[xs.size() / 2])
 
-## Recentraliza os 4 quadros pelo centro dos pes. So age com drift > 3px, e
-## nunca em death (corpo deitado nao tem pes estaveis).
-static func _align_frames(texs: Array, anim: String) -> Array:
+## Recentraliza os 4 quadros pelo centro do TRONCO. So age com drift > 3px, e
+## nunca em death (corpo deitado nao tem tronco estavel). PUBLICO e estatico
+## porque o avatar remoto (remote_player.gd) usa a MESMA regra — sem isso o
+## personagem do outro jogador "patinava" (as folhas novas tem 40-45px de drift).
+static func align_frames(texs: Array, anim: String) -> Array:
 	if anim == "death" or texs.size() < 4:
 		return texs
 	var centers: Array = []
@@ -200,7 +209,7 @@ static func _align_frames(texs: Array, anim: String) -> Array:
 		if im == null:
 			return texs
 		im.convert(Image.FORMAT_RGBA8)
-		var c: float = _feet_center_img(im)
+		var c: float = _body_center_img(im)
 		if c < 0.0:
 			return texs
 		centers.append(c)
