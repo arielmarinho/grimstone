@@ -591,10 +591,12 @@ func _play(base: String) -> void:
 		sprite.flip_h = false
 	elif facing == "left" or facing == "right":
 		anim = base + "_side"
-		# O perfil base do Paladino e do Druida olha para a esquerda; Mago e
-		# Knight procedural olham para a direita.
+		# Lado NATIVO de cada arte (medido nos PNGs, nao presumido): as folhas
+		# novas (paladino/mago/druida) olham para a DIREITA; a folha do knight
+		# (.b64 + procedural) olha para a ESQUERDA. Inverter isto fazia o
+		# personagem andar de costas para onde caminha.
 		var weapon_base: String = GameManager.weapon_base()
-		var native_faces_right: bool = weapon_base not in ["spear", "druid_staff"]
+		var native_faces_right: bool = weapon_base in ["spear", "staff", "druid_staff"]
 		sprite.flip_h = facing == "left" if native_faces_right else facing == "right"
 	else:
 		sprite.flip_h = false
