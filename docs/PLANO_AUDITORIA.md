@@ -1,3 +1,10 @@
+## Ciclo 19/11 (18:55) — Area 32: ESCALA POR CLASSE medida na arte (v0.6.37)
+- BUG: `sprite.scale` fixo em 1.15 para todas as classes, mas a altura do corpo na celula de 96x96 e knight 86px / paladino 56 / mago 53 / druida 53 -> classes novas 32-38% menores na tela.
+- FIX sem tocar nos PNGs: `Equips.sprite_scale_for()` (86/altura sobre 1.15), aplicado no `_build_frames()` do player e no remote_player; `_class_dir()` extraido como fonte unica da classe equipada.
+- FIX painel C: preview era caminho fixo do knight -> agora segue a classe, com fallback.
+- Ferramenta nova: scripts/222ef96c095afc0b/measure_art.py (bbox/altura/base/cx por quadro e classe).
+- Teste novo tests/test_scale.gd = SCALE_TEST_OK; Godot 4.7.2 headless --import 0 erros.
+
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
 > Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
