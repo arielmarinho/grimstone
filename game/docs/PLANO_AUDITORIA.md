@@ -170,6 +170,20 @@
 - Fix em tex_helper.load_sheet_custom -> _walk_variation: detecta folha de walk sem passada (quadros iguais ou = idle) e aplica balanco 4 quadros (0,-2 / 0 / +1 px), up com -1 px lateral; folhas com passada real intactas
 - Validacao: gdparse 52/52 OK + render comparativo (artifacts/audit_walk_classes_v0633.png); headless indisponivel no sandbox neste ciclo
 
+### Area 34 — Feedback de combate: numeros de dano (ciclo 63, v0.6.38) OK
+- BUG: tres copias do numero flutuante de dano (mob/player/projectile) com estilos diferentes e NENHUMA no caminho online — o mob no cliente e espelho, o dano e aplicado no servidor, entao online o jogador acertava sem ver numero; dano recebido pelo player nunca mostrava numero
+- FIX: fonte unica `FX.damage_number()` (normal / critico dourado "%d!" / dano recebido vermelho) com pop de escala; snapshot do servidor leva `hd`/`hc` (dano e crit acumulados) e o espelho mostra o numero; crit viaja no RPC de dano
+- Validacao: `tests/test_damage_numbers.gd` DAMAGE_NUMBERS_TEST_OK + test_scale + test_shop_weapons OK, `--import` e run real 0 erros
+- Pendente: julgamento visual no Mac + teste online 2 clientes
+
+### Area 34 — Ancora do alinhamento de quadros (ciclo 63, v0.6.38) OK
+- BUG: o alinhador de quadros (v0.6.35) media a faixa dos PES — que balanca ao andar/golpear; o movimento era lido como drift e "corrigido", anulando o passo
+- MEDIDO com avaliador independente (centro de massa, 20-80% da altura): residual medio 3.39px, pior 13.7px, 16/39 folhas >=3px -> depois 2.38px, 8.2px, 9/39
+- FIX: ancora no TRONCO (mediana dos x na faixa 25-55%) em `_body_center_img`; `_align_frames` -> `align_frames` publico
+- 2o bug: avatar remoto nao alinhava nada (40-45px de drift do druida na tela do outro jogador) -> usa a mesma funcao
+- Validacao: import 0 erros + run real 0 erros + 8/8 testes; prova visual artifacts/align_v0638_antes_depois.png
+- Pendente: julgamento visual do usuario no Mac
+
 ### Area 33 — Escala por classe + pes no chao (ciclo 62, v0.6.37) OK
 - BUG medido nos PNGs (mediana idle+walk, celula 96x96): corpo knight 86.0px / paladino 56.0 / mago 55.5 / druida 55.0; pes 40 / 36 / 40.5 / 39 abaixo do centro
 - Efeito: com `sprite.scale` fixo 1.15 as 3 classes novas apareciam 33-36% menores que o knight na tela
