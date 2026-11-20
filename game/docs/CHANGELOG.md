@@ -1,4 +1,4 @@
-## v0.6.38 — Area 34: ancora do alinhamento de quadros (sprite "patinando") + avatar remoto
+## v0.6.38 — Area 35: ancora do alinhamento de quadros (sprite "patinando") + avatar remoto
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG medido (nao presumido), com avaliador INDEPENDENTE (centro de massa do corpo, 20-80% da altura, nunca a mesma banda usada como ancora): o alinhador de quadros da v0.6.35 media a faixa dos PES (25% de baixo do bbox). Os pes BALANCAM quando o personagem anda ou golpeia, entao o proprio movimento era lido como "drift" e corrigido — o passo era anulado quadro a quadro e o sprite deslizava. Residual medio 3.39px, pior 13.7px, 16/39 folhas com drift >= 3px.
 - FIX: nova ancora `_body_center_img` = MEDIANA dos x opacos na faixa de 25% a 55% do corpo (tronco). A mediana ignora arma/efeito que aparece de um lado so. `_align_frames` virou `align_frames` (estatico e publico). Resultado medido: residual medio 2.38px, pior 8.2px, 9/39 folhas com drift >= 3px; o caso pior (mago/attack, 13.7px) caiu para 8.2px e knight/walk/down de 8.9px para 1.7px.
@@ -10,7 +10,7 @@ Formato: codigo no GitHub (push MCP), docs pushados
 - Descartado: um `tests/test_align.gd` headless ficou >4min por varrer pixel a pixel em GDScript; removido — a medicao equivalente sai em segundos pelo `align_decide.py` em Python.
 - Pendente: julgamento visual do usuario no Mac (mesmo tema da v0.6.37).
 
-## v0.6.38 — Numeros de dano unificados + feedback de combate ONLINE
+## v0.6.38 — Area 34: numeros de dano unificados + feedback de combate ONLINE
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG (polish de combate, o item mais antigo da fila de feedback): o numero flutuante de dano existia em TRES copias (`mob.gd::_spawn_damage_number`, `player.gd::_spawn_crit_text`, `projectile.gd::_spawn_crit_text`), cada uma com fonte, tamanho e curva diferentes — e NENHUMA delas rodava ONLINE: no cliente o mob e espelho (`net_authority=false`), quem aplica o dano e o servidor e o `take_damage` do cliente so repassa o pedido. Resultado: jogando online o jogador acertava sem ver numero nenhum, e o dano RECEBIDO pelo player nunca mostrava numero.
 - FIX 1 (fonte unica): `FX.damage_number(pos, amount, crit, kind)` em `fx.gd`, com os 3 estilos — normal (creme, 15px), critico (dourado, 19px, "%d!"), dano recebido (vermelho, 16px) — e um "pop" de escala (nasce 1.45x e assenta em 0.12s) que da peso ao golpe. `float_text()` passou a devolver o Label e aceitar a altura da subida.
