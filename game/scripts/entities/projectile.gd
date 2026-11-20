@@ -58,21 +58,5 @@ func _hit() -> void:
 	var radius := 40.0 if not big else 70.0
 	for mob in get_tree().get_nodes_in_group("mobs"):
 		if not mob.dead and mob.global_position.distance_to(global_position) < radius:
-			mob.take_damage(damage)
-			if is_crit:
-				_spawn_crit_text(mob.global_position)
+			mob.take_damage(damage, 0, is_crit)
 	queue_free()
-
-func _spawn_crit_text(pos: Vector2) -> void:
-	var l = Label.new()
-	l.text = "CRIT!"
-	l.position = pos + Vector2(-20, -50)
-	l.add_theme_font_size_override("font_size", 14)
-	l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 4)
-	get_parent().add_child(l)
-	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 24.0, 0.6)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.6)
-	tw.tween_callback(l.queue_free)
