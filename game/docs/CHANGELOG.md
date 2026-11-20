@@ -1,3 +1,14 @@
+## v0.6.52 — Sombra no chao do PLAYER (Area 46)
+Formato: codigo no GitHub (push MCP), docs pushados
+- **BUG REAL medido** (`scripts/81724fd159dae26a/measure_player_shadow.py`): depois das Areas 42-45 **toda** entidade tinha contato visual com o chao — os 9 monstros (v0.6.50/51), os NPCs (v0.6.46), a decoracao (v0.6.48) e ate o loot (v0.6.51) — **menos o personagem do jogador**. Varredura nas 4 folhas (idle/walk/attack, 3 direcoes): as linhas ABAIXO do pe' estao 100% vazias em todas, e as 3 classes novas (paladino/mago/druida) nao tem sombra nenhuma. Resultado: o jogador flutuava sobre o tileset enquanto o monstro ao lado tinha sombra.
+- FIX: novo modulo **puro** `scripts/entities/player_shadow.gd` (`center_y()`, `bottom_y()`, `width_for()`, `class_for()`, `attach()`) — mesma regua do resto do projeto (base da sombra exatamente na linha do pe' de **46px**), e **largura medida na arte por CLASSE**: knight 37 / mago 34 / paladino 25 / druida 22px (mediana das larguras do corpo nas 6 linhas acima do pe', quadros idle/walk/attack das 3 direcoes, ja pela escala da classe). Corpo menor -> sombra menor, mesma regra dos monstros.
+- Reaproveita a **textura 64x20 cacheada do MobShadow** (uma so na memoria do jogo inteiro, zero asset binario novo no repo) e o mesmo alpha 0.25 dos NPCs.
+- Ligado em `player.gd` e `remote_player.gd` dentro do `_build_frames()` — troca de arma/classe reconstroi os frames e a sombra se reajusta sozinha (mesmo sprite `GroundShadow` reaproveitado, `z_index = -1`, primeiro filho = desenha atras do corpo).
+- Novo `tests/test_player_shadow.gd` (**PLAYER_SHADOW_TEST_OK**): base na regua de 46px, espessura 2..12px, largura plausivel e ORDENADA por tamanho de corpo entre as 4 classes, mapa arma->classe conferido nos 4 tipos (sword/spear/staff/druid_staff) e textura compartilhada com o MobShadow.
+- Validacao: Godot 4.7.2 headless `--import` **0 erros** + suite completa **24/24 OK**.
+- Prova: `artifacts/preview/player_shadow_v0652.png` (esq = antes sem sombra, dir = depois).
+- Versao 0.6.52 / versionCode 84.
+
 ## v0.6.51 — Itens dropados e moedas na linha do chao (Area 45)
 Formato: codigo no GitHub (push MCP), docs pushados
 - **BUG REAL medido**: `drop.gd` cria o `Sprite2D` do loot CENTRADO na posicao do node, e o node nasce em `mob.global_position` — o **CENTRO** da celula do monstro. Pela regua unica do projeto o pe' fica `KNIGHT_FEET_SCREEN = 46px` abaixo desse centro, logo a base do icone de 20px caia em **+10px = 36px ACIMA do chao**: o item parecia flutuar no ar onde o monstro estava, enquanto corpo do monstro (v0.6.48), player, NPCs e decoracao estavam todos assentados na mesma linha.
