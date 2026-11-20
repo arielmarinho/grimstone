@@ -176,13 +176,19 @@
 - Validacao: `tests/test_damage_numbers.gd` DAMAGE_NUMBERS_TEST_OK + test_scale + test_shop_weapons OK, `--import` e run real 0 erros
 - Pendente: julgamento visual no Mac + teste online 2 clientes
 
-### Area 36 — Ancora do alinhamento: centro de MASSA (ciclo, v0.6.39) OK
-- BUG: a ancora da Area 35 (mediana do tronco 25-55%) ainda PIORAVA 3 folhas — no ataque do mago o braco esticado domina a faixa e o alinhador empurrava o corpo para o lado (drift 5.2 -> 8.2px)
-- ESCOLHA MEDIDA, nao intuida: 4 candidatas x 3 avaliadores independentes entre si e da ancora (bbox_center / com_10_90 / linha do quadril). Folhas com residual >6px: tronco 5/3/5, pes 6/0/6, cabeca 8/3/5, centro de massa 1/0/2 — vence nos tres
-- FIX: `game/scripts/entities/frame_align.gd`, modulo PURO (sem autoload): `body_center_img` (COM na faixa 20-80%) + `align_frames`. player.gd e remote_player.gd usam o mesmo modulo
-- TESTE consertado: `tests/test_align.gd` estava commitado e QUEBRADO (preloadava player.gd, que exige GameManager; em `-s` nenhum autoload existe). Agora roda o modulo puro, decodifica .b64 do knight e mede por avaliador independente -> ALIGN_TEST_OK
-- Medido: drift medio 23.55px -> 0.79px, pior 2.2px (limite 6.0)
-- Validacao: import 0 erros + boot real 0 erros + 11 testes OK; prova visual artifacts/align_v0639_antes_depois.png
+### Area 37 — Minimapa (ciclo 64, v0.6.40) OK
+- Fase 2 do todo.md ("minimapa circular, hotbar 8 slots, inventario"): painel no canto sup. direito com a textura do mapa ATUAL reduzida (mesma textura do main.gd, zero asset novo) + pontos: voce (verde), monstros vivos (vermelho), NPCs/estruturas (amarelo), saidas (azul). Tecla M = pequeno 156px / grande 288px, redesenho a 10Hz.
+- Integracao: main.gd::switch_map -> HUD.minimap_set_map(textura, mundo=textura*2, saidas); HUD.set_player liga o ponto do jogador. Nenhum colisor/mapa/PNG tocado.
+- Validacao: tests/test_minimap.gd MINIMAP_TEST_OK (conversao mundo->mapa, toggle dentro dos 1280px, clamp de mundo invalido) + import 0 erros + boot real 0 erros + 12 testes OK.
+- Pendente do usuario: julgamento visual no Mac (tamanho/posicao no canto, legibilidade dos pontos).
+
+### Area 36 — Ancora do alinhamento: TRONCO (centro de massa foi descartado) + teste que roda (v0.6.39) OK
+- BUG REAL: `tests/test_align.gd` estava commitado e QUEBRADO desde a v0.6.38 (preloadava player.gd, que exige GameManager; em `-s` nenhum autoload existe) — o teste nunca rodou, e a v0.6.38 o apagou alegando lentidao
+- FALSO POSITIVO corrigido: a troca para CENTRO DE MASSA foi decidida por 3 avaliadores que mediam contra o proprio centro de massa = metrica CIRCULAR (a ancora "ganha" sempre, porque e a mesma grandeza do deslocamento)
+- DECISAO MEDIDA com marco RIGIDO (cabeca, faixa 0-22%): no `mage/attack` o drift da cabeca entre quadros fica 5.5px sem alinhar, 1.5px com TRONCO e 7.5px com CENTRO DE MASSA (o COM arrasta o corpo atras do braco/efeito)
+- CONFIRMACAO independente (jitter do perfil de colunas, 36 folhas): TRONCO 0.90/2.7, CENTRO DE MASSA 1.17/5.0, sem alinhar 4.29/16.0
+- FIX: `game/scripts/entities/frame_align.gd`, modulo PURO sem autoload (`body_center_img` + `align_frames`), usado por player.gd e remote_player.gd; alpha por `get_data` (teste: >4min -> 2s)
+- Validacao: import 0 erros + boot real 0 erros + 9/9 testes OK; `reg_quick.sh` 4min -> 17s
 - Pendente: julgamento visual do usuario no Mac
 
 ### Area 35 — Ancora do alinhamento de quadros (ciclo 63, v0.6.38) OK
