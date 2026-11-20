@@ -1,3 +1,12 @@
+## v0.6.48 — Decoracao das cidades na mesma linha do chao do player (Area 43)
+Formato: codigo no GitHub (push MCP), docs pushados. Area 42 (mobs) e Area 43 (decoracao) entram juntas na v0.6.48.
+- **BUG REAL medido** (`game/tests/measure_decor.gd`): o `Sprite2D` da decoracao e' centrado na posicao do node com scale 2.0 e **sem offset**, entao cada objeto apoiava o pe' num y diferente — o espalhamento cheio era: canteiro de flores **22px FLUTUANDO**, caixote **10px flutuando**, barril 2px, barraca **6px afundada**, poste de luz e bandeira **14px afundados**. Ao lado do player (pe' a 46px do centro) e dos NPCs (v0.6.46) isto aparecia como objetos "boiando" ou enterrados.
+- Fix: `decor.gd` ganhou `feet_offset(tex)` / `feet_offset_y(kind)` — o offset vertical e' **derivado da propria arte** (ultimo pixel opaco da textura), entao mexer no desenho nao desalinha a linha do chao de novo. Regua unica do projeto: `KNIGHT_FEET_SCREEN = 46px` (player, monstros, NPCs, decoracao).
+- Colisores dos objetos solidos (barril, caixote, barraca) passaram a acompanhar a **arte** em vez do centro do node: antes o circulo de 26px ficava 26px acima do pe' desenhado e dava pra entrar "dentro" do barril pela base; agora raio/posicao sao calculados da altura desenhada.
+- Brilho do poste de luz segue a **lampada** (mesmo offset do poste) — antes ficava fixo em `-52px` e, com o poste reposicionado, sairia do lugar.
+- Novos: `tests/measure_decor.gd` (regua reutilizavel de pe' de QUALQUER decor) e `tests/test_decor_feet.gd` (**DECOR_FEET_TEST_OK**: 6 objetos com pe' a 0.0px da linha, tipo invalido e arte encostando na borda lateral/topo reprovam). Prova visual: `artifacts/preview/decor_line.png` (antes x depois, linha do chao desenhada).
+- Validacao: Godot 4.7.2 headless `--import` 0 erros, boot real do main.tscn 0 erros, **20/20 testes unitarios OK**.
+
 ## v0.6.48 — Monstros na mesma linha do chao do player (Area 42)
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG REAL medido (novo `tests/measure_mob_feet.gd`): o node do mob e ancorado no **centro** da celula 96 **sem offset de pe**, e o pe desenhado varia de y=63 (morcego) a y=91 (dummy). Na tela, contra a linha do knight (46px abaixo do centro): o **morcego flutuava 18px**, **rato 10px e slime 11px afundados**, goblin/esqueleto 3.5px afundados. Todo bicho parecia pairar ou afundar no chao do mapa.
