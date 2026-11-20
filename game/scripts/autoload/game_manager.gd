@@ -5,7 +5,7 @@ const SAVE_PATH = "user://savegame.json"
 const SAVE_VERSION := 2  # 2 = gravacao atomica (.tmp -> .bak -> save)
 const BAG_MAX = 20
 # versao do jogo — fonte unica (titulo e export_presets leem daqui; housekeeping manual esquecia)
-const GAME_VERSION := "0.6.44"
+const GAME_VERSION := "0.6.45"
 
 var player_name: String = "Grimstone"
 var level: int = 1
@@ -320,7 +320,42 @@ func _default_skills() -> Dictionary:
 	# dicionario NOVO a cada chamada (nao compartilha referencia com `skills`)
 	return {"espada": {"level": 10, "xp": 0}, "defesa": {"level": 10, "xp": 0}}
 
+## AUTOSAVE (v0.6.45)
+## O jogador perdia progresso: o jogo so gravava ao trocar de mapa, ao desbloquear
+## a city2, no respawn e ao sair pelo menu. No celular o sistema mata o app sem
+## avisar (background, bateria, task killer) — tudo desde o ultimo save ia embora.
+## Solucao SEM gasto desnecessario de disco: a cada AUTOSAVE_PERIOD s o estado e'
+## serializado e COMPARADO com o ultimo texto gravado; so grava se mudou de
+## verdade. Estado igual nao toca no cartao (nada de escrita a cada 20s a toa).
+const AUTOSAVE_PERIOD := 20.0
+var _autosave_acc := 0.0
+var _last_saved_text := ""
+var _save_loaded := false   # so autosave depois de um load bem sucedido
+
+func _process(delta: float) -> void:
+	if not _save_loaded:
+		return
+	_autosave_acc += delta
+	if _autosave_acc < AUTOSAVE_PERIOD:
+		return
+	_autosave_acc = 0.0
+	var text := _serialize()
+	if text == _last_saved_text:
+		return          # nada mudou: nao gasta escrita
+	_write_atomic(text)
+
+## flush imediato — chamado quando o Android manda o app pra background
+func flush_save() -> void:
+	if not _save_loaded:
+		return
+	_autosave_acc = 0.0
+	_write_atomic(_serialize())
+
 func save_game() -> void:
+	_autosave_acc = 0.0
+	_write_atomic(_serialize())
+
+func _serialize() -> String:
 	var data := {
 		"player_name": player_name, "level": level, "xp": xp,
 		"hp": hp, "hp_max": hp_max, "mana": mana, "mana_max": mana_max,
@@ -332,7 +367,9 @@ func save_game() -> void:
 		"bank": bank, "bestiary": bestiary, "belt": belt,
 		"save_version": SAVE_VERSION,
 	}
-	var text := JSON.stringify(data, "\t")
+	return JSON.stringify(data, "\t")
+
+func _write_atomic(text: String) -> void:
 	var tmp := FileAccess.open(SAVE_TMP, FileAccess.WRITE)
 	if tmp == null:
 		push_warning("save: nao consegui abrir " + SAVE_TMP)
@@ -413,6 +450,9 @@ func load_game() -> bool:
 		# save truncado/corrompido: cai no backup da gravacao anterior
 		parsed = _read_save(SAVE_BAK)
 		if parsed == null:
+			# jogo novo: sem save nao ha baseline, mas o autosave precisa funcionar
+			_last_saved_text = ""
+			_save_loaded = true
 			return false
 		push_warning("save: principal ilegivel — carregado do backup")
 	player_name = str(parsed.get("player_name", "Grimstone"))
@@ -451,7 +491,21 @@ func load_game() -> bool:
 	belt = {"z": str(bl.get("z", "")), "x": str(bl.get("x", ""))}
 	# bestiário: save antigo sem "bestiary" = vazio (contadores começam do zero)
 	bestiary = _sanitize_counts(parsed.get("bestiary", {}))
+	_last_saved_text = _serialize()   # baseline: autosave so grava se MUDAR
+	_save_loaded = true
 	return true
+
+## O Android manda PAUSED quando o app vai pra background — e depois pode matar o
+## processo sem aviso. Este e' o unico ponto em que da' pra gravar antes disso.
+## RESUMED apenas retoma o relogio do autosave (o tempo parado nao conta).
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT:
+			flush_save()
+		NOTIFICATION_WM_CLOSE_REQUEST:
+			flush_save()
+		NOTIFICATION_APPLICATION_RESUMED:
+			_autosave_acc = 0.0
 
 # ---------- BESTIÁRIO (estilo Tibia: registro de caça) ----------
 ## registra 1 derrota do tipo de monstro (chamado em todo kill, offline e online)
