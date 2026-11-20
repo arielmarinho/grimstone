@@ -1,3 +1,16 @@
+## v0.6.39 — Area 36: ancora do alinhamento no CENTRO DE MASSA + teste que roda de verdade
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG REAL medido: a ancora da v0.6.38 (mediana do tronco, faixa 25%-55%) ainda PIORAVA 3 folhas. Em `mage/attack/down|side|up` o braco esticado domina a faixa, entao a mediana anda junto com o golpe e o alinhador empurrava o corpo para o lado: drift 5.2px -> 8.2px. O alinhador criava o deslize que devia corrigir.
+- NOVA ANCORA: centro de MASSA dos pixels opacos na faixa 20%-80% da altura do corpo. A faixa corta pes e topo da cabeca (que balancam) e mantem tronco e bracos.
+- COMO FOI ESCOLHIDA (nao por intuicao): 4 ancoras candidatas x 3 avaliadores independentes entre si E da ancora (bbox_center / com_10_90 / linha do quadril mais larga). Folhas com residual > 6px: mediana do tronco 5/3/5, pes 6/0/6, cabeca 8/3/5, centro de massa 1/0/2 — venceu nos tres. Ferramentas: `scripts/222ef96c095afc0b/anchor_eval.py` e `anchor_cross.py`.
+- NOVO `game/scripts/entities/frame_align.gd`: modulo PURO (sem autoload) com `body_center_img` e `align_frames`. `player.gd` e `remote_player.gd` usam o MESMO modulo; `PlayerScript.align_frames` continua valendo como wrapper para chamadas antigas.
+- FIX DO TESTE: `tests/test_align.gd` estava COMMITADO E QUEBRADO desde a v0.6.38 — preloadava player.gd, que precisa de GameManager para compilar; em `-s` nenhum autoload existe, entao dava "Identifier not found: GameManager" e o teste NUNCA rodou (a v0.6.38 o removeu alegando lentidao). Agora carrega o modulo puro, decodifica as folhas .b64 do knight e mede com avaliador independente.
+- RESULTADO medido no repo: drift medio 23.55px -> 0.79px; pior residual 2.2px (limite 6.0). druida idle down 41.5->0.7, druida attack down 45.2->0.4, druida idle up 42.2->0.9, mago attack down 5.2->0.2, knight walk down 5.0->0.4.
+- Prova visual: artifacts/align_v0639_antes_depois.png (antes|depois com a linha do centro da celula).
+- Nenhum PNG alterado (arte do usuario intacta): tudo em runtime.
+- Validacao: Godot 4.7.2 headless --import 0 erros + boot real (--quit-after 120) 0 erros + 11 testes OK (align, scale, damage_numbers, shop_weapons, fusion, bank, bestiary, quests, food, runes, estimates).
+- Versao 0.6.39 / versionCode 71.
+
 ## v0.6.38 — Area 35: ancora do alinhamento de quadros (sprite "patinando") + avatar remoto
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG medido (nao presumido), com avaliador INDEPENDENTE (centro de massa do corpo, 20-80% da altura, nunca a mesma banda usada como ancora): o alinhador de quadros da v0.6.35 media a faixa dos PES (25% de baixo do bbox). Os pes BALANCAM quando o personagem anda ou golpeia, entao o proprio movimento era lido como "drift" e corrigido — o passo era anulado quadro a quadro e o sprite deslizava. Residual medio 3.39px, pior 13.7px, 16/39 folhas com drift >= 3px.
