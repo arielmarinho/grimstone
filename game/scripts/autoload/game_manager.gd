@@ -2,9 +2,10 @@ extends Node
 ## GameManager — estado global do jogo (serializável, pronto pra online futuro)
 
 const SAVE_PATH = "user://savegame.json"
+const SAVE_VERSION := 2  # 2 = gravacao atomica (.tmp -> .bak -> save)
 const BAG_MAX = 20
 # versao do jogo — fonte unica (titulo e export_presets leem daqui; housekeeping manual esquecia)
-const GAME_VERSION := "0.6.41"
+const GAME_VERSION := "0.6.42"
 
 var player_name: String = "Grimstone"
 var level: int = 1
@@ -304,6 +305,21 @@ func runa_dano(id: String) -> int:
 	var magia_lvl: int = skills.get("magia", {"level": 10})["level"]
 	return int(float(r["dano"]) * (1.0 + magia_lvl * 0.02))
 
+## GRAVACAO ATOMICA (v0.6.42)
+## O Android mata o processo a qualquer momento (app em background, bateria,
+## task killer). Gravar direto no savegame.json significava que um kill no meio
+## da escrita deixava o arquivo PELA METADE — e o save anterior ja tinha sido
+## apagado junto. O jogador perdia tudo. Agora:
+##   escreve no .tmp -> relê e confere que virou JSON inteiro -> o save bom vira
+##   .bak -> o .tmp e promovido a save. Um kill em qualquer ponto da sequencia
+##   deixa ou o save antigo ou o novo, nunca um arquivo partido.
+const SAVE_TMP := "user://savegame.tmp"
+const SAVE_BAK := "user://savegame.bak"
+
+func _default_skills() -> Dictionary:
+	# dicionario NOVO a cada chamada (nao compartilha referencia com `skills`)
+	return {"espada": {"level": 10, "xp": 0}, "defesa": {"level": 10, "xp": 0}}
+
 func save_game() -> void:
 	var data := {
 		"player_name": player_name, "level": level, "xp": xp,
@@ -314,60 +330,127 @@ func save_game() -> void:
 		"coins": coins, "bag": bag, "city2_unlocked": city2_unlocked,
 		"quests": quests, "well_fed": int(well_fed_time),
 		"bank": bank, "bestiary": bestiary, "belt": belt,
+		"save_version": SAVE_VERSION,
 	}
-	var f = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	f.store_string(JSON.stringify(data, "\t"))
+	var text := JSON.stringify(data, "\t")
+	var tmp := FileAccess.open(SAVE_TMP, FileAccess.WRITE)
+	if tmp == null:
+		push_warning("save: nao consegui abrir " + SAVE_TMP)
+		return
+	tmp.store_string(text)
+	tmp.close()
+	# relê do DISCO: o que esta gravado tem que voltar como JSON completo antes
+	# de qualquer coisa sobrescrever o save que ja funciona
+	if _read_save(SAVE_TMP) == null:
+		push_warning("save: .tmp saiu invalido — save anterior preservado")
+		return
+	# promove: o save atual vira backup ANTES de ser substituido
+	if FileAccess.file_exists(SAVE_PATH):
+		if FileAccess.file_exists(SAVE_BAK):
+			DirAccess.remove_absolute(SAVE_BAK)
+		DirAccess.rename_absolute(SAVE_PATH, SAVE_BAK)
+	if DirAccess.rename_absolute(SAVE_TMP, SAVE_PATH) != OK:
+		push_warning("save: nao consegui promover o .tmp")
+
+## Le um save e devolve o Dictionary, ou null se o arquivo nao existe, nao abre
+## ou nao e JSON valido. Usa JSON.parse (devolve codigo de erro) em vez de
+## JSON.parse_string (que cospe ERROR no log a cada save corrompido).
+func _read_save(path: String):
+	if not FileAccess.file_exists(path):
+		return null
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return null
+	var txt := f.get_as_text()
+	f.close()
+	var j := JSON.new()
+	if j.parse(txt) != OK:
+		return null
+	if not (j.data is Dictionary):
+		return null
+	return j.data
+
+## Leitura tolerante a tipo: save editado na mao, de versao antiga ou campo com
+## lixo nao pode derrubar o load (antes `int("muitos")` estourava SCRIPT ERROR
+## no meio do load e deixava o jogo com estado pela metade).
+func _as_int(v, fallback: int) -> int:
+	if v is int:
+		return v
+	if v is float:
+		return int(v)
+	if v is String and v.is_valid_int():
+		return int(v)
+	if v is bool:
+		return 1 if v else 0
+	return fallback
+
+func _as_dict(v) -> Dictionary:
+	return v if v is Dictionary else {}
+
+func _sanitize_skills(v) -> Dictionary:
+	var out := _default_skills()
+	var src := _as_dict(v)
+	for k in src:
+		var e := _as_dict(src[k])
+		if e.is_empty():
+			continue
+		out[str(k)] = {"level": maxi(1, _as_int(e.get("level"), 10)),
+			"xp": maxi(0, _as_int(e.get("xp"), 0))}
+	return out
+
+## mochila/banco: so chave String -> quantidade int > 0 sobrevive
+func _sanitize_counts(v) -> Dictionary:
+	var out := {}
+	for k in _as_dict(v):
+		var q := _as_int(_as_dict(v)[k], 0)
+		if k is String and q > 0:
+			out[k] = q
+	return out
 
 func load_game() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return false
-	var f = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	var parsed = JSON.parse_string(f.get_as_text())
+	var parsed = _read_save(SAVE_PATH)
 	if parsed == null:
-		return false
-	player_name = parsed.get("player_name", "Grimstone")
-	level = int(parsed.get("level", 1))
-	xp = int(parsed.get("xp", 0))
+		# save truncado/corrompido: cai no backup da gravacao anterior
+		parsed = _read_save(SAVE_BAK)
+		if parsed == null:
+			return false
+		push_warning("save: principal ilegivel — carregado do backup")
+	player_name = str(parsed.get("player_name", "Grimstone"))
+	level = clampi(_as_int(parsed.get("level"), 1), 1, 1000)
+	xp = maxi(0, _as_int(parsed.get("xp"), 0))
 	hp_max = max_hp_for_level(level)  # derivado do level — save antigo nunca desincroniza
-	hp = min(int(parsed.get("hp", hp_max)), hp_max)
+	hp = clampi(_as_int(parsed.get("hp"), hp_max), 1, hp_max)
 	mana_max = max_mana_for_level(level)
-	mana = min(int(parsed.get("mana", mana_max)), mana_max)
-	skills = parsed.get("skills", skills)
-	current_map = parsed.get("current_map", "city1")
-	weapon = parsed.get("weapon", "spear")
+	mana = clampi(_as_int(parsed.get("mana"), mana_max), 0, mana_max)
+	skills = _sanitize_skills(parsed.get("skills", null))
+	current_map = str(parsed.get("current_map", "city1"))
+	weapon = str(parsed.get("weapon", "spear"))
 	# save antigo: arma sem tier continua valida (tier 0 = comum)
 	if not EQUIPS_OK(weapon):
 		weapon = "spear"
-	coins = int(parsed.get("coins", 0))
-	bag = parsed.get("bag", {})
-	hair_color = parsed.get("hair_color", "castanho")
-	tunic_color = parsed.get("tunic_color", "castanho")
-	pants_color = parsed.get("pants_color", "marrom")
-	arrows = int(parsed.get("arrows", 50))
+	coins = maxi(0, _as_int(parsed.get("coins"), 0))
+	bag = _sanitize_counts(parsed.get("bag", {}))
+	hair_color = str(parsed.get("hair_color", "castanho"))
+	tunic_color = str(parsed.get("tunic_color", "castanho"))
+	pants_color = str(parsed.get("pants_color", "marrom"))
+	arrows = maxi(0, _as_int(parsed.get("arrows"), 50))
 	city2_visited = bool(parsed.get("city2_visited", false))
 	city2_unlocked = bool(parsed.get("city2_unlocked", false))
-	quests = parsed.get("quests", {})
-	if quests is Dictionary:
-		for id in quests:
-			quests[id] = {"progress": int(quests[id].get("progress", 0)),
-				"done": bool(quests[id].get("done", false)),
-				"claimed": bool(quests[id].get("claimed", false))}
-	else:
-		quests = {}
+	quests = {}
+	for id in _as_dict(parsed.get("quests", {})):
+		var qe := _as_dict(_as_dict(parsed.get("quests", {}))[id])
+		quests[str(id)] = {"progress": maxi(0, _as_int(qe.get("progress"), 0)),
+			"done": bool(qe.get("done", false)),
+			"claimed": bool(qe.get("claimed", false))}
 	# comida: save antigo sem "well_fed" = 0 (não persiste entre sessões longas)
-	well_fed_time = float(int(parsed.get("well_fed", 0)))
+	well_fed_time = float(maxi(0, _as_int(parsed.get("well_fed"), 0)))
 	# banco: save antigo sem "bank" = vazio (não perde nada)
-	bank = parsed.get("bank", {})
-	if not bank is Dictionary:
-		bank = {}
+	bank = _sanitize_counts(parsed.get("bank", {}))
 	# cinto: save antigo sem "belt" = vazio
-	var bl = parsed.get("belt", {})
-	if bl is Dictionary:
-		belt = {"z": str(bl.get("z", "")), "x": str(bl.get("x", ""))}
+	var bl := _as_dict(parsed.get("belt", {}))
+	belt = {"z": str(bl.get("z", "")), "x": str(bl.get("x", ""))}
 	# bestiário: save antigo sem "bestiary" = vazio (contadores começam do zero)
-	bestiary = parsed.get("bestiary", {})
-	if not bestiary is Dictionary:
-		bestiary = {}
+	bestiary = _sanitize_counts(parsed.get("bestiary", {}))
 	return true
 
 # ---------- BESTIÁRIO (estilo Tibia: registro de caça) ----------
