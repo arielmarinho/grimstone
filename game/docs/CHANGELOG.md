@@ -1,3 +1,14 @@
+## v0.6.45 — Autosave: o progresso sobrevive ao app ser morto no celular
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG REAL: o jogo gravava **so em 4 momentos** — trocar de mapa, desbloquear a city2, respawn e sair pelo menu. No Android o sistema mata o app sem avisar (background, bateria, task killer). Tudo o que o jogador fez desde o ultimo save (XP, level, moedas, loot, quests, skills) ia embora. Com a gravacao atomica da v0.6.42 o arquivo nao corrompe mais, mas isso nao resolvia nada se ninguem gravava.
+- FIX 1 — **autosave por estado, sem gastar disco**: a cada 20s o estado e serializado e **comparado com o ultimo texto gravado**; so escreve se mudou de verdade (`_last_saved_text`). Ficar parado na cidade nao toca no cartao; ganhar XP/loot/moeda grava no ciclo seguinte.
+- FIX 2 — **flush no ciclo de vida do app**: `_notification` trata `APPLICATION_PAUSED`, `APPLICATION_FOCUS_OUT` e `WM_CLOSE_REQUEST` com `flush_save()` — o Android manda PAUSED ao mandar pra background, e esse e' o ultimo instante em que da' pra gravar antes do processo morrer. `APPLICATION_RESUMED` zera o relogio do autosave (tempo em background nao conta).
+- Sem gravacao durante o load: `_save_loaded` so arma o autosave depois que `load_game()` roda, e o baseline sai do proprio estado carregado — abrir o jogo nao dispara escrita nenhuma. Jogo novo (sem save) tambem arma o autosave, com baseline vazio.
+- `save_game()` continua existindo pros eventos e agora apenas delega para `_write_atomic(_serialize())` — mesma gravacao atomica (.tmp -> confere releitura -> .bak -> promove) para os dois caminhos, sem codigo duplicado.
+- `tests/test_save.gd` estendido (**SAVE_TEST_OK, 42 asserts**): flush no background grava e o progresso volta, autosave periodico NAO reescreve quando nada mudou (dedupe medido pelo tamanho do arquivo) e grava quando o estado muda.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + **15/15 testes OK** + `main.tscn` headless sem erro de script.
+- Versao 0.6.45 / versionCode 76.
+
 ## v0.6.43 — Cadencia de walk decidida por IDENTIDADE, nao por amplitude
 - BUG REAL (medido nas 12 folhas de walk) — a v0.6.41 escolhia quais folhas ganham cadencia sintetizada por **amplitude do centro do quadril < 1.5px**. O crivo errava nos DOIS sentidos:
   - **tocava o KNIGHT**, a arte de referencia aprovada: `knight/walk/down` mede 1.0px e `knight/walk/side` 0.5px de quadril — porque num passo de verdade quem se move sao as PERNAS; o quadril fica quase parado. A cadencia "corrigia" um passo desenhado a mao.
