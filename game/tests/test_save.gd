@@ -154,6 +154,33 @@ func _init() -> void:
 	var h7 = FakeGM.new()
 	_check(not h7.load_game(), "sem arquivo: load devolve false")
 
+	# ---- 8. AUTOSAVE (v0.6.45): so grava quando o estado muda de verdade
+	_wipe()
+	var a = FakeGM.new()
+	_check(not a.load_game(), "autosave: jogo novo sem save")
+	_check(a._save_loaded, "autosave armado mesmo sem save (jogo novo)")
+	a.level = 7
+	a.coins = 100
+	a.flush_save()   # o que o Android dispara ao ir pra background
+	_check(FileAccess.file_exists(a.SAVE_PATH), "flush_save grava no background")
+	var a2 = FakeGM.new()
+	a2.load_game()
+	_check(a2.level == 7 and a2.coins == 100, "flush_save preserva o progresso do background")
+	# dedupe: estado igual NAO reescreve o arquivo
+	var before := FileAccess.get_modified_time(a.SAVE_PATH)
+	var bytes_before := FileAccess.get_file_as_string(a.SAVE_PATH).length()
+	a._autosave_acc = a.AUTOSAVE_PERIOD + 1.0
+	a._process(0.0)
+	_check(FileAccess.get_file_as_string(a.SAVE_PATH).length() == bytes_before,
+		"autosave nao reescreve quando nada mudou (dedupe)")
+	# e grava quando muda
+	a.coins = 999
+	a._autosave_acc = a.AUTOSAVE_PERIOD + 1.0
+	a._process(0.0)
+	var a3 = FakeGM.new()
+	a3.load_game()
+	_check(a3.coins == 999, "autosave periodico grava quando o estado muda")
+
 	_wipe()
 	print("SAVE_TEST_OK" if fails == 0 else "SAVE_TEST_FAIL (%d)" % fails)
 	quit(0 if fails == 0 else 1)
