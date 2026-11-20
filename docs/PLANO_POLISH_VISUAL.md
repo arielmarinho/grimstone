@@ -22,15 +22,26 @@
 | **City2** (vila ana) | ZONA SEGURA: so o dummy de treino | dummy (1024,1300) |
 | **Floresta** | 2 lobos (norte) + 2 aranhas (centro) + 2 goblins (leste) + 2 orcs (sul) | ver spawners.gd |
 
-## ICONES COM FUNDO ROSA (pendente — proximo ciclo)
+## ICONES COM FUNDO ROSA (RESOLVIDO ciclo 19/11 23:45 — medido, nao presumido)
 
-- Estado: os icones de itens ainda mostram fundo magenta/rosa em alguns casos
-- Causa: o chroma key do items_db usa criterio antigo em alguns caminhos
-- Fix planejado: regenerar os 8+ icones com o criterio correto (r E b altos, g baixo) e validar por CONTAGEM de pixels (0 rosa)
+- Estado: NAO existe mais pixel magenta visivel em nenhum icone. Medido nos 23 PNGs
+  de `game/assets/icons/` (32x32, 23.552 pixels): **0 px rosa** com alpha > 0.5.
+  Os 21 icones de item tem fundo TRANSPARENTE (632 a 894 px transparentes cada).
+- Causa historica: o chroma key antigo nao comia o fundo #FF00FF em alguns caminhos.
+  Hoje `items_db.draw_icon()` carga o PNG de `assets/icons/` (com alfa real) e so cai
+  no desenho por codigo quando o PNG nao existe — o codigo nunca pinta fundo.
+- TRAVA contra regressao: `game/tests/test_icons.gd` (**ICONS_TEST_OK**) varre TODOS
+  os PNGs da pasta e falha com 1 px magenta visivel; confere tambem que todo item do
+  ITEMS tem icone desenhavel (incluindo as 5 chaves com raridade `espada#0..#4`).
+  Criterio de magenta = r > 0.78 E b > 0.78 E g < 0.31 (o mesmo do chroma key).
 
 ## VALIDACAO
 
 - Godot headless: 0 SCRIPT ERROR (validado apos cada fix)
+- Suite unitaria completa: `sh scripts/222ef96c095afc0b/test_all.sh` — **18/18 testes OK**
+  (inclui test_icons e test_map_check, que antes so imprimiam diagnostico sem dizer OK/FAIL)
+- `test_map_check.gd` agora e teste de verdade: falha se qualquer um dos 4 mapas
+  carregar <= 512px (o bug do cenario cinza nao pode voltar)
 - Preview visual: renderizado em artifacts/preview/ (mapas, player, monstros, icones)
 - O crash "free(): invalid pointer" no FIM do processo e do wrapper glibc do sandbox — nao afeta o jogo no Mac do usuario
 
