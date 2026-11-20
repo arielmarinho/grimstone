@@ -27,6 +27,24 @@ const TYPES = {
 	"dummy": {"hp": 9999, "dano": 0, "xp": 0, "vel": 0.0},  # alvo de treino: nunca morre, nao revida
 }
 
+# V0.6.47 (Area 42) — OFFSET DE PE' por tipo (px de textura, antes da escala).
+# Medido por tests/measure_mob_feet.gd = TARGET/scale - (CENTRO_do_pe_arte - 48),
+# onde centro = (min+max)/2 dos pes de idle+walk+attack nas 3 direcoes: e' o
+# valor MINIMAX (o que minimiza o pior desvio), nao a mediana — a mediana deixava
+# o rato 7px fora no quadro de walk/up.
+# dummy 0.0 = ja estava na linha (pe' 91, scale 1.15).
+const MOB_FEET_OFFSET = {
+	"rat": -10.1,     # pe' 88-94 (era 10px afundado)
+	"slime": -7.6,    # pe' 88-89 (era 11px afundado)
+	"bat": 15.4,      # pe' 63-68 (era 18px FLUTUANDO)
+	"spider": -2.5,
+	"wolf": -2.5,
+	"goblin": 1.5,    # pe' 85-88 (era 3.5px afundado)
+	"orc": -2.5,
+	"skeleton": 1.5,  # pe' 85-88 (era 3.5px afundado)
+	"dummy": -3.0,
+}
+
 var max_hp: int = 40
 var hp: int = 40
 var damage: int = 8
@@ -136,6 +154,16 @@ func _build_frames() -> void:
 	# mobs menores (rato/slime/bat) ganham presenca na tela (estilo Rucoy)
 	var small := mob_type in ["rat", "slime", "bat"]
 	sprite.scale = Vector2(1.4, 1.4) if small else Vector2(1.15, 1.15)
+	# V0.6.47 (Area 42) — LINHA DO CHAO dos monstros.
+	# Medido com tests/measure_mob_feet.gd: o pe' desenhado na celula vai de y=63
+	# (morcego) a y=91 (dummy), e o node era ancorado no CENTRO da celula sem
+	# offset. Resultado na tela: morcego flutuava 18px acima da linha do player,
+	# rato/slime afundavam 10-11px, goblin/esqueleto 3.5px. Cada corpo tem sua
+	# altura, entao o offset e' por TIPO (mesma regua do NpcArt: pes do knight =
+	# 46px abaixo do centro, Equips.KNIGHT_FEET_SCREEN).
+	# Valor = px de TEXTURA (antes da escala) que apoia a mediana dos quadros
+	# (idle/walk/attack nas 3 direcoes) na linha do chao.
+	sprite.offset = Vector2(0.0, MOB_FEET_OFFSET.get(mob_type, 0.0))
 
 func _strip_tex(t: Texture2D) -> Texture2D:
 	var im = t.get_image()
