@@ -1,3 +1,13 @@
+## v0.6.46 — NPCs na mesma linha do chao do player (Area 41)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG REAL medido (`game/tests/measure_npcs.gd`): o Mestre das Missoes e o Banqueiro eram desenhados em **scale 2.0 sem offset de pe'**. Na pratica: **144px de altura na tela** contra 99px do knight (1.45x mais altos) e o pe' a **84px** abaixo do centro contra **46px** do player — os dois NPCs ficavam **38px afundados no chao**, como se estivessem num buraco; o nome flutuava 95px acima da cabeca (agora 58px).
+- FIX estrutural: a arte dos NPCs saiu de dentro de `quest_npc.gd`/`bank.gd` para o modulo **puro** `scripts/world/npc_art.gd` — mesmo padrao de `walk_cycle.gd` e `frame_align.gd`, arte mensuravel/testavel sem levantar a cena. Expoe `SPRITE_SCALE` (1.3), `FEET_ART` (90) e `sprite_offset_y()`, derivado de `KNIGHT_FEET_SCREEN` = 46 — os dois NPCs usam a MESMA regua do player, sem numero magico duplicado.
+- Novo `tests/test_npc_art.gd` (**NPC_ART_TEST_OK**): pe' na linha do player com tolerancia de 1px, altura dentro de 15% do knight, sprite sem encostar na borda da celula (nao corta no mundo) e quest != banco (a arte nao pode ter virado a mesma imagem nos dois).
+- Novo `tests/measure_npcs.gd`: regua reutilizavel que mede pe' e altura de QUALQUER sprite procedural (player, 9 monstros, NPCs) e imprime o offset sugerido — serve pro proximo sprite que entrar no jogo.
+- Nada de arte binaria: continua tudo procedural em GDScript.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + **7/7 testes OK**.
+- Versao 0.6.46 / versionCode 77.
+
 ## v0.6.45 — Autosave: o progresso sobrevive ao app ser morto no celular
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG REAL: o jogo gravava **so em 4 momentos** — trocar de mapa, desbloquear a city2, respawn e sair pelo menu. No Android o sistema mata o app sem avisar (background, bateria, task killer). Tudo o que o jogador fez desde o ultimo save (XP, level, moedas, loot, quests, skills) ia embora. Com a gravacao atomica da v0.6.42 o arquivo nao corrompe mais, mas isso nao resolvia nada se ninguem gravava.
