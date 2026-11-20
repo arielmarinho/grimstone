@@ -9,6 +9,12 @@
 - Auditoria dos colliders vs arte NOVA (pos v0.6.23/24): 3 fixes aplicados — muralha SUL da city1 continua com abertura SO no bueiro (mundo x 920-1168), portao da cerca de treino da city1 visivel na arte (vao sem poste, mundo x 530-630), vao da ponte do lago exato (mundo y 986-1038)
 - Validacao: preview + check de pixels + 7/7 testes unitarios OK + run real 0 erros; tex_helper.gd pushado byte-exato (blob SHA 1633c848, 44999 bytes)
 
+### Area 38 — Animacao de caminhada por classe (ciclo 63, v0.6.41) OK
+- BUG: `druid/walk/down` com 4 quadros byte-identicos (quadril 0.0px) — personagem deslizava sem passo
+- Criterio de correcao = AMPLITUDE MEDIDA do quadril (<1.5px), nao "walk == idle" (esse pegava 7 folhas e estourava o envelope do knight 0.5-3.5px)
+- Modulo puro `walk_cycle.gd` + teste `test_walk_cycle.gd`; 3.0px de quadril no druid/down; nenhum PNG alterado
+- Validacao: headless 0 erros + 14 testes OK
+
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
 > Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
