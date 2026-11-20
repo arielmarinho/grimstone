@@ -5,6 +5,7 @@ extends CharacterBody2D
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const NETTARGET = preload("res://scripts/entities/net_target.gd")
 const MOBBAR = preload("res://scripts/entities/mob_bar.gd")
+const MOBSHADOW = preload("res://scripts/entities/mob_shadow.gd")
 
 # V0.6.49 (Area 43) — topo do corpo por tipo (px de TEXTE, medido da propria arte
 # ja sem o magenta). Preenchido uma vez por tipo em _build_frames e reaproveitado
@@ -171,6 +172,27 @@ func _build_frames() -> void:
 	# (idle/walk/attack nas 3 direcoes) na linha do chao.
 	sprite.offset = Vector2(0.0, MOB_FEET_OFFSET.get(mob_type, 0.0))
 	_position_hp_bar()
+	_build_shadow()
+
+## V0.6.50 (Area 44) — SOMBRA NO CHAO dos monstros.
+## O modulo mob_shadow.gd existia mas NUNCA era chamado (ficou orfao no commit da
+## area): os 9 tipos continuavam sem contato visual com o chao, enquanto player e
+## NPCs desenham sombra eliptica na mesma linha de pe' (46px). Uma textura 64x20
+## cacheada e compartilhada por todos os mobs; largura propria por tipo.
+func _build_shadow() -> void:
+	if sprite == null:
+		return
+	var sh := Sprite2D.new()
+	sh.name = "GroundShadow"
+	sh.texture = MOBSHADOW.texture()
+	sh.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# largura por tipo / largura da textura -> escala em x; altura fixa da regua
+	sh.scale = Vector2(MOBSHADOW.width_for(mob_type) / float(MOBSHADOW.TEX_W),
+		MOBSHADOW.height_screen() / float(MOBSHADOW.TEX_H))
+	sh.position = Vector2(0.0, MOBSHADOW.center_y())
+	sh.z_index = -1
+	add_child(sh)
+	move_child(sh, 0)
 
 ## V0.6.49 (Area 43) — BARRA DE VIDA derivada da ARTE.
 ## Era offset FIXO no .tscn (-44..-38) e, com o offset de pe' por tipo (v0.6.48),
