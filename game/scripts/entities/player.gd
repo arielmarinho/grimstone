@@ -6,6 +6,7 @@ extends CharacterBody2D
 const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const SKILLS = preload("res://scripts/autoload/skills_db.gd")
+const FRAME_ALIGN = preload("res://scripts/entities/frame_align.gd")
 
 signal feedback(msg: String)
 
@@ -176,61 +177,16 @@ func _build_frames() -> void:
 ## opacos na faixa de 25% a 55% da altura do corpo.
 ## ANTES media a faixa dos PES (25% de baixo): os pes BALANCAM quando o
 ## personagem anda/golpeia, entao o alinhador "corrigia" o passo e o sprite
-## deslizava dentro da propria animacao. Medido nos PNGs do repo (avaliador
-## independente = centro de massa do corpo): residual medio 3.39px -> 2.38px e
-## folhas com drift >=3px 16/39 -> 9/39 (pior 13.7px -> 8.2px). A MEDIANA
-## ignora arma/efeito que aparece so de um lado do corpo.
+## deslizava dentro da propria animacao.
+## v0.6.39: a logica saiu daqui para scripts/entities/frame_align.gd (modulo puro,
+## sem autoload) — este arquivo precisa de GameManager para compilar, e por isso
+## tests/test_align.gd NUNCA conseguia carregar a funcao. Estes wrappers ficam
+## para quem ja chama PlayerScript.align_frames.
 static func _body_center_img(im: Image) -> float:
-	var used: Rect2i = im.get_used_rect()
-	if used.size.x <= 0 or used.size.y <= 0:
-		return -1.0
-	var top_y: int = used.position.y + int(used.size.y * 0.25)
-	var bot_y: int = used.position.y + int(used.size.y * 0.55)
-	var xs: Array = []
-	for y in range(top_y, bot_y):
-		for x in range(used.position.x, used.position.x + used.size.x):
-			if im.get_pixel(x, y).a > 0.2:
-				xs.append(x)
-	if xs.is_empty():
-		return -1.0
-	xs.sort()
-	return float(xs[xs.size() / 2])
+	return FRAME_ALIGN.body_center_img(im)
 
-## Recentraliza os 4 quadros pelo centro do TRONCO. So age com drift > 3px, e
-## nunca em death (corpo deitado nao tem tronco estavel). PUBLICO e estatico
-## porque o avatar remoto (remote_player.gd) usa a MESMA regra — sem isso o
-## personagem do outro jogador "patinava" (as folhas novas tem 40-45px de drift).
 static func align_frames(texs: Array, anim: String) -> Array:
-	if anim == "death" or texs.size() < 4:
-		return texs
-	var centers: Array = []
-	for t in texs:
-		var im: Image = t.get_image()
-		if im == null:
-			return texs
-		im.convert(Image.FORMAT_RGBA8)
-		var c: float = _body_center_img(im)
-		if c < 0.0:
-			return texs
-		centers.append(c)
-	var drift: float = float(centers.max()) - float(centers.min())
-	if drift <= 3.0:
-		return texs
-	var out: Array = []
-	for i in range(texs.size()):
-		var im2: Image = texs[i].get_image()
-		im2.convert(Image.FORMAT_RGBA8)
-		var w: int = im2.get_width()
-		var h: int = im2.get_height()
-		var dx: int = int(round(w * 0.5 - centers[i]))
-		if dx == 0:
-			out.append(texs[i])
-			continue
-		var shifted := Image.create(w, h, false, Image.FORMAT_RGBA8)
-		shifted.fill(Color(0, 0, 0, 0))
-		shifted.blit_rect(im2, Rect2i(0, 0, w, h), Vector2i(dx, 0))
-		out.append(ImageTexture.create_from_image(shifted))
-	return out
+	return FRAME_ALIGN.align_frames(texs, anim)
 
 func _strip_tex(t: Texture2D) -> Texture2D:
 	var im = t.get_image()
