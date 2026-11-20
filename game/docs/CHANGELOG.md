@@ -21,6 +21,17 @@
 - Falta cobertura de save/load desde a v0.5 — era o subsistema com maior custo por bug (perda total de progresso) e o unico sem teste.
 - Versao 0.6.42 / versionCode 74.
 
+## v0.6.44 — Area 40: PERFIL LATERAL dos monstros (7 de 8 andavam de lado olhando pra camera)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG medido (nao presumido), `tests/measure_mobs3.gd`: em 7 dos 8 monstros o desenho pedido como `dir="side"` era **pixel-identico** ao `dir="down"` — slime 0, bat 0, spider 0, wolf 0, goblin 0, orc 0, skeleton 0 de diferenca; so o rato tinha perfil proprio (3728 px). O `mob.gd` escolhe `walk_side`/`idle_side` ao andar na horizontal e resolve o lado esquerdo com `flip_h`, entao o bicho atravessava a tela de lado com a cara sempre virada pra camera.
+- NOVO `game/scripts/entities/mob_sprites_side.gd`: perfil lateral desenhado por tipo (mesma paleta, mesma sombra, pes no mesmo y do `down`), olhando para a DIREITA (o lado esquerdo sai do `flip_h`). O lobo ganhou tambem uma vista FRONTAL no `down` — ele nao tinha: o `down` antigo era um perfil, por isso o `side` saia igual.
+- CENTRALIZACAO: `_finish()` desenha num buffer e cola o bbox centrado em x=48. Medido em `tests/measure_mobs4.gd`: os perfis crus saiam com centro entre 41 e 55 px (o certo e 48) e o orc com a arma encostando na borda; ao virar com `flip_h` o monstro saltava ~7px. Depois do fix: offset <=0.5px em todos os tipos/animacoes, zero overflow da celula 96x96.
+- Nada mais foi tocado: `down`/`up`/`death`/`dummy` continuam byte-identicos; o rato mantem o perfil proprio; nenhum PNG alterado (tudo procedural em runtime).
+- NOVO `tests/test_mob_side.gd`: MOB_SIDE_TEST_OK — side != down em idle/walk/attack (7 tipos), perfis centrados (cx 48 +-2) e pes colados no `down`, perfil do rato preservado, dummy segue estatico (esperado). Com `SAVE_IMG=1` grava a folha de conferencia.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + 10/10 testes OK (o novo + fusion, quests, scale, shop_weapons, runes, bank, bestiary, food, align).
+- Prova visual: `artifacts/preview/mobs_side.png` (down | side | side espelhado, 8 tipos).
+- Versao 0.6.44 / versionCode 75.
+
 ## v0.6.41 — Cadencia de WALK sintetizada onde o quadril nao move (druid/walk/down)
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG MEDIDO (nao presumido): `druid/walk/down` tem os 4 quadros **byte-identicos** no PNG (1 hash unico) e amplitude do quadril 0.0px — o personagem atravessa a tela deslizando, sem perna nenhuma. A varredura das 12 folhas de walk mostrou que esse e o UNICO caso realmente parado (knight/side 0.5px, knight/down 1.5px, druid/side 2.0px, paladin/down 2.0px, druid/up 4.0px, mage/down 4.5px, mage/up 5.5px).
