@@ -1,3 +1,11 @@
+## v0.6.50 — Sombra no chao dos monstros (Area 44)
+Formato: codigo no GitHub (push MCP), docs pushados
+- **BUG REAL**: player e NPCs desenham uma sombra eliptica apoiada na linha do pe' (`KNIGHT_FEET_SCREEN = 46px`), mas os **9 tipos de monstro nao tinham sombra nenhuma**. Ao lado do knight, o bicho parecia colado no tileset sem contato com o chao — e o problema so cresceu depois do offset de pe' por tipo (v0.6.48), que deixou cada corpo terminar num y diferente.
+- FIX: novo modulo **puro** `scripts/entities/mob_shadow.gd` (`texture()`, `center_y()`, `bottom_y()`, `width_for()`) — mesma regua do resto do projeto. A base da sombra fica **exatamente** na linha do pe' (46px), alpha 0.25 no centro (igual ao player e aos NPCs), queda suave ate 0 na borda (nada de quadrado preto) e **largura propria por tipo** (morcego 22px a lobo 38px), 6 valores distintos entre os 9 tipos.
+- `mob.gd`: `_build_shadow()` roda no `_build_frames()` e cria um `Sprite2D` `GroundShadow` com `z_index = -1`, movido para o primeiro slot do mob (desenha atras do corpo). **Uma unica textura de 64x20** e' cacheada e compartilhada pelos 9 tipos (nao uma por bicho) — custo de memoria irrelevante e nada de novo asset binario no repo.
+- Novo `tests/test_mob_shadow.gd` (**MOB_SHADOW_TEST_OK**): trava a base da sombra na linha do pe' (tolerancia 0.6px), exige sombra fina (2..12px), alpha 0.25+/-0.06, **zero alpha nas 4 bordas e nos 4 cantos** da textura, preto puro, e falha se a textura for recriada (cache) ou se todos os tipos usarem a mesma largura.
+- Validacao: Godot 4.7.2 headless + suite completa. Versao 0.6.50.
+
 ## v0.6.49 — Barra de vida do monstro na altura da cabeca (Area 43)
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG REAL medido (novo `tests/measure_bar.gd`): o `ProgressBar` da barra de vida e filho de cada mob com offset **FIXO** no `.tscn` (-44..-38). Ate a v0.6.48 isso passava despercebido porque todos os sprites tinham o mesmo topo aparente; com o **offset de pe' por tipo** (v0.6.48) cada corpo passou a terminar num y diferente. Medido em px de tela contra o topo real da arte: **slime/morcego/aranha -50px** (barra boiando 50px acima da cabeca), rato -7.5px (colada no corpo), orc -14.7px. Um numero magico no `.tscn` que nao conhece nem a arte nem a escala.
