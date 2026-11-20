@@ -49,6 +49,7 @@
 | 29 | **Area 6 UI/UX re-auditada** | gs-ui-ux | paineis exclusivos (HUD.close_all_panels + grupo npc_panel: loja/banco/missoes), versao centralizada GameManager.GAME_VERSION (titulo hardcoded v0.6.17), dica de teclas c/ Z/X | OK ciclo 56 (v0.6.28) — 7/7 testes + run real 0 erros |
 | 28 | **Player ARTE REAL 4 direcoes + fallback** | gs-pixel-art + gs-qa-testing | up/side = b64 real proprio; fallback v0.6.17/19 sem o b64; preview_final3 + check_real4 | OK ciclo 47 (v0.6.21) — pendente push dos 6 b64 |
 | 31 | **Animacao de caminhada das classes** | gs-pixel-art | walk vs idle das folhas paladino/mago/druida, leitura de passo | AUDITADO ciclo 60 (v0.6.34) — walk era identico ao idle em 3 classes (personagem deslizava); fix `_walk_variation` no tex_helper (balanco de passo sintetizado, so onde nao ha passada real) |
+| 39 | **Persistencia / Save** | gs-qa-testing | gravacao atomica, backup, save corrompido, compatibilidade com save antigo | AUDITADO ciclo 22:15 (v0.6.42) — 2 bugs reais: gravacao nao-atomica (kill do Android no meio da escrita destruia o save pra sempre) e `load` estourava SCRIPT ERROR com tipos errados; fix .tmp->.bak->save + load blindado + SAVE_TEST_OK (36 asserts) |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -218,3 +219,11 @@
 - BUG: andando para os lados Paladino/Mago/Druida apareciam de costas; flip_h calculado por presuncao, nao pela arte
 - MEDIDO: 3 folhas novas olham a DIREITA; knight (.b64 + procedural) a ESQUERDA -> player.gd + remote_player.gd corrigidos
 - Validacao: gdparse OK, headless import 0 erros, render ampliado 20x (artifacts/side_single.png, artifacts/knight_side.png)
+
+### Area 39 — Persistencia/Save (ciclo 22:15, v0.6.42) AUDITADO
+- **Gravacao nao-atomica** (bug real, medido): `save_game()` escrevia direto no `savegame.json`. Simulacao de kill no meio da escrita (arquivo truncado): `load` devolvia false, level caia pra 1, e o proximo save apagava o resto. Num celular esse e o cenario NORMAL (app morto em background).
+- **Load sem checagem de tipo** (bug real): `int()` sobre `"muitos"` estourava `SCRIPT ERROR` em `load_game` — jogo ficava com estado pela metade. Reproduzido com `{"level":"muitos","skills":5,"bag":[1,2]}`.
+- FIX: gravacao atomica `savegame.tmp` -> verifica JSON relendo -> promove `savegame.bak` -> renomeia; e load blindado (`_read_save` com `JSON.parse`, fallback pro `.bak`, `_as_int`/`_as_dict`/sanitizadores por colecao).
+- `tests/test_save.gd` (NOVO, 36 asserts) cobre roundtrip, backup, truncado, tipos errados, lixo na mochila, save antigo (v0.5) e ausencia de arquivo. 14/14 testes OK, headless 0 erros.
+- Pendente de teste real: no Mac/Android, matar o app logo apos salvar e reabrir (deve manter o progresso).
+
