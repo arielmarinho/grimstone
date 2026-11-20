@@ -340,6 +340,10 @@ func switch_map(name: String, arrive_pos = null) -> void:
 	sprite.centered = false
 	sprite.scale = Vector2(2, 2)
 	map_layer.add_child(sprite)
+	# MINIMAPA (v0.6.40): mesma textura do mapa, sem custo extra de memoria
+	if has_node("HUD") and $HUD.has_method("minimap_set_map"):
+		var ws := Vector2(float(sprite.texture.get_width()) * 2.0, float(sprite.texture.get_height()) * 2.0)
+		$HUD.minimap_set_map(sprite.texture, ws, MAPS[name].get("exits", []))
 	if player != null:
 		# portao correspondente (chegando de outro mapa) ou spawn default
 		player.global_position = arrive_pos if arrive_pos != null else MAPS[name]["player_spawn"]
