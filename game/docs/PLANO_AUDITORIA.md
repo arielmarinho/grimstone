@@ -1,3 +1,10 @@
+### Area 43 — Decoracao das cidades na linha do chao (ciclo 19/11 23:55, v0.6.48) OK
+- **BUG medido** (`tests/measure_decor.gd`): `Sprite2D` de todo decor e' centrado no node (scale 2.0) SEM offset -> cada objeto apoiava num y diferente. Desvios para o pe' do player (46px): FLOWERS -22px (flutuando), CRATE -10px, BARREL -2px, STALL +6px, LAMP +14px (afundado), FLAG +14px.
+- **Fix**: `decor.gd` -> `feet_offset(tex)` derivado do ultimo pixel opaco da ARTE (mexer no desenho nao desalinha), usando a regua unica `KNIGHT_FEET_SCREEN = 46px` (player/monstros/NPCs/decor). Colisor dos solidos (barril/caixote/barraca) passou a acompanhar a altura desenhada (antes o circulo de 26px ficava 26px acima do pe' e dava pra entrar dentro do barril pela base). Brilho do poste segue a LAMPADA com o mesmo offset.
+- **Trava**: `tests/test_decor_feet.gd` = DECOR_FEET_TEST_OK (6 objetos com desvio 0.00px; tipo invalido, arte encostando na borda lateral/topo reprovam).
+- Validacao: gdparse OK, `--import` 0 erros, boot real (main.tscn) 0 erros, **20/20 testes**. Prova: `artifacts/preview/decor_line.png` (medido por pixel: antes 5.5/13.5px de desvio, depois 0.5px = arredondamento de escala).
+- **Proximo**: build AAB (export_format=1) no Mac do usuario; decisao de quantizacao das folhas das classes novas.
+
 ### Area 28 — Player ARTE REAL nas 4 direcoes + fallback (ciclo 47, v0.6.21) OK
 - Player up/side usam ARTE REAL PROPRIA (b64 up/side no estilo da referencia) quando existir; fallback v0.6.17/v0.6.19 sem o b64 — nunca fica sem animacao
 - Validacao visual obrigatoria: preview_final3 (artifacts/player_real4_dirs.png) + check_real4 programatico (up = costas: 1 px de pele vs 114 no down; up/side = 3000+ px diferentes do down)
