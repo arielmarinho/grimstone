@@ -234,11 +234,16 @@ func net_send_mob_state(mob: Node, map: String, anim: String) -> void:
 	if not is_server:
 		return
 	var mid = mob.get_instance_id()
-	var d = {"t": mob.mob_type, "p": mob.global_position, "m": map, "a": anim, "hp": mob.hp, "mhp": mob.max_hp, "d": mob.dead}
+	var d = {"t": mob.mob_type, "p": mob.global_position, "m": map, "a": anim,
+			"hp": mob.hp, "mhp": mob.max_hp, "d": mob.dead,
+			# dano desde o ultimo snapshot -> cliente mostra o numero de dano ONLINE
+			"hd": mob.net_dmg_acc, "hc": mob.net_dmg_crit}
+	mob.net_dmg_acc = 0
+	mob.net_dmg_crit = false
 	mobs[mid] = d
 	_rpc_mob_state.rpc(mid, d)
 
-func net_mob_take_damage(mob: Node, dmg: int, from_id: int) -> void:
+func net_mob_take_damage(mob: Node, dmg: int, from_id: int, crit: bool = false) -> void:
 	# servidor valida (vivo + range do atacante) e aplica
 	if not is_server:
 		return
@@ -247,7 +252,11 @@ func net_mob_take_damage(mob: Node, dmg: int, from_id: int) -> void:
 	var attacker = players.get(from_id, {}).get("pos", Vector2.INF)
 	if attacker != Vector2.INF and attacker.distance_to(mob.global_position) > 400.0:
 		return
-	mob.take_damage(dmg, from_id)
+	# acumula o dano aplicado para o proximo snapshot carregar o numero (cliente)
+	mob.set("net_dmg_acc", int(mob.get("net_dmg_acc")) + dmg)
+	if crit:
+		mob.set("net_dmg_crit", true)
+	mob.take_damage(dmg, from_id, crit)
 
 @rpc("authority", "call_remote", "unreliable_ordered")
 func _rpc_mob_state(id: int, data: Dictionary) -> void:
@@ -264,7 +273,7 @@ func _rpc_mob_removed(id: int = 0) -> void:
 	_lag_delay(func(): mob_removed.emit(id))
 
 @rpc("any_peer", "call_remote", "reliable")
-func _rpc_mob_damage(mob_id: int, dmg: int) -> void:
+func _rpc_mob_damage(mob_id: int, dmg: int, crit: bool = false) -> void:
 	if not is_server:
 		return
 	var sender = multiplayer.get_remote_sender_id()
@@ -272,17 +281,17 @@ func _rpc_mob_damage(mob_id: int, dmg: int) -> void:
 		return
 	for m in get_tree().get_nodes_in_group("mobs"):
 		if m.get_instance_id() == mob_id:
-			net_mob_take_damage(m, dmg, sender)
+			net_mob_take_damage(m, dmg, sender, crit)
 			return
 
 signal damage_local_player(dmg: int)   # servidor manda dano pro player local (cliente)
 signal mob_reward(xp: int, loot: Array, pos: Vector2, mob_type: String)  # xp/loot do mob que EU matei
 
-func request_mob_damage(mob_id: int, dmg: int) -> void:
+func request_mob_damage(mob_id: int, dmg: int, crit: bool = false) -> void:
 	# cliente pede pro servidor aplicar dano no mob (servidor valida)
 	if not is_online() or is_server:
 		return
-	_rpc_mob_damage.rpc_id(1, mob_id, dmg)
+	_rpc_mob_damage.rpc_id(1, mob_id, dmg, crit)
 
 @rpc("authority", "call_remote", "reliable")
 func _rpc_damage_player(dmg: int) -> void:
