@@ -14,11 +14,11 @@ extends RefCounted
 ## TRONCO (25-55% da altura). Alternativas avaliadas e DESCARTADAS com medida:
 ##   - pes (faixa de baixo): balancam ao andar/golpear -> o passo era lido como
 ##     drift e "corrigido", anulando a animacao (era o bug da v0.6.35);
-##   - centro de massa 20-80%: o braco/efeito que se estende de um lado arrasta
-##     a media. No `mage/attack`, medindo por marco RIGIDO (cabeca, 0-22%), o
-##     drift entre quadros fica 7.5px contra 1.5px da ancora do tronco;
-##   - escolher a ancora por folha: decidia com o centro de massa, repetindo o
-##     erro acima (media 1.17px / pior 5.0 contra 0.90px / 2.7 da ancora fixa).
+##   - centro de massa 20-80%: o efeito magico que entra de lado no quadro
+##     arrasta a media — em `mage/attack` piora o jitter de 2.7 para 5.0px;
+##   - escolher a ancora por folha por "qual deixa o corpo mais parado": decidia
+##     com o centro de massa, e portanto repetia o erro acima. Medido: media
+##     1.17px / pior 5.0px contra 0.90px / 2.7px da ancora fixa do tronco.
 ## Medido nas 36 folhas (avaliador: jitter do perfil de colunas por correlacao
 ## cruzada, independente da ancora): base 4.29px medio/16.0 pior -> 0.90/2.7.
 ##
