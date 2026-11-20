@@ -3,6 +3,7 @@ extends Node2D
 
 const ITEMS_DB = preload("res://scripts/autoload/items_db.gd")
 const RARITY = preload("res://scripts/autoload/rarity.gd")
+const GROUND = preload("res://scripts/entities/ground_item.gd")
 
 var item_id := "moeda"
 var qty := 1
@@ -14,19 +15,22 @@ func setup(id: String, q: int) -> void:
 func _ready() -> void:
 	var sprite = Sprite2D.new()
 	sprite.texture = ITEMS_DB.draw_icon(item_id, 20)
+	# Area 45: o node nasce no CENTRO da celula do monstro; sem este offset o icone
+	# pousava 36px ACIMA da linha do chao (parecia flutuar). Ver ground_item.gd.
+	sprite.position = Vector2(0.0, GROUND.base_offset(20.0))
 	add_child(sprite)
 	# armas com tier: aura colorida da raridade embaixo do icone
 	var tier := RARITY.tier_of(item_id)
 	if tier > 0:
 		var aura = Sprite2D.new()
 		aura.texture = _make_aura(RARITY.cor(tier))
-		aura.position = Vector2(0, 4)
+		aura.position = Vector2(0, GROUND.aura_center_y())
 		aura.z_index = -1
 		add_child(aura)
 		move_child(aura, 0)
 	var tw = create_tween()
-	tw.tween_property(sprite, "position:y", -12.0, 0.22).as_relative()
-	tw.tween_property(sprite, "position:y", 12.0, 0.22).as_relative()
+	tw.tween_property(sprite, "position:y", GROUND.bob_peak(20.0), 0.22)
+	tw.tween_property(sprite, "position:y", GROUND.base_offset(20.0), 0.22)
 
 func _make_aura(c: Color) -> ImageTexture:
 	var img = Image.create(26, 26, false, Image.FORMAT_RGBA8)
