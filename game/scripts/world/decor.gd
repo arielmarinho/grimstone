@@ -37,6 +37,49 @@ const CITY2_DECOR := [
 	[STALL, Vector2(1320, 380), true],
 ]
 
+# ---------- LINHA DO CHAO (Area 43, v0.6.48) ----------
+# Medido com tests/measure_decor.gd: o Sprite2D da decoracao e' centrado na posicao
+# do node com scale 2.0 e SEM offset, entao cada objeto apoiava o pe' num y diferente:
+#   canteiro de flores  24px (22px FLUTUANDO acima do chao)
+#   caixote             36px (10px flutuando)
+#   barril              44px (2px)
+#   barraca             52px (6px afundada)
+#   poste de luz        60px (14px afundado)
+#   bandeira            60px (14px afundado)
+# A regua e' a MESMA do player/monstros/NPCs: pe' a KNIGHT_FEET_SCREEN abaixo do
+# centro do node (Equips.KNIGHT_FEET_SCREEN). O offset e' derivado da PROPRIA arte
+# (ultimo pixel opaco de cada textura), entao mexer no desenho nao desalinha.
+const KNIGHT_FEET_SCREEN := 46.0
+const SPRITE_SCALE := 2.0
+
+static func feet_offset(tex: Texture2D) -> float:
+	var img: Image = tex.get_image()
+	if img == null:
+		return 0.0
+	img.convert(Image.FORMAT_RGBA8)
+	var base := -1
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			if img.get_pixel(x, y).a >= 0.5:
+				base = y
+				break
+	if base < 0:
+		return 0.0
+	return KNIGHT_FEET_SCREEN / SPRITE_SCALE - (float(base) + 1.0 - float(img.get_height()) * 0.5)
+
+static func feet_offset_y(kind: int) -> float:
+	return feet_offset(_tex_of(kind))
+
+static func _top_px(tex: Texture2D) -> int:
+	var img: Image = tex.get_image()
+	if img == null:
+		return 0
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			if img.get_pixel(x, y).a >= 0.5:
+				return y
+	return 0
+
 static func build_decor(map_name: String, parent: Node) -> void:
 	var items: Array = []
 	if map_name == "city1":
@@ -61,16 +104,31 @@ static func build_decor(map_name: String, parent: Node) -> void:
 			root = Node2D.new()
 			root.position = pos
 			parent.add_child(root)
+		var tex := _tex_of(it[0])
+		var off := feet_offset(tex)
 		var spr = Sprite2D.new()
-		spr.texture = _tex_of(it[0])
+		spr.texture = tex
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		spr.scale = Vector2(2, 2)
+		spr.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
+		spr.offset = Vector2(0.0, off)
 		root.add_child(spr)
+		if solid:
+			# o colisor acompanha a ARTE: antes ficava no centro do node (26px acima
+			# do pe' desenhado), entao dava pra entrar "dentro" do barril pela base.
+			var cs2 = root.get_child(0)
+			if cs2 is CollisionShape2D:
+				var sh2 = cs2.shape
+				if sh2 is CircleShape2D:
+					var top_screen: float = (float(_top_px(tex)) + 0.5 - float(tex.get_height()) * 0.5 + off) * SPRITE_SCALE
+					var base_screen := KNIGHT_FEET_SCREEN
+					sh2.radius = clampf((base_screen - top_screen) * 0.42, 14.0, 30.0)
+					cs2.position = Vector2(0.0, (top_screen + base_screen) * 0.5)
 		if it[0] == LAMP:
 			var glow = Sprite2D.new()
 			glow.texture = _tex_glow()
-			glow.position = Vector2(0, -52)
-			glow.scale = Vector2(2, 2)
+			# brilho segue a LAMPADA (y de arte ~8) com o mesmo offset do poste
+			glow.position = Vector2(0.0, (8.0 + 0.5 - float(tex.get_height()) * 0.5 + off) * SPRITE_SCALE)
+			glow.scale = Vector2(SPRITE_SCALE, SPRITE_SCALE)
 			var mat = CanvasItemMaterial.new()
 			mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 			glow.material = mat
