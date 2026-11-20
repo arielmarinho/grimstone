@@ -176,7 +176,7 @@
 - Validacao: `tests/test_damage_numbers.gd` DAMAGE_NUMBERS_TEST_OK + test_scale + test_shop_weapons OK, `--import` e run real 0 erros
 - Pendente: julgamento visual no Mac + teste online 2 clientes
 
-### Area 34 — Ancora do alinhamento de quadros (ciclo 63, v0.6.38) OK
+### Area 35 — Ancora do alinhamento de quadros (ciclo 63, v0.6.38) OK
 - BUG: o alinhador de quadros (v0.6.35) media a faixa dos PES — que balanca ao andar/golpear; o movimento era lido como drift e "corrigido", anulando o passo
 - MEDIDO com avaliador independente (centro de massa, 20-80% da altura): residual medio 3.39px, pior 13.7px, 16/39 folhas >=3px -> depois 2.38px, 8.2px, 9/39
 - FIX: ancora no TRONCO (mediana dos x na faixa 25-55%) em `_body_center_img`; `_align_frames` -> `align_frames` publico
