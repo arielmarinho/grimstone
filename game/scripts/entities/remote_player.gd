@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## O servidor manda posição 15Hz; aqui só interpola e anima
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
-const PlayerScript = preload("res://scripts/entities/player.gd")
+const FRAME_ALIGN = preload("res://scripts/entities/frame_align.gd")
 
 var peer_id: int = 0
 var display_name: String = "???"
@@ -101,7 +101,7 @@ func _build_frames() -> void:
 		# MESMA ancora de quadro do player (v0.6.38). Antes o avatar remoto nao
 		# alinhava nada: as folhas novas do usuario tem 40-45px de drift entre o
 		# 1o e o 4o quadro, entao o outro jogador "patinava" na tela.
-		texs = PlayerScript.align_frames(texs, anim)
+		texs = FRAME_ALIGN.align_frames(texs, anim)
 		sf.add_animation(anim)
 		var anim_speed: float = 12.0 if weapon.split("#")[0] == "druid_staff" and anim.begins_with("attack") else 8.0
 		sf.set_animation_speed(anim, anim_speed)
