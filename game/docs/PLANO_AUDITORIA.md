@@ -17,6 +17,14 @@
 
 # GRIMSTONE — Plano de Auditoria por Especialistas
 
+### Area 40 — Perfil lateral dos monstros (ciclo 64, v0.6.44) OK
+- BUG medido: 7/8 monstros desenhavam `side` pixel-identico ao `down` (diff 0) — andavam de lado virados pra camera. So o rato tinha perfil.
+- Fix: `mob_sprites_side.gd` (perfil por tipo, olhando pra direita; esquerda = flip_h) + buffer centralizado em x=48 (`_finish`). Antes o perfil saia com centro 41-55px e saltava ~7px ao virar.
+- Lobo ganhou vista FRONTAL no `down` (o down antigo era o proprio perfil).
+- Teste `tests/test_mob_side.gd` = MOB_SIDE_TEST_OK; `measure_mobs3/4` ficaram como ferramenta de medicao.
+- Validacao: headless 0 erros + 10/10 testes. Prova: artifacts/preview/mobs_side.png
+
+
 > Metodo: cada especialista audita SUA area do jogo do zero, aponta problemas,
 > melhora ate aprovar. So entao passa pra proxima area. O usuario valida cada uma no final.
 
