@@ -7,6 +7,7 @@ const EQUIPS = preload("res://scripts/autoload/equips.gd")
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const SKILLS = preload("res://scripts/autoload/skills_db.gd")
 const FRAME_ALIGN = preload("res://scripts/entities/frame_align.gd")
+const PLAYERSHADOW = preload("res://scripts/entities/player_shadow.gd")
 
 signal feedback(msg: String)
 
@@ -121,6 +122,11 @@ func _build_frames() -> void:
 	# e os PES no chao: crescer em torno do centro da celula afundaria o
 	# personagem (medido 18-26px). Ver Equips.sprite_offset_y_for.
 	sprite.offset = Vector2(0.0, Equips.sprite_offset_y_for(base_w))
+	# V0.6.52 (Area 46) — SOMBRA NO CHAO do player. Era a UNICA entidade sem
+	# contato visual com o chao depois das Areas 42-45 (mobs, NPCs, decoracao e
+	# loot ja tinham sombra). Largura por CLASSE medida na arte; base da sombra
+	# na linha do pe' de 46px. Ver player_shadow.gd.
+	PLAYERSHADOW.attach(self, base_w)
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
