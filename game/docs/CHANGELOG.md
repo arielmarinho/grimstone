@@ -1,3 +1,13 @@
+## v0.6.48 — Monstros na mesma linha do chao do player (Area 42)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG REAL medido (novo `tests/measure_mob_feet.gd`): o node do mob e ancorado no **centro** da celula 96 **sem offset de pe**, e o pe desenhado varia de y=63 (morcego) a y=91 (dummy). Na tela, contra a linha do knight (46px abaixo do centro): o **morcego flutuava 18px**, **rato 10px e slime 11px afundados**, goblin/esqueleto 3.5px afundados. Todo bicho parecia pairar ou afundar no chao do mapa.
+- FIX: tabela `MOB_FEET_OFFSET` no `mob.gd` (um valor por TIPO, px de textura antes da escala) aplicada em `sprite.offset.y`. O valor de cada tipo e **minimax** (centro do intervalo de pes de idle+walk+attack nas 3 direcoes), nao a mediana — a mediana deixava o rato **7.2px** fora no `walk/up` porque os quadros de passo escavam abaixo do idle.
+- Regua unica compartilhada com player e NPCs: pes do knight a 46px do centro (`Equips.KNIGHT_FEET_SCREEN`); nenhum numero magico novo no arquivo, so a tabela medida.
+- Novo `tests/test_mob_feet.gd` (**MOB_FEET_TEST_OK**): 9 tipos x 3 direcoes x 4 quadros x idle/walk/attack, pior desvio <= 5px e falha se a tabela ficar toda em zero (que era exatamente o bug).
+- Medido depois do fix: rat 4.3px, bat 3.6px, todos os outros <= 1.7px de pior caso no ciclo inteiro de animacao.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + suite completa OK (19/19 com o teste novo).
+- Versao 0.6.48 / versionCode 79 (entra na primeira build de teste no Mac; a primeira build publicavel continua sem bump anterior).
+
 ## v0.6.47 — Suite de testes fechada: icones sem rosa MEDIDO + trava do cenario cinza
 Formato: codigo no GitHub (push MCP), docs pushados. SEM bump de versao no jogo (so testes e docs — nenhuma mudanca de gameplay).
 - **"ICONES COM FUNDO ROSA" (item pendente do PLANO_POLISH_VISUAL) = RESOLVIDO, medido e nao presumido**: 23 PNGs de `assets/icons/` (32x32, 23.552 pixels) varridos com o criterio do chroma key (r > 0.78 E b > 0.78 E g < 0.31) -> **0 px magenta visivel**; os 21 icones de item tem fundo transparente (632-894 px com alpha 0 cada). A causa historica (chroma key antigo) nao existe mais: `items_db.draw_icon()` abre o PNG com alfa e so desenha por codigo quando o PNG falta.
