@@ -1,7 +1,21 @@
 extends Node2D
 ## Sprites procedurais dos monstros (slime, morcego, aranha, lobo, goblin, orc, esqueleto)
 
+const SIDE := preload("res://scripts/entities/mob_sprites_side.gd")
+
 static func draw_mob(img: Image, type: String, f: int, is_attack: bool, is_death: bool, is_walk: bool, dir: String = "down") -> void:
+	# v0.6.42 (Area 39): PERFIL LATERAL de verdade. Antes o ramo de cada tipo
+	# ignorava dir="side" e desenhava o mesmo que "down" (diff medido = 0 pixels
+	# em slime/bat/spider/wolf/goblin/orc/skeleton) — o monstro andava de lado
+	# olhando pra camera. Ver mob_sprites_side.gd.
+	if dir == "side" and type != "rat" and type != "dummy":
+		SIDE.draw(img, type, f, is_attack, is_death, is_walk)
+		return
+	# o lobo nao tinha vista FRONTAL: o "down" dele era um perfil (por isso o
+	# side saia identico). Aqui o down passa a ser de frente.
+	if type == "wolf" and dir == "down":
+		SIDE.draw_front(img, type, f, is_attack, is_death, is_walk)
+		return
 	match type:
 		"rat":
 			_draw_rat(img, f, is_attack, is_death, is_walk, dir)
