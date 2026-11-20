@@ -60,13 +60,13 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 		# do usuario fica INTACTA (AGENTS.md: preservar a referencia).
 		if _is_knight_sheet(path) and (tunic != "castanho" or hair != "castanho"):
 			img = _recolor_real(img, hair, tunic)
-		# folhas sem passada propria (walk == idle) ganham balanco sintetizado
-		# v0.6.41: cadencia sintetizada so onde o quadril nao move (druid/walk/down).
-		# O crivo antigo ("walk == idle") pegava 7 folhas e estourava o envelope de
-		# movimento do knight; agora e' a amplitude MEDIDA que decide.
-		if "/walk/" in path:
-			if WalkCycle.needs_cadence(img):
-				img = WalkCycle.apply(img)
+		# V0.6.42 — cadencia so onde a folha REALMENTE nao tem passo, decidido por
+		# IDENTIDADE (v0.6.41 usava amplitude do quadril: tocava o knight e deixava
+		# paladino/mago deslizando — ver o cabecalho de walk_cycle.gd).
+		#   1 hash => os 4 quadros sao o mesmo quadro
+		#   walk == idle byte a byte => andar e' respirar parado
+		if "/walk/" in path and WalkCycle.needs_cadence(img, _idle_of(path)):
+			img = WalkCycle.apply(img)
 		var out: Array[Texture2D] = []
 		var fw = img.get_width() / 4
 		for i in range(4):
@@ -77,6 +77,21 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 	return _procedural(path, weapon, hair, tunic)
 
 ## Folhas do pipeline (paladino/mago/druida) vem do usuario, nao da arte do knight.
+## A folha de IDLE correspondente a uma de walk (para o crivo de identidade).
+## Devolve null quando nao existe (folha procedural/sem par) — o crivo (a) roda.
+static func _idle_of(walk_path: String) -> Image:
+	var p: String = walk_path.replace("/walk/", "/idle/").replace("_walk_", "_idle_")
+	var im := _load_image(p)
+	if im == null:
+		# knight: walk tem sufixo _base, idle tambem
+		im = _load_image(p.replace("_base", ""))
+	if im == null:
+		im = _load_image(p + ".b64")
+	if im != null:
+		im.convert(Image.FORMAT_RGBA8)
+	return im
+
+
 static func _is_knight_sheet(path: String) -> bool:
 	return "/player/knight/" in path
 
