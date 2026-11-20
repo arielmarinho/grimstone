@@ -1,7 +1,7 @@
 extends Node
-## FX (v0.6.15) — numeros flutuantes de RECOMPENSA (XP, moedas, cura, mana, skill up).
-## O dano ja tinha numero flutuante no mob.gd; aqui cobre o que o player GANHA.
-## Autoload conectado aos sinais do GameManager — 100% procedural, zero assets.
+## FX — numeros flutuantes de texto (v0.6.38): recompensa (XP, moedas, cura, mana,
+## skill up) E dados de combate (dano no mob, critico, dano no player).
+## 100% procedural, zero assets; autoload conectado aos sinais do GameManager.
 
 func _ready() -> void:
 	if GameManager != null:
@@ -17,10 +17,10 @@ func _player_pos() -> Vector2:
 		return Vector2.ZERO
 	return players[0].global_position
 
-func float_text(pos: Vector2, text: String, color: Color, size: int = 14) -> void:
+func float_text(pos: Vector2, text: String, color: Color, size: int = 14, rise: float = 30.0) -> Label:
 	var parent := get_tree().current_scene
 	if parent == null:
-		return
+		return null
 	var l = Label.new()
 	l.text = text
 	l.position = pos + Vector2(-30, -55 + randf() * 10.0 - 5.0)
@@ -29,11 +29,41 @@ func float_text(pos: Vector2, text: String, color: Color, size: int = 14) -> voi
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	l.add_theme_constant_override("outline_size", 4)
 	l.z_index = 50
+	# escala a partir do centro do texto, nao do canto
+	l.pivot_offset = Vector2(0, size)
 	parent.add_child(l)
 	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 30.0, 0.8)
+	tw.tween_property(l, "position:y", l.position.y - rise, 0.8)
 	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.8)
 	tw.tween_callback(l.queue_free)
+	return l
+
+## NUMERO DE DANO — fonte unica (v0.6.38). Antes cada arquivo tinha a sua copia
+## (mob.gd _spawn_damage_number, player.gd/projectile.gd _spawn_crit_text) e o
+## caminho ONLINE nao mostrava numero nenhum: o mob no cliente e espelho e quem
+## aplica o dano e o servidor. Agora todos chamam aqui.
+## kind: "mob" (normal), "crit" (dourado grande), "hurt" (vermelho, dano no player).
+func damage_number(pos: Vector2, amount: int, crit: bool = false, kind: String = "mob") -> void:
+	if amount <= 0:
+		return
+	var txt := str(amount)
+	var col := Color(1.0, 0.95, 0.75)
+	var size := 15
+	var rise := 28.0
+	if crit or kind == "crit":
+		txt = "%d!" % amount
+		col = Color(1.0, 0.72, 0.15)
+		size = 19
+		rise = 34.0
+	elif kind == "hurt":
+		col = Color(1.0, 0.35, 0.3)
+		size = 16
+	var l := float_text(pos + Vector2(0, -8), txt, col, size, rise)
+	# "pop": o numero nasce maior e assenta rapido (peso do golpe)
+	if l != null and is_instance_valid(l):
+		l.scale = Vector2(1.45, 1.45)
+		var tw = l.create_tween()
+		tw.tween_property(l, "scale", Vector2.ONE, 0.12)
 
 func _on_xp_gained(amount: int) -> void:
 	var p := _player_pos()
