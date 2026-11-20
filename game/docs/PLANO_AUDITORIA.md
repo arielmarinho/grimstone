@@ -176,6 +176,15 @@
 - Validacao: `tests/test_damage_numbers.gd` DAMAGE_NUMBERS_TEST_OK + test_scale + test_shop_weapons OK, `--import` e run real 0 erros
 - Pendente: julgamento visual no Mac + teste online 2 clientes
 
+### Area 36 — Ancora do alinhamento: centro de MASSA (ciclo, v0.6.39) OK
+- BUG: a ancora da Area 35 (mediana do tronco 25-55%) ainda PIORAVA 3 folhas — no ataque do mago o braco esticado domina a faixa e o alinhador empurrava o corpo para o lado (drift 5.2 -> 8.2px)
+- ESCOLHA MEDIDA, nao intuida: 4 candidatas x 3 avaliadores independentes entre si e da ancora (bbox_center / com_10_90 / linha do quadril). Folhas com residual >6px: tronco 5/3/5, pes 6/0/6, cabeca 8/3/5, centro de massa 1/0/2 — vence nos tres
+- FIX: `game/scripts/entities/frame_align.gd`, modulo PURO (sem autoload): `body_center_img` (COM na faixa 20-80%) + `align_frames`. player.gd e remote_player.gd usam o mesmo modulo
+- TESTE consertado: `tests/test_align.gd` estava commitado e QUEBRADO (preloadava player.gd, que exige GameManager; em `-s` nenhum autoload existe). Agora roda o modulo puro, decodifica .b64 do knight e mede por avaliador independente -> ALIGN_TEST_OK
+- Medido: drift medio 23.55px -> 0.79px, pior 2.2px (limite 6.0)
+- Validacao: import 0 erros + boot real 0 erros + 11 testes OK; prova visual artifacts/align_v0639_antes_depois.png
+- Pendente: julgamento visual do usuario no Mac
+
 ### Area 35 — Ancora do alinhamento de quadros (ciclo 63, v0.6.38) OK
 - BUG: o alinhador de quadros (v0.6.35) media a faixa dos PES — que balanca ao andar/golpear; o movimento era lido como drift e "corrigido", anulando o passo
 - MEDIDO com avaliador independente (centro de massa, 20-80% da altura): residual medio 3.39px, pior 13.7px, 16/39 folhas >=3px -> depois 2.38px, 8.2px, 9/39
