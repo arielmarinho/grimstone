@@ -57,6 +57,8 @@ var _net_anim: String = "idle:down"
 var _net_buf: Array = []       # buffer de snapshots [{t, p, a}] p/ interpolação c/ lag
 const NET_BUF_MS := 120        # interpola ~120ms no passado (cobre jitter de rede)
 var _last_hit_by: int = 0      # peer id do ultimo atacante (servidor, pra xp/loot)
+var net_dmg_acc: int = 0       # dano acumulado desde o ultimo snapshot (numero ONLINE)
+var net_dmg_crit: bool = false # algum dos golpes acumulados foi critico
 var _net_target = null         # alvo virtual (servidor dedicado, sem player local)
 
 func is_net_mirror() -> bool:
@@ -284,17 +286,17 @@ func _net_dedicated_target():
 	_net_target.dead = false
 	return _net_target
 
-func take_damage(amount: int, from_peer: int = 0) -> void:
+func take_damage(amount: int, from_peer: int = 0, crit: bool = false) -> void:
 	if dead or dying:
 		return
 	if not net_authority:
 		# espelho no cliente: pede pro servidor aplicar
-		NetworkManager.request_mob_damage(net_id, amount)
+		NetworkManager.request_mob_damage(net_id, amount, crit)
 		return
 	# dummy de treino: mostra o numero de dano mas nunca morre (treino infinito)
 	if mob_type == "dummy":
 		_flash_damage()
-		_spawn_damage_number(amount)
+		FX.damage_number(global_position, amount, crit)
 		return
 	if from_peer != 0:
 		_last_hit_by = from_peer
@@ -304,7 +306,7 @@ func take_damage(amount: int, from_peer: int = 0) -> void:
 	AudioManager.play_sfx("hit", 0.15)
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
 	_flash_damage()
-	_spawn_damage_number(amount)
+	FX.damage_number(global_position, amount, crit)
 	if hp <= 0:
 		die()
 
@@ -314,21 +316,6 @@ func _flash_damage() -> void:
 	sprite.modulate = Color(3.0, 3.0, 3.0)
 	var tw = create_tween()
 	tw.tween_property(sprite, "modulate", Color(1, 1, 1), 0.15)
-
-func _spawn_damage_number(amount: int) -> void:
-	var l = Label.new()
-	l.text = str(amount)
-	l.position = global_position + Vector2(-12, -60 + randf() * 10 - 5)
-	l.add_theme_font_size_override("font_size", 15)
-	l.add_theme_color_override("font_color", Color(1.0, 0.95, 0.75))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
-	l.add_theme_constant_override("outline_size", 4)
-	l.z_index = 50
-	get_parent().add_child(l)
-	var tw = l.create_tween()
-	tw.tween_property(l, "position:y", l.position.y - 28.0, 0.55)
-	tw.parallel().tween_property(l, "modulate:a", 0.0, 0.55)
-	tw.tween_callback(l.queue_free)
 
 func die() -> void:
 	dying = true
@@ -376,9 +363,19 @@ func apply_net_state(data: Dictionary) -> void:
 	if data.get("m", "") != "":
 		_net_map = data["m"]
 	_net_anim = data.get("a", "idle:down")
+	var hp_antes: int = hp
 	hp = int(data.get("hp", hp))
 	max_hp = int(data.get("mhp", max_hp))
 	hp_bar.value = float(hp) / float(max_hp) * 100.0
+	# numero de dano ONLINE: quem aplica o dano e o servidor, entao o cliente
+	# descobre pelo snapshot (campo "hd" = dano desde o ultimo snapshot, so 10Hz).
+	# Sem isso, jogar online = acertar sem ver numero nenhum.
+	var hd: int = int(data.get("hd", 0))
+	if hd == 0 and hp_antes > hp and not bool(data.get("d", false)):
+		hd = hp_antes - hp   # fallback: snapshot sem o campo (cliente antigo/servidor antigo)
+	if hd > 0:
+		_flash_damage()
+		FX.damage_number(global_position, hd, bool(data.get("hc", false)))
 	var was_dead := dead
 	dead = bool(data.get("d", false))
 	if dead and not was_dead:
