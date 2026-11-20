@@ -1,3 +1,15 @@
+## v0.6.43 — Cadencia de walk decidida por IDENTIDADE, nao por amplitude
+- BUG REAL (medido nas 12 folhas de walk) — a v0.6.41 escolhia quais folhas ganham cadencia sintetizada por **amplitude do centro do quadril < 1.5px**. O crivo errava nos DOIS sentidos:
+  - **tocava o KNIGHT**, a arte de referencia aprovada: `knight/walk/down` mede 1.0px e `knight/walk/side` 0.5px de quadril — porque num passo de verdade quem se move sao as PERNAS; o quadril fica quase parado. A cadencia "corrigia" um passo desenhado a mao.
+  - **deixava 5 folhas deslizando**: `paladin/down`+`up` e `mage/down`+`up` medem 2.0-5.5px de quadril, mas esse numero e' so a **respiracao do idle**. Medido: o arquivo de walk dessas 4 folhas e' **byte-identico ao idle** (0.0% de diferenca). O personagem andava sem sair da pose de parado.
+- CRIVO CORRETO (identidade, nao amplitude): (a) os 4 quadros da folha sao **o mesmo quadro** -> `druid/walk/down` (1 hash); (b) a folha de walk e' **byte-identica ao idle** -> paladino e mago /down e /up. Marca exatamente 5 folhas e **nenhuma** do knight.
+- `tex_helper._idle_of(walk_path)` resolve a folha de idle par (null quando nao existe; o critério (a) roda sozinho).
+- Cadencia recalibrada (bob 1px + sway +-3px do quadril) e criterio de aceitacao trocado de valor ABSOLUTO para **GANHO** (>=1.5px): as folhas =idle ja tem 2-5px de respiracao, entao o absoluto nao distingue passo de respiracao. Ganhos: druid/down 6.0px, paladin/down 3.5, paladin/up 3.5, mage/down 2.5, mage/up 2.0.
+- `tests/test_walk_cycle.gd` reescrito: **11 folhas** (antes 5), com os dois controles do knight (`needs_cadence == false`) e o ganho medido por folha.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + **14/14 testes OK**.
+- Prova visual: `artifacts/walk_contact_v0641.png` (idle vs walk lado a lado, 4 classes x 3 direcoes).
+- Versao 0.6.43.
+
 ## v0.6.42 — Save a prova de morte do processo (gravacao atomica + load tolerante)
 - BUG REAL (medido, nao presumido) — **gravacao NAO-ATOMICA**: `save_game()` abria o `savegame.json` e escrevia por cima do save bom. O Android mata o app a qualquer momento (background, bateria, task killer): um kill no meio da escrita deixava o arquivo PELA METADE, e o save anterior ja tinha sido apagado junto — progresso do jogador perdido pra sempre. Comprovado com um save truncado pela metade: `load` devolvia false e o jogo comecava do level 1.
 - BUG REAL 2 — **load estourava com save malformado**: `int(parsed.get("level", 1))` sem checar tipo. Um save com `{"level": "muitos"}` ou `"skills": 5` causava `SCRIPT ERROR` no meio do `load_game` (float -> Dictionary), deixando o estado do jogo pela metade (level 0, skills invalidas).
