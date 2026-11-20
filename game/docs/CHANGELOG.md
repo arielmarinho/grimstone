@@ -1,3 +1,16 @@
+## v0.6.41 — Cadencia de WALK sintetizada onde o quadril nao move (druid/walk/down)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG MEDIDO (nao presumido): `druid/walk/down` tem os 4 quadros **byte-identicos** no PNG (1 hash unico) e amplitude do quadril 0.0px — o personagem atravessa a tela deslizando, sem perna nenhuma. A varredura das 12 folhas de walk mostrou que esse e o UNICO caso realmente parado (knight/side 0.5px, knight/down 1.5px, druid/side 2.0px, paladin/down 2.0px, druid/up 4.0px, mage/down 4.5px, mage/up 5.5px).
+- ARMADILHA EVITADA (o que quase virou regressao): o crivo antigo era "walk == idle", que casa com **7 folhas**. Aplicar cadencia em todas levava o paladino a 4.0px, o mago a 5.5px e o druid/side a 5.0px de quadril — FORA do envelope de 0.5-3.5px da unica arte com passada desenhada a mao (o knight, aprovado pelo usuario). Ou seja: o criterio tem que ser a AMPLITUDE MEDIDA, nao a semelhanca com o idle.
+- NOVO `game/scripts/entities/walk_cycle.gd` (modulo PURO, sem autoload — mesmo padrao da v0.6.39 para ser testavel com `-s`): `hem_amplitude` mede o centro do quadril (barra da tunica/pernas, ultimos 30% da altura do CORPO) entre os 4 quadros; `needs_cadence` age so abaixo de 1.5px; `apply` monta 4 batidas de 2 quadros com bob de 1px no corpo + sway de +-2px no quadril, nunca atravessando a fronteira do cell.
+- Calibrada contra o knight (a referencia): resultado no druid/down = **3.0px de quadril, 1px de bob** — 0.0px antes.
+- `tex_helper.gd`: `_walk_variation` (que so fazia bob vertical) REMOVIDO e substituido por `WalkCycle.needs_cadence/apply`. A folha que ja tem passada real continua intocada (knight inteiro, druid/up, druid/side, mago/paladino side).
+- Nenhum PNG alterado: tudo em runtime, arte do usuario intacta.
+- NOVO `tests/test_walk_cycle.gd`: WALK_CYCLE_TEST_OK — trava o bug (druid/down precisa de cadencia), o contraponto (druid/up, druid/side, mage/down, paladin/side NAO precisam), o envelope (>=1.5px e <=4.0px depois), o quadro 0 intacto (ancora do alinhamento da v0.6.39) e nenhum pixel novo vazando entre quadros.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + 14 testes OK (walk_cycle, minimap, align, scale, damage_numbers, shop_weapons, fusion, bank, bestiary, quests, food, runes, estimates).
+- Ferramentas da medicao em `scripts/222ef96c095afc0b/`: `walk_calib.py` (envelope do knight), `walk_search.py` (diagnostico das 12 folhas), `align_iou.py` (avaliador de alinhamento por IoU, independente da ancora).
+- Versao 0.6.41 / versionCode 73.
+
 ## v0.6.40 — Minimapa (Fase 2 do todo: "minimapa circular, hotbar 8 slots, inventario")
 Formato: codigo no GitHub (push MCP), docs pushados
 - NOVO `game/scripts/ui/minimap.gd`: painel no canto superior direito com a textura do mapa ATUAL reduzida — usa a MESMA textura que o `main.gd` ja carregou (custo zero de memoria, nenhum asset novo no repo).
