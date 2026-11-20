@@ -3,6 +3,8 @@ extends Node2D
 ## deposita itens da mochila pra liberar slots (BAG_MAX 20) e saca de volta.
 ## Moedas ficam no bolso (Tibia clássico não guarda moedas no banco).
 
+const NA := preload("res://scripts/world/npc_art.gd")
+
 var city: String = "city1"
 
 var panel: Control
@@ -25,11 +27,12 @@ func _build_npc() -> void:
 	npc_sprite = Sprite2D.new()
 	npc_sprite.texture = _make_npc_tex()
 	npc_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	npc_sprite.scale = Vector2(2, 2)
+	npc_sprite.scale = Vector2(NA.SPRITE_SCALE, NA.SPRITE_SCALE)
+	npc_sprite.offset = Vector2(0.0, NA.sprite_offset_y())
 	add_child(npc_sprite)
 	var name_l = Label.new()
 	name_l.text = "BANCO [T]"
-	name_l.position = Vector2(-40, -95)
+	name_l.position = Vector2(-40, -58)
 	name_l.add_theme_font_size_override("font_size", 14)
 	name_l.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
 	name_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
@@ -41,64 +44,7 @@ func _build_npc() -> void:
 	tw.tween_property(name_l, "position:y", name_l.position.y, 0.7)
 
 func _make_npc_tex() -> ImageTexture:
-	var img = Image.create(96, 96, false, Image.FORMAT_RGBA8)
-	var skin := Color(0.9, 0.72, 0.55)
-	var robe := Color(0.55, 0.45, 0.15)   # tunica dourada de banqueiro
-	var robe_d := Color(0.42, 0.34, 0.11)
-	# sombra
-	for x in range(30, 66):
-		for y in range(90, 94):
-			img.set_pixel(x, y, Color(0, 0, 0, 0.25))
-	# pernas
-	for x in range(40, 44):
-		for y in range(72, 90):
-			img.set_pixel(x, y, Color(0.25, 0.2, 0.15))
-	for x in range(52, 56):
-		for y in range(72, 90):
-			img.set_pixel(x, y, Color(0.25, 0.2, 0.15))
-	# tunica (corpo)
-	for x in range(36, 60):
-		for y in range(42, 74):
-			var c := robe if x < 40 else robe_d if x >= 56 else robe
-			img.set_pixel(x, y, c)
-	# cinto
-	for x in range(36, 60):
-		img.set_pixel(x, 66, Color(0.3, 0.22, 0.1))
-	# bracos
-	for x in range(30, 36):
-		for y in range(46, 66):
-			img.set_pixel(x, y, robe_d)
-	for x in range(60, 66):
-		for y in range(46, 66):
-			img.set_pixel(x, y, robe_d)
-	# maos
-	for x in range(30, 36):
-		for y in range(66, 70):
-			img.set_pixel(x, y, skin)
-	for x in range(60, 66):
-		for y in range(66, 70):
-			img.set_pixel(x, y, skin)
-	# cabeca
-	for x in range(40, 56):
-		for y in range(22, 42):
-			img.set_pixel(x, y, skin)
-	# cabelo (topo)
-	for x in range(38, 58):
-		for y in range(18, 26):
-			img.set_pixel(x, y, Color(0.2, 0.15, 0.1))
-	# olhos
-	img.set_pixel(44, 32, Color(0.1, 0.1, 0.1))
-	img.set_pixel(51, 32, Color(0.1, 0.1, 0.1))
-	# baú/cofre ao lado
-	for x in range(66, 88):
-		for y in range(62, 88):
-			img.set_pixel(x, y, Color(0.45, 0.3, 0.15))
-	for x in range(66, 88):
-		img.set_pixel(x, 74, Color(0.85, 0.7, 0.2))
-	for x in range(70, 84):
-		for y in range(66, 72):
-			img.set_pixel(x, y, Color(0.2, 0.18, 0.12))
-	return ImageTexture.create_from_image(img)
+	return ImageTexture.create_from_image(NA.bank_image())
 
 # ---------- PAINEL (mesmo estilo da loja/quests) ----------
 func _build_panel() -> void:
