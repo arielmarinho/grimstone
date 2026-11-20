@@ -4,6 +4,12 @@ extends CharacterBody2D
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const NETTARGET = preload("res://scripts/entities/net_target.gd")
+const MOBBAR = preload("res://scripts/entities/mob_bar.gd")
+
+# V0.6.49 (Area 43) — topo do corpo por tipo (px de TEXTE, medido da propria arte
+# ja sem o magenta). Preenchido uma vez por tipo em _build_frames e reaproveitado
+# pelos mobs seguintes do mesmo tipo (o calculo custa uma varredura de 96x96).
+static var _head_top_cache := {}
 
 const WANDER_RADIUS = 240.0
 const AGGRO_RANGE = 280.0
@@ -164,6 +170,42 @@ func _build_frames() -> void:
 	# Valor = px de TEXTURA (antes da escala) que apoia a mediana dos quadros
 	# (idle/walk/attack nas 3 direcoes) na linha do chao.
 	sprite.offset = Vector2(0.0, MOB_FEET_OFFSET.get(mob_type, 0.0))
+	_position_hp_bar()
+
+## V0.6.49 (Area 43) — BARRA DE VIDA derivada da ARTE.
+## Era offset FIXO no .tscn (-44..-38) e, com o offset de pe' por tipo (v0.6.48),
+## ficou boiando ate 50px acima da cabeca do slime/morcego/aranha e colada no rato.
+## Ver mob_bar.gd (modulo puro) e tests/test_mob_bar.gd.
+func _position_hp_bar() -> void:
+	if hp_bar == null:
+		return
+	var top_art: float = _head_top_art()
+	if top_art < 0.0:
+		return
+	var off: float = float(MOB_FEET_OFFSET.get(mob_type, 0.0))
+	var top: float = MOBBAR.bar_top(top_art, off, sprite.scale.y)
+	hp_bar.offset_left = -MOBBAR.BAR_W * 0.5
+	hp_bar.offset_right = MOBBAR.BAR_W * 0.5
+	hp_bar.offset_top = top
+	hp_bar.offset_bottom = top + MOBBAR.BAR_H
+
+## Pixel mais alto do corpo (arte ja sem magenta), em px de TEXTURA.
+func _head_top_art() -> float:
+	if _head_top_cache.has(mob_type):
+		return float(_head_top_cache[mob_type])
+	var best := -1.0
+	if sprite != null and sprite.sprite_frames != null and sprite.sprite_frames.has_animation("idle_down"):
+		var n := sprite.sprite_frames.get_frame_count("idle_down")
+		for i in range(n):
+			var tex: Texture2D = sprite.sprite_frames.get_frame_texture("idle_down", i)
+			if tex == null:
+				continue
+			var t: float = MOBBAR.head_top_of(tex.get_image())
+			if t >= 0.0:
+				best = t if best < 0.0 else minf(best, t)
+	if best >= 0.0:
+		_head_top_cache[mob_type] = best
+	return best
 
 func _strip_tex(t: Texture2D) -> Texture2D:
 	var im = t.get_image()
