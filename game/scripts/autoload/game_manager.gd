@@ -4,7 +4,7 @@ extends Node
 const SAVE_PATH = "user://savegame.json"
 const BAG_MAX = 20
 # versao do jogo — fonte unica (titulo e export_presets leem daqui; housekeeping manual esquecia)
-const GAME_VERSION := "0.6.38"
+const GAME_VERSION := "0.6.39"
 
 var player_name: String = "Grimstone"
 var level: int = 1
