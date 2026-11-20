@@ -1,3 +1,13 @@
+## v0.6.49 — Barra de vida do monstro na altura da cabeca (Area 43)
+Formato: codigo no GitHub (push MCP), docs pushados
+- BUG REAL medido (novo `tests/measure_bar.gd`): o `ProgressBar` da barra de vida e filho de cada mob com offset **FIXO** no `.tscn` (-44..-38). Ate a v0.6.48 isso passava despercebido porque todos os sprites tinham o mesmo topo aparente; com o **offset de pe' por tipo** (v0.6.48) cada corpo passou a terminar num y diferente. Medido em px de tela contra o topo real da arte: **slime/morcego/aranha -50px** (barra boiando 50px acima da cabeca), rato -7.5px (colada no corpo), orc -14.7px. Um numero magico no `.tscn` que nao conhece nem a arte nem a escala.
+- FIX estrutural: novo modulo **puro** `scripts/entities/mob_bar.gd` (`bar_top`/`head_top_screen`/`head_top_of`) — mesma regua do player, dos mobs, dos NPCs e da decoracao: node = centro da celula 96, um pixel de arte em y aparece em `(y - 48 + feet_offset) * scale`; a barra fica `GAP`=6px acima do pixel mais alto do corpo.
+- `mob.gd`: `_position_hp_bar()` roda no fim do `_build_frames()` e le o topo do corpo **da propria textura ja sem magenta** (`idle_down`, cacheado por tipo numa `static var`, uma varredura por tipo e nao por mob) — mudar o desenho de um monstro reposiciona a barra sozinho.
+- Novos: `tests/test_mob_bar.gd` (**MOB_BAR_TEST_OK**) mede 9 tipos x 3 direcoes x 4 quadros x idle/walk/attack e exige a barra a 6 +/- 1.5px do topo real, folga visivel (2..14px) e **folga uniforme** entre os 9 tipos; falha se a folga voltar a variar 40+px como no offset fixo. `tests/measure_bar.gd` fica como regua reutilizavel do proximo sprite.
+- Resultado: folga 6.0px nos **9** tipos (antes: -50.2 a -7.5).
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + suite completa OK (21/21).
+- Versao 0.6.49 / versionCode 80.
+
 ## v0.6.48 — Decoracao das cidades na mesma linha do chao do player (Area 43)
 Formato: codigo no GitHub (push MCP), docs pushados. Area 42 (mobs) e Area 43 (decoracao) entram juntas na v0.6.48.
 - **BUG REAL medido** (`game/tests/measure_decor.gd`): o `Sprite2D` da decoracao e' centrado na posicao do node com scale 2.0 e **sem offset**, entao cada objeto apoiava o pe' num y diferente — o espalhamento cheio era: canteiro de flores **22px FLUTUANDO**, caixote **10px flutuando**, barril 2px, barraca **6px afundada**, poste de luz e bandeira **14px afundados**. Ao lado do player (pe' a 46px do centro) e dos NPCs (v0.6.46) isto aparecia como objetos "boiando" ou enterrados.
