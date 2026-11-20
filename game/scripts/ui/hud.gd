@@ -28,6 +28,7 @@ var death_screen: Control
 var cloth_panel: Control
 var skills_panel: Control
 var preview: TextureRect
+var minimap: Control = null
 var player_ref: Node = null
 var hotbar_slots: Array = []
 var skill_btns := {}
@@ -75,6 +76,7 @@ func _ready() -> void:
 	_build_bestiary_panel()
 	_build_feedback()
 	_build_chat()
+	_build_minimap()
 	add_to_group("hud")
 	GameManager.quest_ready.connect(_on_quest_ready)
 
@@ -216,6 +218,18 @@ func set_player(p: Node) -> void:
 	player_ref = p
 	if p != null and not p.feedback.is_connected(_show_feedback):
 		p.feedback.connect(_show_feedback)
+	if minimap != null:
+		minimap.set_player(p)
+
+## MINIMAPA (v0.6.40): canto superior direito, textura do mapa atual.
+## O main.gd chama a cada troca de mapa (tex, tamanho do mundo em px, saidas).
+func minimap_set_map(tex: Texture2D, world: Vector2, exits: Array) -> void:
+	if minimap != null:
+		minimap.set_map(tex, world, exits)
+
+func _build_minimap() -> void:
+	minimap = load("res://scripts/ui/minimap.gd").new()
+	add_child(minimap)
 
 func _process(_delta: float) -> void:
 	hp_bar.value = float(GameManager.hp) / float(GameManager.hp_max) * 100.0
@@ -237,7 +251,7 @@ func _process(_delta: float) -> void:
 		fed_label.visible = false
 	if player_ref != null:
 		var w = EQUIPS.WEAPONS[GameManager.weapon_base()]
-		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | Z/X runas | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | F loja | Enter chat]" % [w["classe"], w["nome"]]
+		class_label.text = "%s (arma: %s)  [1-4 arma | Q/E/R/G skills | Z/X runas | B mochila | C roupas | K skills | N bestiario | J missoes | T banco | F loja | M minimapa | Enter chat]" % [w["classe"], w["nome"]]
 		var parts = []
 		for skill in GameManager.skills:
 			parts.append("%s %d" % [skill.capitalize(), GameManager.skills[skill]["level"]])
@@ -1031,6 +1045,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_N:
 			AudioManager.play_sfx("ui_click")
 			toggle_bestiary_panel()
+		elif event.keycode == KEY_M:
+			# minimapa: M alterna pequeno <-> grande
+			AudioManager.play_sfx("ui_click")
+			if minimap != null:
+				minimap.toggle_size()
 		elif event.keycode == KEY_Z:
 			# cinto de runas (v0.6.11): usa a runa do slot Z sem abrir a mochila
 			if not GameManager.belt_use("z"):
