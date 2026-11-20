@@ -1,3 +1,12 @@
+## v0.6.51 — Itens dropados e moedas na linha do chao (Area 45)
+Formato: codigo no GitHub (push MCP), docs pushados
+- **BUG REAL medido**: `drop.gd` cria o `Sprite2D` do loot CENTRADO na posicao do node, e o node nasce em `mob.global_position` — o **CENTRO** da celula do monstro. Pela regua unica do projeto o pe' fica `KNIGHT_FEET_SCREEN = 46px` abaixo desse centro, logo a base do icone de 20px caia em **+10px = 36px ACIMA do chao**: o item parecia flutuar no ar onde o monstro estava, enquanto corpo do monstro (v0.6.48), player, NPCs e decoracao estavam todos assentados na mesma linha.
+- FIX: novo modulo **puro** `scripts/entities/ground_item.gd` (`base_offset(h)`, `aura_center_y()`, `bob_peak(h)`) — mesma regua 46px do player/mobs/NPCs/decor. `base_offset(h) = FEET_SCREEN - h/2`: a base do icone cai exatamente na linha do chao para QUALQUER altura de icone, sem numero magico.
+- `drop.gd`: sprite assentado com `GROUND.base_offset(20.0)`, aura de raridade reposicionada para o chao (`aura_center_y()`) em vez do `+4px` do centro do icone, e o tween de queda virou ABSOLUTO (`bob_peak` -> `base_offset`) em vez de `as_relative()`, que somava o deslocamento antigo e acumulava desvio a cada pulinho.
+- Novo `tests/test_ground_items.gd` (**GROUND_ITEM_TEST_OK**): base do icone na linha do chao para 5 alturas (12/16/20/24/32px, tol 0.5px), pulinho sempre subindo, aura entre o centro e o chao, e trava de regressao lendo o `drop.gd` real (falha se voltar a animar por posicao relativa).
+- Validacao: Godot 4.7.2 headless `--import` **0 erros**.
+- Versao 0.6.51 / versionCode 83.
+
 ## v0.6.50 — Sombra no chao dos monstros (Area 44)
 Formato: codigo no GitHub (push MCP), docs pushados
 - **BUG REAL**: player e NPCs desenham uma sombra eliptica apoiada na linha do pe' (`KNIGHT_FEET_SCREEN = 46px`), mas os **9 tipos de monstro nao tinham sombra nenhuma**. Ao lado do knight, o bicho parecia colado no tileset sem contato com o chao — e o problema so cresceu depois do offset de pe' por tipo (v0.6.48), que deixou cada corpo terminar num y diferente.
