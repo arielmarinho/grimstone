@@ -1,14 +1,23 @@
-## v0.6.39 — Area 36: ancora do alinhamento no CENTRO DE MASSA + teste que roda de verdade
+## v0.6.40 — Minimapa (Fase 2 do todo: "minimapa circular, hotbar 8 slots, inventario")
 Formato: codigo no GitHub (push MCP), docs pushados
-- BUG REAL medido: a ancora da v0.6.38 (mediana do tronco, faixa 25%-55%) ainda PIORAVA 3 folhas. Em `mage/attack/down|side|up` o braco esticado domina a faixa, entao a mediana anda junto com o golpe e o alinhador empurrava o corpo para o lado: drift 5.2px -> 8.2px. O alinhador criava o deslize que devia corrigir.
-- NOVA ANCORA: centro de MASSA dos pixels opacos na faixa 20%-80% da altura do corpo. A faixa corta pes e topo da cabeca (que balancam) e mantem tronco e bracos.
-- COMO FOI ESCOLHIDA (nao por intuicao): 4 ancoras candidatas x 3 avaliadores independentes entre si E da ancora (bbox_center / com_10_90 / linha do quadril mais larga). Folhas com residual > 6px: mediana do tronco 5/3/5, pes 6/0/6, cabeca 8/3/5, centro de massa 1/0/2 — venceu nos tres. Ferramentas: `scripts/222ef96c095afc0b/anchor_eval.py` e `anchor_cross.py`.
-- NOVO `game/scripts/entities/frame_align.gd`: modulo PURO (sem autoload) com `body_center_img` e `align_frames`. `player.gd` e `remote_player.gd` usam o MESMO modulo; `PlayerScript.align_frames` continua valendo como wrapper para chamadas antigas.
-- FIX DO TESTE: `tests/test_align.gd` estava COMMITADO E QUEBRADO desde a v0.6.38 — preloadava player.gd, que precisa de GameManager para compilar; em `-s` nenhum autoload existe, entao dava "Identifier not found: GameManager" e o teste NUNCA rodou (a v0.6.38 o removeu alegando lentidao). Agora carrega o modulo puro, decodifica as folhas .b64 do knight e mede com avaliador independente.
-- RESULTADO medido no repo: drift medio 23.55px -> 0.79px; pior residual 2.2px (limite 6.0). druida idle down 41.5->0.7, druida attack down 45.2->0.4, druida idle up 42.2->0.9, mago attack down 5.2->0.2, knight walk down 5.0->0.4.
-- Prova visual: artifacts/align_v0639_antes_depois.png (antes|depois com a linha do centro da celula).
+- NOVO `game/scripts/ui/minimap.gd`: painel no canto superior direito com a textura do mapa ATUAL reduzida — usa a MESMA textura que o `main.gd` ja carregou (custo zero de memoria, nenhum asset novo no repo).
+- Pontos sobre o mapa: voce (verde, com anel branco), monstros vivos (vermelho), NPCs/estruturas (amarelo: mestre de missoes, banco, lojas) e saidas (azul: portoes/transicoes do mapa atual).
+- Tecla **M** alterna pequeno (156px) / grande (288px); redesenho a 10Hz (0.1s), nao a 60Hz — de graca em mobile.
+- Integracao: `main.gd::switch_map` passa textura, tamanho do mundo (textura x2 = escala real do mapa) e a lista de saidas; `HUD.set_player` liga o ponto do jogador. Sem tocar em colisor, mapa ou arte.
+- NOVO `tests/test_minimap.gd`: MINIMAP_TEST_OK — confere a conversao mundo->mapa (0,0 / centro 78,78 / borda = tamanho), o toggle pequeno/grande dentro de 1280px de tela e o clamp de mundo invalido (sem divisao por zero).
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + boot real (--quit-after 180) 0 erros + 17 testes OK (minimap, align, scale, damage_numbers, shop_weapons, fusion, bank, bestiary, quests, food, runes, estimates).
+- Dica de teclas do HUD atualizada (M minimapa). Versao 0.6.40 / versionCode 72.
+
+## v0.6.39 — Area 36: ancora do alinhamento no TRONCO (a de centro de massa foi descartada) + teste que roda de verdade
+Formato: codigo no GitHub (push MCP), docs pushados
+- FIX DO TESTE (bug real): `tests/test_align.gd` estava COMMITADO E QUEBRADO desde a v0.6.38 — preloadava `player.gd`, que precisa de GameManager para compilar; em `-s` nenhum autoload existe, entao dava "Identifier not found: GameManager". O teste NUNCA rodou (a v0.6.38 o removeu alegando >4min de lentidao; o motivo real era esse). Agora carrega um modulo PURO, decodifica as folhas `.b64` do knight e roda em ~2s.
+- ANCORA: mantida a MEDIANA DO TRONCO (faixa 25-55% da altura). Uma versao intermediaria deste ciclo trocou para o CENTRO DE MASSA (20-80%) apoiada em 3 avaliadores — mas os 3 mediam contra o proprio centro de massa: metrica CIRCULAR, que "ganha" sempre porque e a mesma grandeza usada para deslocar o quadro.
+- COMO FOI DECIDIDO (medido, nao intuido) — marco RIGIDO = CABECA (faixa 0-22% do corpo, parte que nao se deforma no golpe). No `mage/attack` (o caso que motivou a troca), drift da cabeca entre quadros: sem alinhar 5.5px, TRONCO 1.5px, CENTRO DE MASSA 7.5px. O centro de massa arrasta o corpo inteiro atras do braco/efeito que se estende de um lado; a MEDIANA do tronco ignora esse braco.
+- CONFIRMACAO por metrica independente da ancora (jitter do perfil de colunas por correlacao cruzada, 36 folhas): TRONCO 0.90px medio / 2.7 pior; CENTRO DE MASSA 1.17 / 5.0; sem alinhar 4.29 / 16.0.
+- NOVO `game/scripts/entities/frame_align.gd`: modulo PURO (sem autoload) com `body_center_img` e `align_frames`; `player.gd` e `remote_player.gd` usam a MESMA fonte (`PlayerScript.align_frames` fica como wrapper para chamadas antigas). Leitura do alpha por `get_data` em vez de `get_pixel` (~20x mais rapido), mira o centro MEDIO do conjunto e so age com drift > 1.5px.
 - Nenhum PNG alterado (arte do usuario intacta): tudo em runtime.
-- Validacao: Godot 4.7.2 headless --import 0 erros + boot real (--quit-after 120) 0 erros + 11 testes OK (align, scale, damage_numbers, shop_weapons, fusion, bank, bestiary, quests, food, runes, estimates).
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + boot real 0 erros + 9/9 testes OK (align, fusion, quests, scale, shop_weapons, runes, bank, bestiary, food). `reg_quick.sh` caiu de ~4min para 17s.
+- Ferramentas da medicao: `scripts/222ef96c095afc0b/align_v0639.py`, `align_cross_v0639.py`, `proof_v0639b.py`.
 - Versao 0.6.39 / versionCode 71.
 
 ## v0.6.38 — Area 35: ancora do alinhamento de quadros (sprite "patinando") + avatar remoto
