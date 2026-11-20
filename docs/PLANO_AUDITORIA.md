@@ -152,3 +152,17 @@
 - Arma equipada fundida = re-equipa a base automaticamente
 - Teste unitario headless tests/test_fusion.gd PASSOU (FUSION_TEST_OK); projeto 0 erros de script
 - Pendente: teste no Mac do usuario
+## Ciclo 20/11 (01:18-01:40) — Area 46: sombra no chao do PLAYER (v0.6.52) OK
+- **BUG medido** (`scripts/81724fd159dae26a/measure_player_shadow.py`): apos as Areas 42-45
+  (monstros v0.6.50/51, NPCs v0.6.46, decoracao v0.6.48, loot v0.6.51) o PLAYER era a UNICA
+  entidade sem contato visual com o chao. Varredura das 4 folhas (idle/walk/attack x 3 direcoes):
+  nenhuma tem linha util abaixo do pe' — nao existe sombra cozida na arte de NENHUMA classe.
+- FIX: modulo PURO `game/scripts/entities/player_shadow.gd` — base da sombra na regua de 46px,
+  largura medida na arte POR CLASSE (knight 37 / mago 34 / paladino 25 / druida 22px), textura
+  64x20 cacheada e compartilhada com `mob_shadow.gd` (zero binario novo). Ligado em `player.gd`
+  e `remote_player.gd` no `_build_frames()` (troca de arma reajusta).
+- `game/tests/test_player_shadow.gd` = **PLAYER_SHADOW_TEST_OK**; `--import` 0 erros; suite 24/24.
+- Prova: `artifacts/preview/player_shadow_v0652.png`. Versao 0.6.52 / versionCode 84.
+- **Pendente**: 1) `gradle_build/export_format=1` (AAB) + primeira build real no Mac do usuario;
+  2) teste do usuario (v0.6.52 + 51 + 50/49/48/46 — cadeia da linha do chao); 3) quantizacao das
+  folhas novas (1149 cores) — decisao do usuario.
