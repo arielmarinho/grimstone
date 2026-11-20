@@ -5,7 +5,7 @@ const SAVE_PATH = "user://savegame.json"
 const SAVE_VERSION := 2  # 2 = gravacao atomica (.tmp -> .bak -> save)
 const BAG_MAX = 20
 # versao do jogo — fonte unica (titulo e export_presets leem daqui; housekeeping manual esquecia)
-const GAME_VERSION := "0.6.45"
+const GAME_VERSION := "0.6.46"
 
 var player_name: String = "Grimstone"
 var level: int = 1
