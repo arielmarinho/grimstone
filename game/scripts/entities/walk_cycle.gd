@@ -5,34 +5,43 @@ extends RefCounted
 ## tem autoload, entao a logica precisa morar num script que compile sozinho).
 ## tex_helper.gd chama estas funcoes.
 ##
-## O PROBLEMA medido nas 12 folhas de walk do jogo:
-##   druid/walk/down   4 quadros BYTE-IDENTICOS -> quadril 0.0px (desliza parado)
-##   knight/walk/side  0.5px, knight/down 1.5px   -> referencia aprovada
-##   mage/walk/down    4.5px                      -> ja tem movimento, nao mexer
+## O PROBLEMA medido (as 12 folhas de walk do jogo, auditadas com 3 metricas):
 ##
-## A REGRA que a medicao forcou: o crivo NAO e' "walk == idle" (7 folhas se
-## encaixam nisso, e aplicar cadencia em todas ESTOURA o envelope de movimento
-## que o usuario aprovou no knight: paladino ia a 4.0px, mago a 5.5px, druida
-## side a 5.0px contra 0.5-3.5px do knight). O crivo e' a AMPLITUDE MEDIDA:
-## so a folha que praticamente nao move (abaixo de NEED_PX) recebe cadencia.
-## Hoje isso e' exatamente 1 folha: druid/walk/down.
+##   druid/walk/down    os 4 quadros sao O MESMO QUADRO (1 hash) -> parado
+##   paladin e mage /down e /up   arquivo BYTE-IDENTICO ao idle    -> desliza
+##   knight down/side/up          passo desenhado a mao, 91-94% diferente
+##                                do idle                        -> intocavel
+##   */walk/side                  alternam 2 poses reais          -> aceitavel
 ##
-## A CADENCIA: bob de 1-2px no corpo inteiro + sway do quadril (ultimos 30% da
-## altura do corpo, a barra da tunica/pernas) alternando +-2px, em 4 batidas.
-## Calibrada contra o knight: alvo 2.5px de quadril e 1px de bob.
+## HISTORICO DE UM CRIVO ERRADO (v0.6.41): a regra era "amplitude do centro do
+## quadril < 1.5px". Ela errava NOS DOIS SENTIDOS — tocava o knight (que anda
+## de verdade: o quadril quase nao se move porque quem move sao as PERNAS) e
+## deixava 5 folhas deslizando (paladino/mago tem 2.0-5.5px de quadril, mas
+## esse numero e' a RESPIRACAO do idle, nao passo). Medido: a folha do paladino
+## /down tem 2.0px de quadril e 0.0% de diferenca do idle.
+##
+## O CRIVO CORRETO e' identidade, nao amplitude:
+##   (a) os 4 quadros da folha sao o mesmo quadro, OU
+##   (b) a folha de walk e' byte-identica ao idle correspondente.
+## Testado nas 12 folhas: marca exatamente 5 (paladin/down+up, mage/down+up,
+## druid/down) e NENHUMA do knight. Ver tests/test_walk_cycle.gd.
+##
+## A CADENCIA: bob de 1px no corpo + sway do quadril (ultimos 30% da altura do
+## corpo) de +-2px, em 4 batidas. O criterio de aceitacao nao e' o valor
+## absoluto do quadril (as folhas =idle ja tem 2-5px de respiracao); e' o GANHO
+## que a cadencia acrescenta, que precisa ser >= 2px para ler como passo.
 
 const ALPHA := 0.2
 const HEM_FRACTION := 0.30   # ultimos 30% da altura do corpo = quadril pra baixo
-const NEED_PX := 1.5         # abaixo disso a folha "desliza parada"
-const TARGET_PX := 2.5       # alvo de amplitude do quadril (knight: 0.5-3.5)
+const MIN_GAIN_PX := 2.0     # ganho minimo de quadril para ler como passo
 
 ## Cadencia por quadro: (dy corpo, dx quadril, dx tronco).
 ## Batida de 2 quadros: meio da passada nos indices 1 e 3.
 const CADENCE := [
 	Vector3i(0, 0, 0),
-	Vector3i(-1, 2, 0),
-	Vector3i(0, -1, 0),
-	Vector3i(-1, -1, 1),
+	Vector3i(-1, 3, 0),
+	Vector3i(0, -3, 0),
+	Vector3i(-1, -3, 1),
 ]
 
 
@@ -100,10 +109,42 @@ static func hem_amplitude(img: Image) -> float:
 	return hi - lo
 
 
-## A folha precisa de cadencia? Sim quando o quadril quase nao move.
-static func needs_cadence(img: Image) -> bool:
-	var amp: float = hem_amplitude(img)
-	return amp >= 0.0 and amp < NEED_PX
+## A folha precisa de cadencia? CRIVO DE IDENTIDADE (v0.6.42), nao de amplitude.
+##   (a) os 4 quadros da folha sao o MESMO quadro  -> parado
+##   (b) a folha e' byte-identica ao idle          -> andar = respirar parado
+## `idle` e' opcional: sem ele, so o crivo (a) roda.
+static func needs_cadence(img: Image, idle: Image = null) -> bool:
+	if img == null:
+		return false
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	if w % 4 != 0 or h < 8:
+		return false
+	var data: PackedByteArray = img.get_data()
+	var fw: int = w / 4
+		# (a) quadro 0 vs 1,2,3 — comparacao direta de bytes (sem hash, sem alocacao)
+	var same_frames := true
+	for i in range(1, 4):
+		for y in range(h):
+			var r0: int = y * w * 4
+			var ri: int = y * w * 4 + i * fw * 4
+			for b in range(fw * 4):
+				if data[r0 + b] != data[ri + b]:
+					same_frames = false
+					break
+			if not same_frames:
+				break
+		if not same_frames:
+			break
+	if same_frames:
+		return true
+	# (b) byte-identica ao idle (mesma ordem de quadros)
+	if idle != null and idle.get_width() == w and idle.get_height() == h:
+		idle.convert(Image.FORMAT_RGBA8)
+		img.convert(Image.FORMAT_RGBA8)
+		if idle.get_data() == img.get_data():
+			return true
+	return false
 
 
 ## Aplica a cadencia. Devolve uma NOVA Image (nao mexe na original).
