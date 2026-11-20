@@ -11,6 +11,10 @@ extends SceneTree
 
 const WalkCycle := preload("res://scripts/entities/walk_cycle.gd")
 
+## needs=True nas 5 folhas que o crivo de IDENTIDADE marca (v0.6.42):
+##   paladin/down+up e mage/down+up = arquivo byte-identico ao idle
+##   druid/down = os 4 quadros sao o mesmo quadro
+## needs=False nas que tem passo real (knight = arte de referencia aprovada).
 const SHEETS := [
 	{"path": "res://assets/sprites/animation/player/druid/walk/down/druid_walk_down.png",
 	 "label": "druid/walk/down", "needs": true},
@@ -19,9 +23,21 @@ const SHEETS := [
 	{"path": "res://assets/sprites/animation/player/druid/walk/side/druid_walk_side.png",
 	 "label": "druid/walk/side", "needs": false},
 	{"path": "res://assets/sprites/animation/player/mage/walk/down/mage_walk_down.png",
-	 "label": "mage/walk/down", "needs": false},
+	 "label": "mage/walk/down", "needs": true},
+	{"path": "res://assets/sprites/animation/player/mage/walk/up/mage_walk_up.png",
+	 "label": "mage/walk/up", "needs": true},
+	{"path": "res://assets/sprites/animation/player/mage/walk/side/mage_walk_side.png",
+	 "label": "mage/walk/side", "needs": false},
+	{"path": "res://assets/sprites/animation/player/paladin/walk/down/paladin_walk_down.png",
+	 "label": "paladin/walk/down", "needs": true},
+	{"path": "res://assets/sprites/animation/player/paladin/walk/up/paladin_walk_up.png",
+	 "label": "paladin/walk/up", "needs": true},
 	{"path": "res://assets/sprites/animation/player/paladin/walk/side/paladin_walk_side.png",
 	 "label": "paladin/walk/side", "needs": false},
+	{"path": "res://assets/sprites/animation/player/knight/walk/down/knight_walk_down_base.png.b64",
+	 "label": "knight/walk/down", "needs": false},
+	{"path": "res://assets/sprites/animation/player/knight/walk/up/knight_walk_up_base.png.b64",
+	 "label": "knight/walk/up", "needs": false},
 ]
 
 var fails := 0
@@ -42,7 +58,8 @@ func _load(path: String) -> Image:
 		if im.load(disk) == OK:
 			return im
 	# algumas folhas sao versionadas so como .b64 (o knight)
-	var f := FileAccess.open(path + ".b64", FileAccess.READ)
+	var b64p: String = path if path.ends_with(".b64") else path + ".b64"
+	var f := FileAccess.open(b64p, FileAccess.READ)
 	if f == null:
 		return null
 	var b64: String = f.get_as_text().replace(" ", "").replace("\n", "").replace("\r", "").replace("\t", "").strip_edges()
@@ -81,7 +98,13 @@ func _init() -> void:
 		im.convert(Image.FORMAT_RGBA8)
 		checked += 1
 		var amp_before: float = WalkCycle.hem_amplitude(im)
-		var need: bool = WalkCycle.needs_cadence(im)
+		var idle_p: String = String(spec["path"]).replace("/walk/", "/idle/").replace("_walk_", "_idle_")
+		var idle: Image = _load(idle_p)
+		if idle == null:
+			idle = _load(idle_p.replace("_base", ""))
+		if idle == null and idle_p.ends_with(".b64"):
+			idle = _load(idle_p.replace(".b64", ""))
+		var need: bool = WalkCycle.needs_cadence(im, idle)
 		print("  %-16s quadril=%.1fpx needs=%s" % [spec["label"], amp_before, need])
 		_check(need == spec["needs"], "%s: needs_cadence == %s" % [spec["label"], spec["needs"]])
 
@@ -96,8 +119,12 @@ func _init() -> void:
 		out.convert(Image.FORMAT_RGBA8)
 		var amp_after: float = WalkCycle.hem_amplitude(out)
 		print("  %-16s depois quadril=%.1fpx" % [spec["label"], amp_after])
-		_check(amp_after >= 1.5, "%s: passou a andar (>=1.5px)" % spec["label"])
-		_check(amp_after <= 4.0, "%s: nao exagerou (<=4.0px, knight=3.5)" % spec["label"])
+		# o criterio NAO e' valor absoluto: as folhas =idle ja tem 2-5px de
+		# RESPIRACAO. O que le como passo e' o GANHO que a cadencia acrescenta.
+		var gain: float = amp_after - amp_before
+		print("  %-16s ganho=%.1fpx" % [spec["label"], gain])
+		_check(gain >= 1.5, "%s: ganho de passo >=1.5px (%.1f)" % [spec["label"], gain])
+		_check(amp_after <= 8.0, "%s: nao exagerou (<=8.0px)" % spec["label"])
 
 		# quadro 0 e a ancora do alinhamento: precisa ficar como estava
 		var w: int = im.get_width()
