@@ -6,6 +6,11 @@ extends Object
 
 const KNIGHT_IDLE := "res://assets/sprites/animation/player/knight/idle/down/knight_idle_down_base.png"
 
+## v0.6.41 — a cadencia de WALK saiu daqui para um modulo puro (walk_cycle.gd):
+## testavel sem autoload e com a regra calibrada pela MEDIDA (so a folha que
+## praticamente nao move o quadril recebe cadencia; ver o cabecalho do modulo).
+const WalkCycle := preload("res://scripts/entities/walk_cycle.gd")
+
 static var CURRENT_MOB: String = "rat"
 static var CURRENT_PANTS: String = "marrom"
 
@@ -56,8 +61,12 @@ static func load_sheet_custom(path: String, weapon: String, hair: String, tunic:
 		if _is_knight_sheet(path) and (tunic != "castanho" or hair != "castanho"):
 			img = _recolor_real(img, hair, tunic)
 		# folhas sem passada propria (walk == idle) ganham balanco sintetizado
+		# v0.6.41: cadencia sintetizada so onde o quadril nao move (druid/walk/down).
+		# O crivo antigo ("walk == idle") pegava 7 folhas e estourava o envelope de
+		# movimento do knight; agora e' a amplitude MEDIDA que decide.
 		if "/walk/" in path:
-			img = _walk_variation(img, path)
+			if WalkCycle.needs_cadence(img):
+				img = WalkCycle.apply(img)
 		var out: Array[Texture2D] = []
 		var fw = img.get_width() / 4
 		for i in range(4):
@@ -96,65 +105,6 @@ static func _recolor_real(img: Image, hair: String, tunic: String) -> Image:
 				var shade2: float = c.r / maxf(base_hair.r, 0.01)
 				img.set_pixel(x, y, Color(new_hair.r * shade2, new_hair.g * shade2, new_hair.b * shade2, c.a))
 	return img
-
-# WALK sem passada propria: as folhas novas (paladino/mago/druida) foram geradas
-# de poses de IDLE, entao walk/down e walk/up sao byte-identicos ao idle (o
-# personagem "anda" deslizando, sem nenhum passo — quebra o polish). Aqui a
-# folha de walk ganha um BALANCO vertical sutil (2px/1px) + 1px lateral em ritmo
-# de 4 quadros, lido como passo em pixel art. Folhas que JA tem passada real
-# (druida walk/side, knight) nao sao tocadas.
-static func _walk_variation(img: Image, path: String) -> Image:
-	var w: int = img.get_width()
-	var h: int = img.get_height()
-	if w % 4 != 0 or h <= 4:
-		return img
-	var fw: int = w / 4
-	var identical := true
-	for i in range(1, 4):
-		for y in range(0, h, 2):
-			for x in range(0, fw, 2):
-				if img.get_pixel(x, y) != img.get_pixel(i * fw + x, y):
-					identical = false
-					break
-			if not identical:
-				break
-		if not identical:
-			break
-	# segundo caso: a folha de WALK e a MESMA arte do IDLE (paladino/mago — o
-	# pipeline gerou walk das poses de idle). Andar mostraria so a respiracao
-	# parada; o balanco e o que da a leitura de passo.
-	if not identical:
-		var idle_path: String = path.replace("/walk/", "/idle/").replace("_walk_", "_idle_")
-		var idle_img := _load_image(idle_path)
-		if idle_img != null and idle_img.get_width() == w and idle_img.get_height() == h:
-			var same := true
-			for y in range(0, h, 2):
-				for x in range(0, w, 2):
-					if img.get_pixel(x, y) != idle_img.get_pixel(x, y):
-						same = false
-						break
-				if not same:
-					break
-			if not same:
-				return img
-		else:
-			return img
-	var offs: Array = [Vector2i(0, 0), Vector2i(0, -2), Vector2i(0, 0), Vector2i(1, -1)]
-	if "/up/" in path:
-		offs = [Vector2i(0, 0), Vector2i(0, -1), Vector2i(0, 0), Vector2i(-1, -1)]
-	var out := Image.create(w, h, false, Image.FORMAT_RGBA8)
-	for i in range(4):
-		var o: Vector2i = offs[i]
-		for y in range(h):
-			for x in range(fw):
-				var c: Color = img.get_pixel(i * fw + x, y)
-				if c.a <= 0.0:
-					continue
-				var tx: int = i * fw + x + o.x
-				var ty: int = y + o.y
-				if tx >= 0 and tx < w and ty >= 0 and ty < h:
-					out.set_pixel(tx, ty, c)
-	return out
 
 # UP a partir da ARTE REAL: substitui o rosto (pele) por cabelo — costas de verdade,
 # mantendo 100% a identidade visual do knight aprovado
