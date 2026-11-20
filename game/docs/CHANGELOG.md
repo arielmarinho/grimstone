@@ -1,3 +1,12 @@
+## v0.6.47 — Suite de testes fechada: icones sem rosa MEDIDO + trava do cenario cinza
+Formato: codigo no GitHub (push MCP), docs pushados. SEM bump de versao no jogo (so testes e docs — nenhuma mudanca de gameplay).
+- **"ICONES COM FUNDO ROSA" (item pendente do PLANO_POLISH_VISUAL) = RESOLVIDO, medido e nao presumido**: 23 PNGs de `assets/icons/` (32x32, 23.552 pixels) varridos com o criterio do chroma key (r > 0.78 E b > 0.78 E g < 0.31) -> **0 px magenta visivel**; os 21 icones de item tem fundo transparente (632-894 px com alpha 0 cada). A causa historica (chroma key antigo) nao existe mais: `items_db.draw_icon()` abre o PNG com alfa e so desenha por codigo quando o PNG falta.
+- Novo `tests/test_icons.gd` (**ICONS_TEST_OK**): falha com **1 px** magenta visivel em qualquer PNG da pasta, exige 15+ PNGs, confere que TODO item do `ITEMS` tem icone desenhavel e que as chaves com raridade (`espada#0..#4`) caem no icone da base.
+- `tests/test_map_check.gd` **deixou de ser diagnostico**: antes so imprimia largura/altura e nunca dizia OK nem FAIL (era o unico "FAIL" falso da suite). Agora e teste de verdade: falha se qualquer um dos **4 mapas** (city1/city2/forest/rat_cave) carregar <= 512px — o bug do cenario cinza (PLANO_POLISH_VISUAL #1/#2) fica travado contra regressao.
+- Suite unificada: `scripts/222ef96c095afc0b/test_all.sh` roda **todos** os `tests/test_*.gd` e imprime OK/FAIL por teste -> **18/18 OK**. Antes eram rodados 7 de 18 a mao.
+- Novo `scripts/222ef96c095afc0b/check_calls.py`: verificador estatico de **chamadas a metodo inexistente** em autoloads e scripts `preload`ados (526 referencias) — a classe de bug que o `--import` NAO pega e que ja custou 2 incidentes (`_show_feedback` na v0.6.11, `is_online` na v0.5.5). Resultado atual: **CALLS_OK**.
+- Validacao: Godot 4.7.2 headless `--import` 0 erros + 18/18 testes OK.
+
 ## v0.6.46 — NPCs na mesma linha do chao do player (Area 41)
 Formato: codigo no GitHub (push MCP), docs pushados
 - BUG REAL medido (`game/tests/measure_npcs.gd`): o Mestre das Missoes e o Banqueiro eram desenhados em **scale 2.0 sem offset de pe'**. Na pratica: **144px de altura na tela** contra 99px do knight (1.45x mais altos) e o pe' a **84px** abaixo do centro contra **46px** do player — os dois NPCs ficavam **38px afundados no chao**, como se estivessem num buraco; o nome flutuava 95px acima da cabeca (agora 58px).
