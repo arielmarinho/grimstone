@@ -65,6 +65,7 @@
 | 28 | **Player ARTE REAL 4 direcoes + fallback** | gs-pixel-art + gs-qa-testing | up/side = b64 real proprio; fallback v0.6.17/19 sem o b64; preview_final3 + check_real4 | OK ciclo 47 (v0.6.21) — pendente push dos 6 b64 |
 | 31 | **Animacao de caminhada das classes** | gs-pixel-art | walk vs idle das folhas paladino/mago/druida, leitura de passo | AUDITADO ciclo 60 (v0.6.34) — walk era identico ao idle em 3 classes (personagem deslizava); fix `_walk_variation` no tex_helper (balanco de passo sintetizado, so onde nao ha passada real) |
 | 39 | **Persistencia / Save** | gs-qa-testing | gravacao atomica, backup, save corrompido, compatibilidade com save antigo | AUDITADO ciclo 22:15 (v0.6.42) — 2 bugs reais: gravacao nao-atomica (kill do Android no meio da escrita destruia o save pra sempre) e `load` estourava SCRIPT ERROR com tipos errados; fix .tmp->.bak->save + load blindado + SAVE_TEST_OK (36 asserts) |
+| 43 | **HUD do monstro (barra de vida)** | gs-ui-ux + gs-pixel-art | barra de vida na altura da cabeca de cada tipo | AUDITADO ciclo 00:20-01:15 (v0.6.49) — offset FIXO -44 no .tscn ficou errado com o pe' por tipo da v0.6.48: barra boiava ate 50px acima da cabeca (slime/bat/spider) e colava no rato (7.5px); agora derivada da arte, 6.0px nos 9 tipos |
 
 ## Regra do usuario
 - Ciclos de 10 min; se nao terminar ou ficar ruim, o proximo ciclo APRIJORA o mesmo item
@@ -242,3 +243,8 @@
 - `tests/test_save.gd` (NOVO, 36 asserts) cobre roundtrip, backup, truncado, tipos errados, lixo na mochila, save antigo (v0.5) e ausencia de arquivo. 14/14 testes OK, headless 0 erros.
 - Pendente de teste real: no Mac/Android, matar o app logo apos salvar e reabrir (deve manter o progresso).
 
+### Area 43 — Barra de vida do monstro derivada da ARTE (ciclo 01:00-01:15, v0.6.49) OK
+- BUG REAL medido (`tests/measure_bar.gd`, novo): `HpBar` e' ProgressBar filho do mob com offset FIXO no `.tscn` (-44..-38). Passava despercebido enquanto todos os sprites tinham o mesmo topo aparente; o offset de pe' por tipo (v0.6.48) fez cada corpo terminar num y diferente. Medido em px de tela contra o topo real: **slime/morcego/aranha -50px** (barra boiando), rato -7.5px (colada), orc -14.7px.
+- FIX: modulo PURO `scripts/entities/mob_bar.gd` + `mob.gd::_position_hp_bar()` no fim de `_build_frames()`; topo do corpo lido da PROPRIA textura ja sem magenta (cache `static var` por tipo). Mesma regua do player/mobs/NPCs/decor: `(y - 48 + feet_offset) * scale`.
+- `tests/test_mob_bar.gd` (**MOB_BAR_TEST_OK**): 9 tipos x 3 direcoes x 4 quadros x idle/walk/attack, barra a 6 +/- 1.5px do topo, folga visivel 2..14px e folga UNIFORME entre os tipos (o bug variava 42px).
+- Depois: folga 6.0px nos 9 tipos. `--import` 0 erros, suite 21/21 OK. Prova: `artifacts/preview/mob_bar_v0649.png` (vermelho = antes, verde = depois).
