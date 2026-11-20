@@ -4,6 +4,7 @@ extends CharacterBody2D
 
 const TEXHELPER = preload("res://scripts/autoload/tex_helper.gd")
 const FRAME_ALIGN = preload("res://scripts/entities/frame_align.gd")
+const PLAYERSHADOW = preload("res://scripts/entities/player_shadow.gd")
 
 var peer_id: int = 0
 var display_name: String = "???"
@@ -91,6 +92,9 @@ func _build_frames() -> void:
 	var sc: float = Equips.sprite_scale_for(wbase)
 	sprite.scale = Vector2(sc, sc)
 	sprite.offset = Vector2(0.0, Equips.sprite_offset_y_for(wbase))
+	# V0.6.52 — mesmo contato com o chao do player local (o avatar remoto tem que
+	# parecer o mesmo personagem: sem sombra ele parecia flutuar ao lado do outro).
+	PLAYERSHADOW.attach(self, wbase)
 	var sf = SpriteFrames.new()
 	sf.remove_animation("default")
 	for anim in ANIMS:
